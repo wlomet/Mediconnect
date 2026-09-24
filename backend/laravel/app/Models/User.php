@@ -96,6 +96,25 @@ class User extends Authenticatable
     }
 
     /**
+     * Rôles nécessitant une ligne de profil dédiée pour fonctionner à la connexion.
+     */
+    public const PROFILE_REQUIRED_ROLES = ['medecin', 'secretaire', 'gestionnaire', 'directeur'];
+
+    /**
+     * Vérifie que la ligne de profil liée au rôle principal existe bien.
+     */
+    public function hasRequiredProfileRow(): bool
+    {
+        return match ($this->getMainRoleAttribute()) {
+            'medecin' => $this->medecinProfile()->exists(),
+            'secretaire' => $this->secretaire()->exists(),
+            'gestionnaire' => $this->gestionnaire()->exists(),
+            'directeur' => $this->directeur()->exists(),
+            default => true,
+        };
+    }
+
+    /**
      * Boot the model with creating event to auto-generate client_id.
      */
     protected static function boot()

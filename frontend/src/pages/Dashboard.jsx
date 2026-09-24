@@ -8,9 +8,12 @@ import DashboardGestionnaire from "./gestionnaire/dashboard/DashboardGestionnair
 import DashboardSecretaire from "./secretaire/dashboard/DashboardSecretaire";
 import DashboardSuperAdmin from "./superadmin/dashboard/DashboardSuperAdmin";
 import DashboardDirecteur from "./directeur/dashboard/DashboardDirecteur";
+import CompleteProfileForm from "./CompleteProfileForm";
+
+const PROFILE_REQUIRED_ROLES = ["medecin", "secretaire", "gestionnaire", "directeur"];
 
 const Dashboard = () => {
-  const { user, loading } = useContext(AuthContext);
+  const { user, loading, checkAuth } = useContext(AuthContext);
   const navigate = useNavigate();
 
   // Rediriger si pas connecté
@@ -28,6 +31,11 @@ const Dashboard = () => {
   // Si pas d'utilisateur
   if (!user) {
     return null;
+  }
+
+  // Ligne de profil (medecin_profiles, secretaires, gestionnaires, directeurs) manquante
+  if (PROFILE_REQUIRED_ROLES.includes(user.role) && user.profileComplete === false) {
+    return <CompleteProfileForm role={user.role} onCompleted={checkAuth} />;
   }
 
   // Afficher le dashboard selon le rôle
@@ -55,3 +63,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

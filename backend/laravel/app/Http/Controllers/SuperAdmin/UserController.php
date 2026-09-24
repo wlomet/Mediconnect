@@ -133,7 +133,18 @@ class UserController extends Controller
         ]);
 
         $user = User::findOrFail($request->user_id);
-        $user->assignRole($request->role);
+
+        // Un compte super-admin ne peut jamais se voir changer/retirer son rôle,
+        // que ce soit par lui-même ou par un autre super-admin.
+        if ($user->hasRole('super-admin') && $request->role !== 'super-admin') {
+            return response()->json([
+                'message' => 'Impossible de modifier le rôle d\'un compte Super Admin',
+            ], 422);
+        }
+
+        // Un rôle assigné remplace les précédents pour éviter les conflits de connexion
+        // (un utilisateur ne doit avoir qu'un seul rôle actif à la fois).
+        $user->syncRoles([$request->role]);
         $user->refresh();
 
         return response()->json([
@@ -161,6 +172,13 @@ class UserController extends Controller
         ]);
 
         $user = User::findOrFail($request->user_id);
+
+        if ($user->hasRole('super-admin')) {
+            return response()->json([
+                'message' => 'Impossible de retirer un rôle à un compte Super Admin',
+            ], 422);
+        }
+
         $user->removeRole($request->role);
         $user->refresh();
 

@@ -64,6 +64,13 @@ class SuperAdminController extends Controller
         ]);
 
         $user = User::findOrFail($request->user_id);
+
+        if ($user->hasRole('super-admin') && $request->role !== 'super-admin') {
+            return response()->json([
+                'message' => 'Impossible de modifier le rôle d\'un compte Super Admin',
+            ], 422);
+        }
+
         $user->syncRoles([$request->role]);
 
         return response()->json([

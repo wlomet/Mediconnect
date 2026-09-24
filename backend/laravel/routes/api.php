@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProfileCompletionController;
 use App\Http\Controllers\MedecinProfileController;
 use App\Http\Controllers\SpecialiteController;
 use App\Http\Controllers\MedecinPlanningController;
@@ -84,6 +85,8 @@ Route::post('/rendezvous', [ClientRendezVousController::class, 'store']);
 
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
     // Shared resources for authenticated users
+    Route::get('/profile-completion/status', [ProfileCompletionController::class, 'status']);
+    Route::post('/profile-completion', [ProfileCompletionController::class, 'store']);
     Route::get('/medecin/profile', [MedecinProfileController::class, 'show']);
     Route::put('/medecin/profile', [MedecinProfileController::class, 'update']);
     Route::get('/medecin/planning', [MedecinPlanningController::class, 'getPlanning']);

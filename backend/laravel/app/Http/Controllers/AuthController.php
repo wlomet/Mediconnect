@@ -114,6 +114,7 @@ class AuthController extends Controller
                     'phone' => $user->phone,
                     'client_id' => $user->client_id,
                     'role' => $user->getMainRoleAttribute(),
+                    'profileComplete' => $user->hasRequiredProfileRow(),
                 ],
                 'token' => 'session-based',
                 'roles' => $user->getRoleNames()->toArray()
@@ -155,6 +156,7 @@ class AuthController extends Controller
                         'client_id' => $user->client_id,
                         'role' => $user->getMainRoleAttribute(),
                         'isVerified' => $user->isVerified,
+                        'profileComplete' => $user->hasRequiredProfileRow(),
                     ],
                     'roles' => $user->getRoleNames()->toArray()
                 ]);
