@@ -196,6 +196,10 @@ const buildEvents = (horaires, indisponibilitesRaw, range, rendezvousRaw = []) =
 export default function PlanningMedecin() {
   const { user } = useContext(AuthContext);
   const [events, setEvents] = useState([]);
+  const [currentView, setCurrentView] = useState(() =>
+    window.innerWidth >= 768 ? "timeGridWeek" : "timeGridDay"
+  );
+  const calendarRef = useRef(null);
   const horairesRef = useRef([]);
   const indisposRef = useRef([]);
   const rendezvousRef = useRef([]);
@@ -239,6 +243,23 @@ export default function PlanningMedecin() {
     fetchEvents();
   }, [fetchEvents]);
 
+  // Gérer le changement de vue en fonction de la taille de l'écran
+  useEffect(() => {
+    const handleResize = () => {
+      const newView = window.innerWidth >= 768 ? "timeGridWeek" : "timeGridDay";
+      if (newView !== currentView) {
+        setCurrentView(newView);
+        // Changer la vue du calendrier si la ref est disponible
+        if (calendarRef.current) {
+          calendarRef.current.getApi().changeView(newView);
+        }
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [currentView]);
+
   return (
     <div className={styles.container}>
       <NavbarMedecin />
@@ -269,8 +290,9 @@ export default function PlanningMedecin() {
 
         <div className="p-4">
           <FullCalendar
+            ref={calendarRef}
             plugins={[timeGridPlugin]}
-            initialView="timeGridDay"
+            initialView={currentView}
             slotMinTime="06:00:00"
             slotMaxTime="20:00:00"
             allDaySlot={false}
