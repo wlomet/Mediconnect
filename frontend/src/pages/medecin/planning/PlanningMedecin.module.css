@@ -175,3 +175,62 @@
 .container :global(.fc-scroller::-webkit-scrollbar-thumb:hover) {
   background: #a0aec0;
 }
+
+/* ========== RESPONSIVE MOBILE ========== */
+
+@media (max-width: 768px) {
+  /* Réduire le padding sur mobile */
+  .container :global(.fc) {
+    padding: 0.75rem;
+  }
+
+  /* Réduire la hauteur des slots */
+  .container :global(.fc .fc-timegrid-slot) {
+    height: 2.5rem;
+  }
+
+  /* Réduire la taille de la police */
+  .container :global(.fc .fc-timegrid-slot-label) {
+    font-size: 0.75rem;
+  }
+
+  .container :global(.fc .fc-toolbar-title) {
+    font-size: 1.25rem;
+  }
+
+  /* Boutons du calendrier plus compacts */
+  .container :global(.fc .fc-button) {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  /* Header du calendrier en colonne */
+  .container :global(.fc .fc-toolbar) {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Réduire les en-têtes de colonnes */
+  .container :global(.fc .fc-col-header-cell) {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.85rem;
+  }
+
+  /* Réduire les événements */
+  .container :global(.fc .fc-event) {
+    font-size: 0.75rem;
+    padding: 0.25rem;
+  }
+
+  /* Réduire les marges */
+  .container :global(.fc .fc-toolbar) {
+    margin-bottom: 1rem;
+  }
+
+  /* Optimiser l'affichage des boutons de vue */
+  .container :global(.fc .fc-button-group) {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}

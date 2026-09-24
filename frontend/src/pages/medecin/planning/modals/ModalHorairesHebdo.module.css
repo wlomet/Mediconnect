@@ -242,20 +242,119 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  .modalContentLarge {
-    width: 95%;
-    margin: 10px;
+  .modalOverlay {
+    padding: 10px;
   }
-  
+
+  .modalContentLarge {
+    width: 100%;
+    max-width: calc(100vw - 20px);
+    max-height: 95vh;
+    padding: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modalHeader {
+    padding: 16px;
+    font-size: 1.2rem;
+  }
+
+  .modalTitle {
+    font-size: 1.25rem;
+  }
+
+  .closeButton {
+    font-size: 1.25rem;
+    padding: 4px;
+  }
+
+  .infoBox {
+    margin: 16px;
+    padding: 12px;
+    font-size: 0.875rem;
+  }
+
+  .form {
+    padding: 0 16px 16px;
+  }
+
   .horairesGrid {
     grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
   }
-  
+
+  .jourSection {
+    padding: 16px;
+  }
+
+  .jourTitle {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+  }
+
+  .creneauSection {
+    margin-bottom: 16px;
+    padding: 12px;
+  }
+
+  .creneauLabel {
+    gap: 8px;
+    font-size: 0.95rem;
+  }
+
+  .checkbox {
+    width: 16px;
+    height: 16px;
+  }
+
+  .creneauTitle {
+    font-size: 0.95rem;
+  }
+
   .heuresInputs {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
-  
+
+  .timeInputGroup {
+    gap: 4px;
+  }
+
+  .timeInputGroup label {
+    font-size: 0.8rem;
+  }
+
+  .timeInput {
+    padding: 6px 10px;
+    font-size: 0.875rem;
+  }
+
   .buttonContainer {
-    flex-direction: column;
+    flex-direction: column-reverse;
+    gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+    margin: 0 16px;
+  }
+
+  .cancelButton,
+  .submitButton {
+    width: 100%;
+    padding: 10px 16px;
+    font-size: 0.95rem;
+    justify-content: center;
+  }
+
+  .loading {
+    padding: 40px 20px;
+    gap: 12px;
+  }
+
+  .spinner {
+    width: 24px;
+    height: 24px;
   }
 }

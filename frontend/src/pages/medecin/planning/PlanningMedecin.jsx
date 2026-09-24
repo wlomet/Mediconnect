@@ -243,24 +243,24 @@ export default function PlanningMedecin() {
     <div className={styles.container}>
       <NavbarMedecin />
       <div className="p-4">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-2 md:gap-0">
           <h2 className="text-xl font-semibold">Mon planning</h2>
-          <div className="flex gap-2">
+          <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
             <button
               onClick={() => setShowHoraireModal(true)}
-              className="bg-blue-500 text-white px-3 py-1 rounded"
+              className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 w-full md:w-auto"
             >
               Gestion des Horaires Hebdos
             </button>
             <button
               onClick={() => setShowIndispoModal(true)}
-              className="bg-red-500 text-white px-3 py-1 rounded"
+              className="bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600 w-full md:w-auto"
             >
               Ajouter indisponibilité
             </button>
             <button
               onClick={fetchEvents}
-              className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+              className="bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600 w-full md:w-auto"
             >
               Rafraîchir
             </button>
@@ -270,7 +270,7 @@ export default function PlanningMedecin() {
         <div className="p-4">
           <FullCalendar
             plugins={[timeGridPlugin]}
-            initialView="timeGridWeek"
+            initialView="timeGridDay"
             slotMinTime="06:00:00"
             slotMaxTime="20:00:00"
             allDaySlot={false}
@@ -281,7 +281,7 @@ export default function PlanningMedecin() {
             headerToolbar={{
               left: "prev,next today",
               center: "title",
-              right: "timeGridWeek,timeGridDay",
+              right: "timeGridDay,timeGridWeek",
             }}
             eventTextColor="#000"
             eventClick={(clickInfo) => {
