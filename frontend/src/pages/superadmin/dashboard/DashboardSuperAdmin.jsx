@@ -9,7 +9,11 @@ import CreateClientModal from "./modals/CreateClientModal";
 import CreateGestionnaireModal from "./modals/CreateGestionnaireModal";
 import CreateSecretaireModal from "./modals/CreateSecretaireModal";
 import CreateMedecinModal from "./modals/CreateMedecinModal";
+import AssignRoleProfileModal from "./modals/AssignRoleProfileModal";
 import styles from "./DashboardSuperAdmin.module.css";
+
+// Rôles nécessitant une ligne de profil dédiée (medecin_profiles, secretaires, gestionnaires, directeurs)
+const PROFILE_REQUIRED_ROLES = ["medecin", "secretaire", "gestionnaire", "directeur"];
 
 const CREATE_ROLE_BUTTONS = [
   { key: "directeur", label: "+ Créer un Directeur" },
@@ -29,6 +33,7 @@ const DashboardSuperAdmin = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedRole, setSelectedRole] = useState("");
   const [activeCreateModal, setActiveCreateModal] = useState(null);
+  const [assignRoleModalOpen, setAssignRoleModalOpen] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -62,6 +67,13 @@ const DashboardSuperAdmin = () => {
       return;
     }
 
+    // Ces rôles exigent que le super admin complète la ligne de profil correspondante
+    // au moment de l'assignation : sans ces informations, le rôle n'est pas assigné.
+    if (PROFILE_REQUIRED_ROLES.includes(selectedRole)) {
+      setAssignRoleModalOpen(true);
+      return;
+    }
+
     try {
       await axiosInstance.post("/super-admin/users/assign-role", {
         user_id: selectedUser,
@@ -74,8 +86,14 @@ const DashboardSuperAdmin = () => {
       setSelectedRole("");
     } catch (error) {
       console.error("Erreur:", error);
-      toast.error("Erreur lors de l'assignation du rôle");
+      toast.error(error.response?.data?.message || "Erreur lors de l'assignation du rôle");
     }
+  };
+
+  const handleAssignRoleProfileSuccess = () => {
+    fetchDashboardData();
+    setSelectedUser(null);
+    setSelectedRole("");
   };
 
   if (loading) {
@@ -185,6 +203,20 @@ const DashboardSuperAdmin = () => {
           ))}
         </div>
       </div>
+
+      {/* Complétion du profil requise pour finaliser l'assignation du rôle */}
+      {assignRoleModalOpen && selectedUser && (
+        <AssignRoleProfileModal
+          userId={selectedUser}
+          userName={users.find((u) => String(u.id) === String(selectedUser))?.name || ""}
+          role={selectedRole}
+          onClose={() => setAssignRoleModalOpen(false)}
+          onSuccess={() => {
+            setAssignRoleModalOpen(false);
+            handleAssignRoleProfileSuccess();
+          }}
+        />
+      )}
 
       {/* Modals Créer Utilisateur */}
       {activeCreateModal === "directeur" && (

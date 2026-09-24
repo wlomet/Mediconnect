@@ -4,7 +4,13 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Directeur;
+use App\Models\Gestionnaire;
+use App\Models\Hopital;
+use App\Models\MedecinProfile;
+use App\Models\Secretaire;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
@@ -142,9 +148,25 @@ class UserController extends Controller
             ], 422);
         }
 
-        // Un rôle assigné remplace les précédents pour éviter les conflits de connexion
-        // (un utilisateur ne doit avoir qu'un seul rôle actif à la fois).
-        $user->syncRoles([$request->role]);
+        $role = $request->role;
+
+        // Le rôle exige une ligne de profil dédiée : le super admin doit la renseigner
+        // maintenant, sinon l'assignation du rôle est bloquée (plus de complétion différée à la connexion).
+        $profileData = null;
+        if (in_array($role, User::PROFILE_REQUIRED_ROLES, true) && !$this->userHasProfileFor($user, $role)) {
+            $profileData = $this->validateProfilePayload($request, $role);
+        }
+
+        DB::transaction(function () use ($user, $role, $profileData) {
+            // Un rôle assigné remplace les précédents pour éviter les conflits de connexion
+            // (un utilisateur ne doit avoir qu'un seul rôle actif à la fois).
+            $user->syncRoles([$role]);
+
+            if ($profileData !== null) {
+                $this->createProfileRow($user, $role, $profileData);
+            }
+        });
+
         $user->refresh();
 
         return response()->json([
@@ -193,6 +215,113 @@ class UserController extends Controller
                     'name' => $role->name,
                 ]),
             ]
+        ]);
+    }
+
+    /**
+     * Vérifie si l'utilisateur possède déjà la ligne de profil correspondant à ce rôle.
+     */
+    private function userHasProfileFor(User $user, string $role): bool
+    {
+        return match ($role) {
+            'medecin' => $user->medecinProfile()->exists(),
+            'secretaire' => $user->secretaire()->exists(),
+            'gestionnaire' => $user->gestionnaire()->exists(),
+            'directeur' => $user->directeur()->exists(),
+            default => true,
+        };
+    }
+
+    /**
+     * Valide les informations de profil requises pour le rôle ciblé.
+     * L'assignation échoue (422) si ces informations ne sont pas fournies.
+     */
+    private function validateProfilePayload(Request $request, string $role): array
+    {
+        return match ($role) {
+            'medecin' => $request->validate([
+                'hopital_id' => 'nullable|integer|exists:hopitals,id',
+                'specialite_id' => 'required|integer|exists:specialites,id',
+                'telephone' => 'required|string|max:20',
+                'adresse' => 'nullable|string|max:255',
+                'ville' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
+            ], [
+                'specialite_id.required' => 'La spécialité est requise pour assigner le rôle médecin',
+                'telephone.required' => 'Le téléphone est requis pour assigner le rôle médecin',
+            ]),
+            'secretaire', 'gestionnaire' => $request->validate([
+                'hopital_id' => 'nullable|integer|exists:hopitals,id',
+                'name' => 'required|string|max:255',
+            ], [
+                'name.required' => 'Le nom du profil est requis pour assigner ce rôle',
+            ]),
+            'directeur' => $request->validate([
+                'hopital_id' => 'nullable|integer|exists:hopitals,id',
+                'name' => 'required|string|max:255',
+                'hopital_name' => 'required_without:hopital_id|nullable|string|max:255',
+                'hopital_adresse' => 'required_without:hopital_id|nullable|string|max:255',
+                'hopital_telephone' => 'required_without:hopital_id|nullable|string|max:20',
+                'hopital_ville' => 'required_without:hopital_id|nullable|string|max:255',
+            ], [
+                'name.required' => 'Le nom du profil est requis pour assigner le rôle directeur',
+                'hopital_name.required_without' => 'Veuillez sélectionner un hôpital existant ou renseigner un nouvel hôpital',
+                'hopital_adresse.required_without' => 'Veuillez sélectionner un hôpital existant ou renseigner un nouvel hôpital',
+                'hopital_telephone.required_without' => 'Veuillez sélectionner un hôpital existant ou renseigner un nouvel hôpital',
+                'hopital_ville.required_without' => 'Veuillez sélectionner un hôpital existant ou renseigner un nouvel hôpital',
+            ]),
+            default => [],
+        };
+    }
+
+    /**
+     * Crée la ligne de profil correspondant au rôle assigné.
+     */
+    private function createProfileRow(User $user, string $role, array $data): void
+    {
+        match ($role) {
+            'medecin' => MedecinProfile::create([
+                'user_id' => $user->id,
+                'hopital_id' => $data['hopital_id'] ?? null,
+                'specialite_id' => $data['specialite_id'],
+                'telephone' => $data['telephone'],
+                'adresse' => $data['adresse'] ?? null,
+                'ville' => $data['ville'] ?? null,
+                'description' => $data['description'] ?? null,
+            ]),
+            'secretaire' => Secretaire::create([
+                'user_id' => $user->id,
+                'hopital_id' => $data['hopital_id'] ?? null,
+                'name' => $data['name'],
+            ]),
+            'gestionnaire' => Gestionnaire::create([
+                'user_id' => $user->id,
+                'hopital_id' => $data['hopital_id'] ?? null,
+                'name' => $data['name'],
+            ]),
+            'directeur' => $this->createDirecteurProfile($user, $data),
+            default => null,
+        };
+    }
+
+    private function createDirecteurProfile(User $user, array $data): void
+    {
+        $hopitalId = $data['hopital_id'] ?? null;
+
+        if (!$hopitalId) {
+            $hopital = Hopital::create([
+                'name' => $data['hopital_name'],
+                'adresse' => $data['hopital_adresse'],
+                'telephone' => $data['hopital_telephone'],
+                'ville' => $data['hopital_ville'],
+            ]);
+            $hopitalId = $hopital->id;
+        }
+
+        Directeur::create([
+            'user_id' => $user->id,
+            'hopital_id' => $hopitalId,
+            'name' => $data['name'],
         ]);
     }
 }
