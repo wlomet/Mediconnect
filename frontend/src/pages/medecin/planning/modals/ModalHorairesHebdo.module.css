@@ -8,7 +8,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 99999;
   padding: 20px;
 }
 
@@ -243,21 +243,26 @@
 /* Responsive */
 @media (max-width: 768px) {
   .modalOverlay {
-    padding: 10px;
+    padding: 8px;
+    align-items: flex-start;
+    justify-content: center;
   }
 
   .modalContentLarge {
     width: 100%;
-    max-width: calc(100vw - 20px);
-    max-height: 95vh;
+    max-width: 100%;
+    max-height: calc(100vh - 16px);
     padding: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+    margin-top: auto;
   }
 
   .modalHeader {
     padding: 16px;
     font-size: 1.2rem;
+    flex-wrap: wrap;
   }
 
   .modalTitle {
@@ -270,13 +275,13 @@
   }
 
   .infoBox {
-    margin: 16px;
+    margin: 12px;
     padding: 12px;
     font-size: 0.875rem;
   }
 
   .form {
-    padding: 0 16px 16px;
+    padding: 0 12px 12px;
   }
 
   .horairesGrid {
@@ -335,9 +340,9 @@
   .buttonContainer {
     flex-direction: column-reverse;
     gap: 8px;
-    padding-top: 16px;
+    padding: 12px;
     border-top: 1px solid #e5e7eb;
-    margin: 0 16px;
+    margin: 0;
   }
 
   .cancelButton,

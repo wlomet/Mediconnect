@@ -139,30 +139,34 @@ export default function ModalHorairesHebdo({ onClose, onUpdate }) {
                 return (
                   <div
                     key={`${jour}-matin`}
-                    className="flex items-center gap-3 bg-gray-50 p-3 rounded"
+                    className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 bg-gray-50 p-3 rounded"
                   >
-                    <input
-                      type="checkbox"
-                      checked={horaire?.actif ?? false}
-                      onChange={() => toggleActif(jour, "matin")}
-                      className="w-5 h-5 cursor-pointer"
-                    />
-                    <span className="w-24 font-medium capitalize">{jour}</span>
-                    <input
-                      type="time"
-                      value={horaire?.heure_debut ?? "08:30"}
-                      onChange={(e) => updateHoraire(jour, "matin", "heure_debut", e.target.value)}
-                      disabled={!horaire?.actif}
-                      className="border rounded px-2 py-1 disabled:bg-gray-200 disabled:cursor-not-allowed"
-                    />
-                    <span>-</span>
-                    <input
-                      type="time"
-                      value={horaire?.heure_fin ?? "12:30"}
-                      onChange={(e) => updateHoraire(jour, "matin", "heure_fin", e.target.value)}
-                      disabled={!horaire?.actif}
-                      className="border rounded px-2 py-1 disabled:bg-gray-200 disabled:cursor-not-allowed"
-                    />
+                    <div className="flex items-center gap-2 md:gap-3 md:flex-1">
+                      <input
+                        type="checkbox"
+                        checked={horaire?.actif ?? false}
+                        onChange={() => toggleActif(jour, "matin")}
+                        className="w-5 h-5 cursor-pointer"
+                      />
+                      <span className="w-24 font-medium capitalize">{jour}</span>
+                    </div>
+                    <div className="flex items-center gap-2 md:gap-1">
+                      <input
+                        type="time"
+                        value={horaire?.heure_debut ?? "08:30"}
+                        onChange={(e) => updateHoraire(jour, "matin", "heure_debut", e.target.value)}
+                        disabled={!horaire?.actif}
+                        className="border rounded px-2 py-1 disabled:bg-gray-200 disabled:cursor-not-allowed flex-1 md:flex-none"
+                      />
+                      <span className="hidden md:inline">-</span>
+                      <input
+                        type="time"
+                        value={horaire?.heure_fin ?? "12:30"}
+                        onChange={(e) => updateHoraire(jour, "matin", "heure_fin", e.target.value)}
+                        disabled={!horaire?.actif}
+                        className="border rounded px-2 py-1 disabled:bg-gray-200 disabled:cursor-not-allowed flex-1 md:flex-none"
+                      />
+                    </div>
                   </div>
                 );
               })}
@@ -187,34 +191,38 @@ export default function ModalHorairesHebdo({ onClose, onUpdate }) {
                 return (
                   <div
                     key={`${jour}-apres_midi`}
-                    className="flex items-center gap-3 bg-gray-50 p-3 rounded"
+                    className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 bg-gray-50 p-3 rounded"
                   >
-                    <input
-                      type="checkbox"
-                      checked={horaire?.actif ?? false}
-                      onChange={() => toggleActif(jour, "apres_midi")}
-                      className="w-5 h-5 cursor-pointer"
-                    />
-                    <span className="w-24 font-medium capitalize">{jour}</span>
-                    <input
-                      type="time"
-                      value={horaire?.heure_debut ?? "13:30"}
-                      onChange={(e) =>
-                        updateHoraire(jour, "apres_midi", "heure_debut", e.target.value)
-                      }
-                      disabled={!horaire?.actif}
-                      className="border rounded px-2 py-1 disabled:bg-gray-200 disabled:cursor-not-allowed"
-                    />
-                    <span>-</span>
-                    <input
-                      type="time"
-                      value={horaire?.heure_fin ?? "17:00"}
-                      onChange={(e) =>
-                        updateHoraire(jour, "apres_midi", "heure_fin", e.target.value)
-                      }
-                      disabled={!horaire?.actif}
-                      className="border rounded px-2 py-1 disabled:bg-gray-200 disabled:cursor-not-allowed"
-                    />
+                    <div className="flex items-center gap-2 md:gap-3 md:flex-1">
+                      <input
+                        type="checkbox"
+                        checked={horaire?.actif ?? false}
+                        onChange={() => toggleActif(jour, "apres_midi")}
+                        className="w-5 h-5 cursor-pointer"
+                      />
+                      <span className="w-24 font-medium capitalize">{jour}</span>
+                    </div>
+                    <div className="flex items-center gap-2 md:gap-1">
+                      <input
+                        type="time"
+                        value={horaire?.heure_debut ?? "13:30"}
+                        onChange={(e) =>
+                          updateHoraire(jour, "apres_midi", "heure_debut", e.target.value)
+                        }
+                        disabled={!horaire?.actif}
+                        className="border rounded px-2 py-1 disabled:bg-gray-200 disabled:cursor-not-allowed flex-1 md:flex-none"
+                      />
+                      <span className="hidden md:inline">-</span>
+                      <input
+                        type="time"
+                        value={horaire?.heure_fin ?? "17:00"}
+                        onChange={(e) =>
+                          updateHoraire(jour, "apres_midi", "heure_fin", e.target.value)
+                        }
+                        disabled={!horaire?.actif}
+                        className="border rounded px-2 py-1 disabled:bg-gray-200 disabled:cursor-not-allowed flex-1 md:flex-none"
+                      />
+                    </div>
                   </div>
                 );
               })}
