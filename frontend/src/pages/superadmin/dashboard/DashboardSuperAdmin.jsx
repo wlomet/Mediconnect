@@ -4,7 +4,21 @@ import axiosInstance from "../../../api/axios";
 import { toast } from "react-toastify";
 import UserDataTable from "./tables/UserDataTable";
 import CreateDirectorModal from "./modals/CreateDirectorModal";
+import CreateAdminModal from "./modals/CreateAdminModal";
+import CreateClientModal from "./modals/CreateClientModal";
+import CreateGestionnaireModal from "./modals/CreateGestionnaireModal";
+import CreateSecretaireModal from "./modals/CreateSecretaireModal";
+import CreateMedecinModal from "./modals/CreateMedecinModal";
 import styles from "./DashboardSuperAdmin.module.css";
+
+const CREATE_ROLE_BUTTONS = [
+  { key: "directeur", label: "+ Créer un Directeur" },
+  { key: "admin", label: "+ Créer un Admin" },
+  { key: "medecin", label: "+ Créer un Médecin" },
+  { key: "gestionnaire", label: "+ Créer un Gestionnaire" },
+  { key: "secretaire", label: "+ Créer un(e) Secrétaire" },
+  { key: "client", label: "+ Créer un Client" },
+];
 
 const DashboardSuperAdmin = () => {
   const navigate = useNavigate();
@@ -14,7 +28,7 @@ const DashboardSuperAdmin = () => {
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedRole, setSelectedRole] = useState("");
-  const [showCreateDirectorModal, setShowCreateDirectorModal] = useState(false);
+  const [activeCreateModal, setActiveCreateModal] = useState(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -125,36 +139,37 @@ const DashboardSuperAdmin = () => {
         </div>
       </div>
 
+      {/* Création d'utilisateurs par rôle */}
+      <div className={styles.section}>
+        <h2 style={{ marginTop: 0 }}>Créer un utilisateur</h2>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+          {CREATE_ROLE_BUTTONS.map((btn) => (
+            <button
+              key={btn.key}
+              onClick={() => setActiveCreateModal(btn.key)}
+              style={{
+                padding: "10px 20px",
+                backgroundColor: "#1976d2",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                fontWeight: "600",
+                cursor: "pointer",
+                fontSize: "0.95rem",
+                transition: "background-color 0.2s",
+              }}
+              onMouseEnter={(e) => (e.target.style.backgroundColor = "#1565c0")}
+              onMouseLeave={(e) => (e.target.style.backgroundColor = "#1976d2")}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Liste des utilisateurs */}
       <div className={styles.section}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "15px",
-          }}
-        >
-          <h2 style={{ margin: 0 }}>Tous les utilisateurs</h2>
-          <button
-            onClick={() => setShowCreateDirectorModal(true)}
-            style={{
-              padding: "10px 20px",
-              backgroundColor: "#1976d2",
-              color: "white",
-              border: "none",
-              borderRadius: "6px",
-              fontWeight: "600",
-              cursor: "pointer",
-              fontSize: "0.95rem",
-              transition: "background-color 0.2s",
-            }}
-            onMouseEnter={(e) => (e.target.style.backgroundColor = "#1565c0")}
-            onMouseLeave={(e) => (e.target.style.backgroundColor = "#1976d2")}
-          >
-            + Créer un Directeur
-          </button>
-        </div>
+        <h2 style={{ margin: "0 0 15px 0" }}>Tous les utilisateurs</h2>
         <UserDataTable users={users} />
       </div>
 
@@ -171,10 +186,40 @@ const DashboardSuperAdmin = () => {
         </div>
       </div>
 
-      {/* Modal Créer Directeur */}
-      {showCreateDirectorModal && (
+      {/* Modals Créer Utilisateur */}
+      {activeCreateModal === "directeur" && (
         <CreateDirectorModal
-          onClose={() => setShowCreateDirectorModal(false)}
+          onClose={() => setActiveCreateModal(null)}
+          onSuccess={() => fetchDashboardData()}
+        />
+      )}
+      {activeCreateModal === "admin" && (
+        <CreateAdminModal
+          onClose={() => setActiveCreateModal(null)}
+          onSuccess={() => fetchDashboardData()}
+        />
+      )}
+      {activeCreateModal === "medecin" && (
+        <CreateMedecinModal
+          onClose={() => setActiveCreateModal(null)}
+          onSuccess={() => fetchDashboardData()}
+        />
+      )}
+      {activeCreateModal === "gestionnaire" && (
+        <CreateGestionnaireModal
+          onClose={() => setActiveCreateModal(null)}
+          onSuccess={() => fetchDashboardData()}
+        />
+      )}
+      {activeCreateModal === "secretaire" && (
+        <CreateSecretaireModal
+          onClose={() => setActiveCreateModal(null)}
+          onSuccess={() => fetchDashboardData()}
+        />
+      )}
+      {activeCreateModal === "client" && (
+        <CreateClientModal
+          onClose={() => setActiveCreateModal(null)}
           onSuccess={() => fetchDashboardData()}
         />
       )}

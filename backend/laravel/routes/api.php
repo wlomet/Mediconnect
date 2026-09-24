@@ -28,6 +28,7 @@ use App\Http\Controllers\Gestionnaire\DashboardController as GestionnaireDashboa
 use App\Http\Controllers\SuperAdmin\UserController as SuperAdminUserController;
 use App\Http\Controllers\SuperAdmin\RoleController as SuperAdminRoleController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
+use App\Http\Controllers\SuperAdmin\UserCreationController as SuperAdminUserCreationController;
 use App\Http\Controllers\SuperAdminController;
 // Admin Controllers
 use App\Http\Controllers\Admin\AdminUserController;
@@ -290,6 +291,14 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::prefix('directors')->name('directors.')->group(function () {
             Route::post('/create', [SuperAdminController::class, 'createDirector']);
         });
+
+        // Création d'utilisateurs par rôle
+        Route::get('/hopitaux', [SuperAdminUserCreationController::class, 'getHopitaux']);
+        Route::post('/admins/create', [SuperAdminUserCreationController::class, 'createAdmin']);
+        Route::post('/clients/create', [SuperAdminUserCreationController::class, 'createClient']);
+        Route::post('/gestionnaires/create', [SuperAdminUserCreationController::class, 'createGestionnaire']);
+        Route::post('/secretaires/create', [SuperAdminUserCreationController::class, 'createSecretaire']);
+        Route::post('/medecins/create', [SuperAdminUserCreationController::class, 'createMedecin']);
 
         // Role Management
         Route::prefix('roles')->name('roles.')->group(function () {
