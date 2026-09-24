@@ -87,6 +87,14 @@ class AuthController extends Controller
 
         // Vérifier le mot de passe et isVerified si l'utilisateur existe
         if ($user && Hash::check($request->input('password'), $user->password)) {
+            // Compte désactivé par un administrateur : message explicite, distinct du cas "en attente"
+            if (!$user->is_active) {
+                return response()->json([
+                    'message' => 'Votre compte a été désactivé par un administrateur. Veuillez contacter le support pour plus d\'informations.',
+                    'isDisabled' => true
+                ], 403);
+            }
+
             // Vérifier que l'utilisateur est vérifié
             if (!$user->isVerified) {
                 return response()->json([

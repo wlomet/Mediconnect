@@ -59,6 +59,27 @@ export default function Login() {
     } catch (error) {
       setLoading(false);
 
+      // Gérer le cas du compte désactivé par un administrateur
+      if (error.response?.data?.isDisabled) {
+        toast.error(
+          error.response.data.message ||
+            "Votre compte a été désactivé par un administrateur. Veuillez contacter le support pour plus d'informations.",
+          {
+            position: "top-right",
+            autoClose: false,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          }
+        );
+        setErrors({
+          email: "",
+          password: "Compte désactivé",
+        });
+        return;
+      }
+
       // Gérer le cas du compte en attente de vérification
       if (error.response?.status === 403) {
         toast.warning(

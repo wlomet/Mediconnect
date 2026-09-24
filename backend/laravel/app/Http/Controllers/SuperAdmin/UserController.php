@@ -22,6 +22,7 @@ class UserController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'is_active' => $user->is_active,
                     'created_at' => $user->created_at,
                     'roles' => $user->roles->map(fn ($role) => [
                         'id' => $role->id,
@@ -50,6 +51,7 @@ class UserController extends Controller
                 'email' => $user->email,
                 'phone' => $user->phone ?? null,
                 'address' => $user->address ?? null,
+                'is_active' => $user->is_active,
                 'created_at' => $user->created_at,
                 'roles' => $user->roles->map(fn ($role) => [
                     'id' => $role->id,
@@ -87,6 +89,35 @@ class UserController extends Controller
                     'id' => $role->id,
                     'name' => $role->name,
                 ]),
+            ]
+        ]);
+    }
+
+    /**
+     * SuperAdmin active ou désactive un compte utilisateur
+     */
+    public function toggleActive(Request $request, $id)
+    {
+        $request->validate([
+            'is_active' => 'required|boolean',
+        ]);
+
+        if ((int) $id === (int) $request->user()->id) {
+            return response()->json([
+                'message' => 'Vous ne pouvez pas désactiver votre propre compte',
+            ], 422);
+        }
+
+        $user = User::findOrFail($id);
+        $user->update(['is_active' => $request->boolean('is_active')]);
+
+        return response()->json([
+            'message' => $user->is_active
+                ? 'Compte activé avec succès'
+                : 'Compte désactivé avec succès',
+            'user' => [
+                'id' => $user->id,
+                'is_active' => $user->is_active,
             ]
         ]);
     }

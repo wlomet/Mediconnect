@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import { Eye, Pencil, Key } from "react-bootstrap-icons";
+import Swal from "sweetalert2";
 import axiosInstance from "../../../../api/axios";
 import { toast } from "react-toastify";
+import { AuthContext } from "../../../../context/AuthContext";
 import ShowUserModal from "../modals/ShowUserModal";
 import EditUserModal from "../modals/EditUserModal";
 import ChangePasswordModal from "../modals/ChangePasswordModal";
@@ -9,6 +11,8 @@ import ChangePasswordModal from "../modals/ChangePasswordModal";
 const UserDataTable = ({ users }) => {
   const tableRef = useRef(null);
   const dataTableRef = useRef(null);
+  const { user: currentUser } = useContext(AuthContext);
+  const [localUsers, setLocalUsers] = useState(users);
   const [selectedRole, setSelectedRole] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
@@ -17,6 +21,46 @@ const UserDataTable = ({ users }) => {
   const [editFormData, setEditFormData] = useState(null);
   const [loadingModal, setLoadingModal] = useState(false);
   const [availableRoles, setAvailableRoles] = useState([]);
+
+  // Resynchroniser la copie locale quand la liste fournie par le parent change
+  useEffect(() => {
+    setLocalUsers(users);
+  }, [users]);
+
+  // Activer/désactiver un compte utilisateur
+  const handleToggleActive = async (userId, nextActive, checkboxEl) => {
+    if (!nextActive) {
+      const result = await Swal.fire({
+        title: "Êtes-vous sûr ?",
+        text: "Ce compte ne pourra plus se connecter tant qu'il n'est pas réactivé.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#ef4444",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "Oui, désactiver",
+        cancelButtonText: "Annuler",
+      });
+
+      if (!result.isConfirmed) {
+        checkboxEl.checked = true;
+        return;
+      }
+    }
+
+    try {
+      await axiosInstance.put(`/super-admin/users/${userId}/status`, {
+        is_active: nextActive,
+      });
+      toast.success(nextActive ? "Compte activé avec succès" : "Compte désactivé avec succès");
+      setLocalUsers((prev) =>
+        prev.map((u) => (u.id === Number(userId) ? { ...u, is_active: nextActive } : u))
+      );
+    } catch (error) {
+      console.error("Erreur lors du changement de statut:", error);
+      toast.error(error.response?.data?.message || "Erreur lors du changement de statut");
+      checkboxEl.checked = !nextActive;
+    }
+  };
 
   // Récupérer les détails d'un utilisateur via API
   const fetchUserDetails = async (userId) => {
@@ -81,81 +125,113 @@ const UserDataTable = ({ users }) => {
       }
     };
 
+    const handleTableChange = (e) => {
+      const switchInput = e.target.closest('.switch-input');
+      if (switchInput) {
+        handleToggleActive(switchInput.dataset.userId, switchInput.checked, switchInput);
+      }
+    };
+
     tableRef.current.addEventListener('click', handleTableClick);
+    tableRef.current.addEventListener('change', handleTableChange);
 
     return () => {
       if (tableRef.current) {
         tableRef.current.removeEventListener('click', handleTableClick);
+        tableRef.current.removeEventListener('change', handleTableChange);
       }
     };
   }, []);
 
-  // Initialiser DataTables
+  // Initialiser DataTables une seule fois (les données sont ensuite mises à jour via l'API DataTables, sans destroy/recreate)
+  const currentUserIdRef = useRef(currentUser?.id);
   useEffect(() => {
-    // Extraire les rôles uniques
-    const roles = [...new Set(users.flatMap(user => user.roles.map(role => role.name)))];
-    setAvailableRoles(roles.sort());
+    currentUserIdRef.current = currentUser?.id;
+  }, [currentUser]);
 
-    // Détruire l'instance précédente si elle existe
-    if (dataTableRef.current) {
-      dataTableRef.current.destroy();
-    }
+  useEffect(() => {
+    if (!tableRef.current || !window.$) return;
 
-    // Initialiser DataTables
-    if (tableRef.current && window.$) {
-      dataTableRef.current = window.$(tableRef.current).DataTable({
-        data: users,
-        columns: [
-          { data: 'id', title: 'ID' },
-          { data: 'name', title: 'Nom' },
-          { data: 'email', title: 'Email' },
-          {
-            data: null,
-            title: 'Rôle',
-            render: (data) => {
-              return data.roles[0]?.name || 'Aucun rôle';
-            }
-          },
-          {
-            data: null,
-            title: 'Actions',
-            orderable: false,
-            render: (data) => {
-              return `
-                <div style="display: flex; gap: 8px;">
-                  <button class="btn-action btn-view" data-user-id="${data.id}" title="Voir les détails">
-                    <i class="bi bi-eye"></i>
-                  </button>
-                  <button class="btn-action btn-edit" data-user-id="${data.id}" title="Éditer l'utilisateur">
-                    <i class="bi bi-pencil"></i>
-                  </button>
-                  <button class="btn-action btn-password" data-user-id="${data.id}" title="Changer le mot de passe">
-                    <i class="bi bi-key"></i>
-                  </button>
-                </div>
-              `;
-            }
+    dataTableRef.current = window.$(tableRef.current).DataTable({
+      data: [],
+      columns: [
+        { data: 'id', title: 'ID' },
+        { data: 'name', title: 'Nom' },
+        { data: 'email', title: 'Email' },
+        {
+          data: null,
+          title: 'Rôle',
+          render: (data) => {
+            return data.roles[0]?.name || 'Aucun rôle';
           }
-        ],
-        pageLength: 10,
-        responsive: true,
-        language: {
-          url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/fr-FR.json'
         },
-        dom: 'lrtip'
-      });
-    }
+        {
+          data: null,
+          title: 'Statut',
+          orderable: false,
+          render: (data) => {
+            const isSelf = currentUserIdRef.current && Number(currentUserIdRef.current) === Number(data.id);
+            return `
+              <label class="switch" title="${isSelf ? 'Vous ne pouvez pas désactiver votre propre compte' : ''}">
+                <input type="checkbox" class="switch-input" data-user-id="${data.id}" ${data.is_active ? 'checked' : ''} ${isSelf ? 'disabled' : ''} />
+                <span class="switch-slider"></span>
+              </label>
+            `;
+          }
+        },
+        {
+          data: null,
+          title: 'Actions',
+          orderable: false,
+          render: (data) => {
+            return `
+              <div style="display: flex; gap: 8px;">
+                <button class="btn-action btn-view" data-user-id="${data.id}" title="Voir les détails">
+                  <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn-action btn-edit" data-user-id="${data.id}" title="Éditer l'utilisateur">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn-action btn-password" data-user-id="${data.id}" title="Changer le mot de passe">
+                  <i class="bi bi-key"></i>
+                </button>
+              </div>
+            `;
+          }
+        }
+      ],
+      pageLength: 10,
+      responsive: true,
+      language: {
+        url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/fr-FR.json'
+      },
+      dom: 'lrtip'
+    });
 
     return () => {
       if (dataTableRef.current) {
         dataTableRef.current.destroy();
+        dataTableRef.current = null;
       }
     };
-  }, [users]);
+  }, []);
+
+  // Mettre à jour les données du tableau sans le détruire/recréer
+  useEffect(() => {
+    // Extraire les rôles uniques
+    const roles = [...new Set(localUsers.flatMap(user => user.roles.map(role => role.name)))];
+    setAvailableRoles(roles.sort());
+
+    if (dataTableRef.current) {
+      dataTableRef.current.clear();
+      dataTableRef.current.rows.add(localUsers);
+      dataTableRef.current.draw(false);
+    }
+  }, [localUsers]);
 
   // Appliquer le filtre de rôles
   useEffect(() => {
-    if (dataTableRef.current && window.$ && users.length > 0) {
+    if (dataTableRef.current && window.$ && localUsers.length > 0) {
       const $ = window.$;
       const dt = dataTableRef.current;
       
@@ -166,7 +242,7 @@ const UserDataTable = ({ users }) => {
       if (selectedRole) {
         $.fn.dataTable.ext.search.push(
           function(settings, data, dataIndex) {
-            const user = users[dataIndex];
+            const user = localUsers[dataIndex];
             if (!user) return false;
             const role = user.roles[0]?.name || 'Aucun rôle';
             return role === selectedRole;
@@ -177,7 +253,7 @@ const UserDataTable = ({ users }) => {
       // Redessiner le tableau
       dt.draw();
     }
-  }, [selectedRole, users]);
+  }, [selectedRole, localUsers]);
 
   const handleFormChange = (field, value) => {
     setEditFormData((prev) => ({ ...prev, [field]: value }));
@@ -261,6 +337,7 @@ const UserDataTable = ({ users }) => {
               <th>Nom</th>
               <th>Email</th>
               <th>Rôle</th>
+              <th>Statut</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -299,6 +376,46 @@ const UserDataTable = ({ users }) => {
         }
         .btn-password:hover {
           background-color: #e68a00;
+        }
+        .switch {
+          position: relative;
+          display: inline-block;
+          width: 42px;
+          height: 24px;
+        }
+        .switch input {
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+        .switch-slider {
+          position: absolute;
+          cursor: pointer;
+          inset: 0;
+          background-color: #f44336;
+          border-radius: 24px;
+          transition: background-color 0.2s;
+        }
+        .switch-slider::before {
+          content: "";
+          position: absolute;
+          height: 18px;
+          width: 18px;
+          left: 3px;
+          bottom: 3px;
+          background-color: #fff;
+          border-radius: 50%;
+          transition: transform 0.2s;
+        }
+        .switch input:checked + .switch-slider {
+          background-color: #4CAF50;
+        }
+        .switch input:checked + .switch-slider::before {
+          transform: translateX(18px);
+        }
+        .switch input:disabled + .switch-slider {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
         .dataTables_wrapper .dataTables_paginate .paginate_button {
           padding: 6px 10px;

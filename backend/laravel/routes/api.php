@@ -82,7 +82,7 @@ Route::post('/rendezvous', [ClientRendezVousController::class, 'store']);
 // AUTHENTICATED ROUTES
 // ============================================
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'active'])->group(function () {
     // Shared resources for authenticated users
     Route::get('/medecin/profile', [MedecinProfileController::class, 'show']);
     Route::put('/medecin/profile', [MedecinProfileController::class, 'update']);
@@ -277,6 +277,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/', [SuperAdminUserController::class, 'getAll']);
             Route::get('/{id}', [SuperAdminUserController::class, 'show']);
             Route::put('/{id}', [SuperAdminUserController::class, 'update']);
+            Route::put('/{id}/status', [SuperAdminUserController::class, 'toggleActive']);
             Route::put('/{id}/change-password', [SuperAdminController::class, 'changeUserPassword']);
             Route::post('/assign-role', [SuperAdminUserController::class, 'assignRole']);
             Route::post('/remove-role', [SuperAdminUserController::class, 'removeRole']);

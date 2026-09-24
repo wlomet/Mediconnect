@@ -58,6 +58,21 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Intercepteur de réponse : forcer la déconnexion si le compte a été désactivé en cours de session
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && error.response?.data?.isDisabled) {
+      localStorage.removeItem("token");
+      if (!window.location.pathname.startsWith("/login")) {
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+
 // Intercepteur de réponse pour debug
 api.interceptors.response.use(
   (response) => response,
