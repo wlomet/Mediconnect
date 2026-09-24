@@ -58,6 +58,8 @@ Route::get('/test', function () {
 
 // Public search routes
 Route::get('/search/medecins', [SearchMedecinController::class, 'search']);
+Route::get('/search/suggestions', [SearchMedecinController::class, 'suggestions']);
+Route::get('/search/villes', [SearchMedecinController::class, 'villes']);
 Route::get('/hopital/{id}/medecins', [SearchMedecinController::class, 'getHopitalMedecins']);
 Route::get('/specialites', [ClientSearchController::class, 'getSpecialites']);
 Route::get('/medecin/planningbyid/{id}', [MedecinPlanningController::class, 'getPlanningById']);

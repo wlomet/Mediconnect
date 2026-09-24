@@ -1,13 +1,16 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, MapPin, Phone, User, Building2 } from "lucide-react";
+import { Search, MapPin, Phone, User, Building2, Stethoscope } from "lucide-react";
 import styles from "./SearchMedecin.module.css";
 import ModalHoraires from "./components/ModalHoraires";
 import ModalHopital from "./components/ModalHopital";
 import api from "/src/api/axios";
 
+const SUGGESTION_DEBOUNCE_MS = 250;
+
 export default function SearchMedecin() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [ville, setVille] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
@@ -17,18 +20,66 @@ export default function SearchMedecin() {
   const [showHopitalModal, setShowHopitalModal] = useState(false);
   const [loadingHopitalId, setLoadingHopitalId] = useState(null);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [villeSuggestions, setVilleSuggestions] = useState([]);
+  const [showVilleSuggestions, setShowVilleSuggestions] = useState(false);
+  const suggestionsTimer = useRef(null);
+  const villeTimer = useRef(null);
 
+  // Autocomplétion sur le nom / spécialité / établissement
+  useEffect(() => {
     if (!searchQuery.trim()) {
+      setSuggestions([]);
       return;
     }
 
+    clearTimeout(suggestionsTimer.current);
+    suggestionsTimer.current = setTimeout(async () => {
+      try {
+        const res = await api.get(
+          `/search/suggestions?query=${encodeURIComponent(searchQuery)}`
+        );
+        setSuggestions(res.data);
+      } catch (error) {
+        console.error("Erreur lors du chargement des suggestions:", error);
+      }
+    }, SUGGESTION_DEBOUNCE_MS);
+
+    return () => clearTimeout(suggestionsTimer.current);
+  }, [searchQuery]);
+
+  // Autocomplétion sur la ville (proposée dès le focus, même sans saisie)
+  useEffect(() => {
+    clearTimeout(villeTimer.current);
+    villeTimer.current = setTimeout(async () => {
+      try {
+        const res = await api.get(`/search/villes?query=${encodeURIComponent(ville)}`);
+        setVilleSuggestions(res.data);
+      } catch (error) {
+        console.error("Erreur lors du chargement des villes:", error);
+      }
+    }, SUGGESTION_DEBOUNCE_MS);
+
+    return () => clearTimeout(villeTimer.current);
+  }, [ville]);
+
+  const performSearch = async (queryValue, villeValue) => {
+    if (!queryValue.trim() && !villeValue.trim()) {
+      return;
+    }
+
+    setShowSuggestions(false);
+    setShowVilleSuggestions(false);
     setLoading(true);
     setSearched(true);
 
     try {
-      const response = await api.get(`/search/medecins?query=${encodeURIComponent(searchQuery)}`);
+      const params = new URLSearchParams();
+      if (queryValue.trim()) params.append("query", queryValue.trim());
+      if (villeValue.trim()) params.append("ville", villeValue.trim());
+
+      const response = await api.get(`/search/medecins?${params.toString()}`);
       setResults(response.data);
     } catch (error) {
       console.error("Erreur lors de la recherche:", error);
@@ -36,6 +87,30 @@ export default function SearchMedecin() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    performSearch(searchQuery, ville);
+  };
+
+  const handleSelectSuggestion = (suggestion) => {
+    setSearchQuery(suggestion.label);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    performSearch(suggestion.label, ville);
+  };
+
+  const handleSelectVille = (v) => {
+    setVille(v);
+    setShowVilleSuggestions(false);
+    performSearch(searchQuery, v);
+  };
+
+  const suggestionIcon = (type) => {
+    if (type === "specialite") return <Stethoscope className={styles.suggestionIcon} />;
+    if (type === "hopital") return <Building2 className={styles.suggestionIcon} />;
+    return <User className={styles.suggestionIcon} />;
   };
 
   const handleShowHoraires = (medecin) => {
@@ -69,8 +144,20 @@ export default function SearchMedecin() {
   const handleInputChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
+    setShowSuggestions(true);
 
-    if (value.trim() === "") {
+    if (value.trim() === "" && !ville.trim()) {
+      setResults([]);
+      setSearched(false);
+    }
+  };
+
+  const handleVilleChange = (e) => {
+    const value = e.target.value;
+    setVille(value);
+    setShowVilleSuggestions(true);
+
+    if (value.trim() === "" && !searchQuery.trim()) {
       setResults([]);
       setSearched(false);
     }
@@ -90,13 +177,69 @@ export default function SearchMedecin() {
           {/* Search Bar */}
           <form onSubmit={handleSearch} className={styles.searchForm}>
             <div className={styles.searchContainer}>
-              <input
-                type="text"
-                placeholder="Nom du médecin, hôpital, ville..."
-                value={searchQuery}
-                onChange={handleInputChange}
-                className={styles.searchInput}
-              />
+              <div className={styles.searchField}>
+                <Search className={styles.searchIcon} />
+                <input
+                  type="text"
+                  placeholder="Nom, spécialité, établissement..."
+                  value={searchQuery}
+                  onChange={handleInputChange}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                  className={styles.searchInput}
+                  autoComplete="off"
+                />
+                {showSuggestions && suggestions.length > 0 && (
+                  <ul className={styles.suggestionsList}>
+                    {suggestions.map((s) => (
+                      <li key={`${s.type}-${s.id}`}>
+                        <button
+                          type="button"
+                          className={styles.suggestionItem}
+                          onMouseDown={() => handleSelectSuggestion(s)}
+                        >
+                          {suggestionIcon(s.type)}
+                          <span className={styles.suggestionLabel}>{s.label}</span>
+                          {s.meta && <span className={styles.suggestionMeta}>{s.meta}</span>}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div className={styles.searchDivider} />
+
+              <div className={styles.searchField}>
+                <MapPin className={styles.searchIcon} />
+                <input
+                  type="text"
+                  placeholder="Où ? (ville, optionnel)"
+                  value={ville}
+                  onChange={handleVilleChange}
+                  onFocus={() => setShowVilleSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowVilleSuggestions(false), 150)}
+                  className={styles.searchInput}
+                  autoComplete="off"
+                />
+                {showVilleSuggestions && villeSuggestions.length > 0 && (
+                  <ul className={styles.suggestionsList}>
+                    {villeSuggestions.map((v) => (
+                      <li key={v}>
+                        <button
+                          type="button"
+                          className={styles.suggestionItem}
+                          onMouseDown={() => handleSelectVille(v)}
+                        >
+                          <MapPin className={styles.suggestionIcon} />
+                          <span className={styles.suggestionLabel}>{v}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
               <button type="submit" className={styles.searchButton} disabled={loading}>
                 {loading ? "Recherche..." : "Rechercher"}
               </button>

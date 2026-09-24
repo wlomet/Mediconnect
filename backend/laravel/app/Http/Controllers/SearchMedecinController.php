@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Hopital;
 use App\Models\MedecinProfile;
+use App\Models\Specialite;
 use Illuminate\Http\Request;
 
 class SearchMedecinController extends Controller
@@ -12,27 +13,37 @@ class SearchMedecinController extends Controller
     public function search(Request $request)
     {
         try {
-            $query = $request->input('query', '');
+            $query = trim($request->input('query', ''));
+            $ville = trim($request->input('ville', ''));
 
             // ---- Médecins ----
-            if (empty($query)) {
-                $medecinProfiles = MedecinProfile::with('user', 'specialite', 'hopital')
-                    ->limit(20)
-                    ->get();
-            } else {
-                $medecinProfiles = MedecinProfile::with('user', 'specialite', 'hopital')
-                    ->where(function ($q) use ($query) {
-                        $q->where('ville', 'LIKE', "%{$query}%")
-                            ->orWhereHas('user', function ($userQuery) use ($query) {
-                                $userQuery->where('name', 'LIKE', "%{$query}%");
-                            })
-                            ->orWhereHas('specialite', function ($specQuery) use ($query) {
-                                $specQuery->where('nom', 'LIKE', "%{$query}%");
-                            });
-                    })
-                    ->limit(20)
-                    ->get();
+            $medecinQuery = MedecinProfile::with('user', 'specialite', 'hopital');
+
+            if (!empty($query)) {
+                $medecinQuery->where(function ($q) use ($query) {
+                    $q->where('ville', 'LIKE', "%{$query}%")
+                        ->orWhereHas('user', function ($userQuery) use ($query) {
+                            $userQuery->where('name', 'LIKE', "%{$query}%");
+                        })
+                        ->orWhereHas('specialite', function ($specQuery) use ($query) {
+                            $specQuery->where('nom', 'LIKE', "%{$query}%");
+                        })
+                        ->orWhereHas('hopital', function ($hopQuery) use ($query) {
+                            $hopQuery->where('name', 'LIKE', "%{$query}%");
+                        });
+                });
             }
+
+            if (!empty($ville)) {
+                $medecinQuery->where(function ($q) use ($ville) {
+                    $q->where('ville', 'LIKE', "%{$ville}%")
+                        ->orWhereHas('hopital', function ($hopQuery) use ($ville) {
+                            $hopQuery->where('ville', 'LIKE', "%{$ville}%");
+                        });
+                });
+            }
+
+            $medecinProfiles = $medecinQuery->limit(20)->get();
 
             $medecins = $medecinProfiles->map(function ($profile) use ($request) {
                 return [
@@ -57,21 +68,24 @@ class SearchMedecinController extends Controller
             });
 
             // ---- Hôpitaux ----
-            if (empty($query)) {
-                $hopitalModels = Hopital::withCount('medecins')->limit(10)->get();
-            } else {
-                $hopitalModels = Hopital::withCount('medecins')
-                    ->where(function ($q) use ($query) {
-                        $q->where('name', 'LIKE', "%{$query}%")
-                            ->orWhere('ville', 'LIKE', "%{$query}%")
-                            ->orWhere('description', 'LIKE', "%{$query}%")
-                            ->orWhereHas('medecins.specialite', function ($specQuery) use ($query) {
-                                $specQuery->where('nom', 'LIKE', "%{$query}%");
-                            });
-                    })
-                    ->limit(10)
-                    ->get();
+            $hopitalQuery = Hopital::withCount('medecins');
+
+            if (!empty($query)) {
+                $hopitalQuery->where(function ($q) use ($query) {
+                    $q->where('name', 'LIKE', "%{$query}%")
+                        ->orWhere('ville', 'LIKE', "%{$query}%")
+                        ->orWhere('description', 'LIKE', "%{$query}%")
+                        ->orWhereHas('medecins.specialite', function ($specQuery) use ($query) {
+                            $specQuery->where('nom', 'LIKE', "%{$query}%");
+                        });
+                });
             }
+
+            if (!empty($ville)) {
+                $hopitalQuery->where('ville', 'LIKE', "%{$ville}%");
+            }
+
+            $hopitalModels = $hopitalQuery->limit(10)->get();
 
             $hopitaux = $hopitalModels->map(function ($hopital) {
                 return [
@@ -95,6 +109,97 @@ class SearchMedecinController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Suggestions d'autocomplétion pour la barre de recherche principale
+     * (spécialités, médecins, établissements).
+     */
+    public function suggestions(Request $request)
+    {
+        $query = trim($request->input('query', ''));
+
+        if (mb_strlen($query) < 1) {
+            return response()->json([]);
+        }
+
+        $specialites = Specialite::where('nom', 'LIKE', "%{$query}%")
+            ->orderBy('nom')
+            ->limit(5)
+            ->get(['id', 'nom'])
+            ->map(function ($specialite) {
+                return [
+                    'type'  => 'specialite',
+                    'id'    => $specialite->id,
+                    'label' => $specialite->nom,
+                    'meta'  => 'Spécialité',
+                ];
+            });
+
+        $medecins = MedecinProfile::with('user', 'specialite')
+            ->whereHas('user', function ($q) use ($query) {
+                $q->where('name', 'LIKE', "%{$query}%");
+            })
+            ->limit(5)
+            ->get()
+            ->filter(fn ($profile) => $profile->user)
+            ->map(function ($profile) {
+                return [
+                    'type'  => 'medecin',
+                    'id'    => $profile->user->id,
+                    'label' => $profile->user->name,
+                    'meta'  => $profile->specialite->nom ?? 'Médecin',
+                ];
+            })
+            ->values();
+
+        $hopitaux = Hopital::where('name', 'LIKE', "%{$query}%")
+            ->limit(5)
+            ->get(['id', 'name', 'ville'])
+            ->map(function ($hopital) {
+                return [
+                    'type'  => 'hopital',
+                    'id'    => $hopital->id,
+                    'label' => $hopital->name,
+                    'meta'  => $hopital->ville ?? 'Établissement',
+                ];
+            });
+
+        $suggestions = $specialites->concat($medecins)->concat($hopitaux)->values();
+
+        return response()->json($suggestions);
+    }
+
+    /**
+     * Suggestions de villes pour l'autocomplétion du champ "Où ?".
+     */
+    public function villes(Request $request)
+    {
+        $query = trim($request->input('query', ''));
+
+        $medecinVilles = MedecinProfile::whereNotNull('ville')
+            ->where('ville', '!=', '')
+            ->when($query !== '', function ($q) use ($query) {
+                $q->where('ville', 'LIKE', "%{$query}%");
+            })
+            ->distinct()
+            ->pluck('ville');
+
+        $hopitalVilles = Hopital::whereNotNull('ville')
+            ->where('ville', '!=', '')
+            ->when($query !== '', function ($q) use ($query) {
+                $q->where('ville', 'LIKE', "%{$query}%");
+            })
+            ->distinct()
+            ->pluck('ville');
+
+        $villes = $medecinVilles->concat($hopitalVilles)
+            ->unique()
+            ->sort()
+            ->values()
+            ->take(8);
+
+        return response()->json($villes);
     }
 
     public function getHopitalMedecins($id, Request $request)

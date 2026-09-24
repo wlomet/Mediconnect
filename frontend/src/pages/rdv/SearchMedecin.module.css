@@ -188,34 +188,107 @@
 
 .searchContainer {
   display: flex;
+  align-items: stretch;
   background: white;
   border-radius: 0.75rem;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* Champ de recherche avec autocomplétion (nom, spécialité ou champ ville) */
+.searchField {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
 }
 
 .searchIcon {
   position: absolute;
-  left: 1.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 1.5rem;
-  height: 1.5rem;
+  left: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
   color: #9ca3af;
   pointer-events: none;
 }
 
 .searchInput {
   flex: 1;
-  padding: 1rem 1rem 1rem 3.5rem;
+  width: 100%;
+  padding: 1rem 1rem 1rem 3.25rem;
   border: none;
   font-size: 1rem;
   color: #1f2937;
   outline: none;
+  border-radius: 0.75rem 0 0 0.75rem;
 }
 
 .searchInput::placeholder {
   color: #9ca3af;
+}
+
+.searchDivider {
+  width: 1px;
+  background: #e5e7eb;
+  margin: 0.75rem 0;
+  flex-shrink: 0;
+}
+
+/* Liste de suggestions (autocomplétion) */
+.suggestionsList {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 60;
+  list-style: none;
+  padding: 0.5rem 0;
+  margin: 0;
+  text-align: left;
+  color: #1f2937;
+}
+
+.suggestionItem {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.65rem 1.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.suggestionItem:hover,
+.suggestionItem:focus {
+  background: #f0f9ff;
+}
+
+.suggestionIcon {
+  width: 1rem;
+  height: 1rem;
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.suggestionLabel {
+  flex: 1;
+  font-weight: 500;
+}
+
+.suggestionMeta {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  white-space: nowrap;
 }
 
 .searchButton {
@@ -225,6 +298,7 @@
   font-weight: 600;
   border: none;
   cursor: pointer;
+  border-radius: 0 0.75rem 0.75rem 0;
   transition: background-color 0.2s;
 }
 
@@ -608,6 +682,17 @@
 
   .searchInput {
     padding: 1rem;
+    border-radius: 0;
+  }
+
+  .searchDivider {
+    width: auto;
+    height: 1px;
+    margin: 0 1rem;
+  }
+
+  .searchButton {
+    border-radius: 0 0 0.75rem 0.75rem;
   }
 
   .searchIcon {
