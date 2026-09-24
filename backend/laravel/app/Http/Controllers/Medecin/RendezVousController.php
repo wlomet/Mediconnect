@@ -78,7 +78,7 @@ class RendezVousController extends Controller
 
         return response()->json([
             'rendez_vous' => $rendezVous,
-            'count' => count($rendezVous)
+            'count' => $rendezVous->where('statut', '!=', 'annulé')->count()
         ]);
     }
 
@@ -117,7 +117,7 @@ class RendezVousController extends Controller
 
         return response()->json([
             'rendez_vous' => $rendezVous,
-            'count' => count($rendezVous)
+            'count' => $rendezVous->where('statut', '!=', 'annulé')->count()
         ]);
     }
 

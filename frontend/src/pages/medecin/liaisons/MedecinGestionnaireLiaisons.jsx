@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "../../../api/axios";
+import ConfirmDialog from "../../../components/ConfirmDialog";
 import "./MedecinGestionnaireLiaisons.css";
 
 function MedecinGestionnaireLiaisons() {
@@ -8,6 +9,9 @@ function MedecinGestionnaireLiaisons() {
   const [historique, setHistorique] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [confirmDialog, setConfirmDialog] = useState({ open: false });
+
+  const closeConfirmDialog = () => setConfirmDialog({ open: false });
 
   useEffect(() => {
     fetchDemandes();
@@ -58,9 +62,18 @@ function MedecinGestionnaireLiaisons() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cette liaison ?")) {
-      return;
-    }
+    setConfirmDialog({
+      open: true,
+      title: "Supprimer la liaison",
+      message: "Êtes-vous sûr de vouloir supprimer cette liaison ?",
+      confirmLabel: "Supprimer",
+      variant: "danger",
+      onConfirm: () => confirmDelete(id),
+    });
+  };
+
+  const confirmDelete = async (id) => {
+    closeConfirmDialog();
 
     try {
       await axiosInstance.delete(`/medecin/liaisons-gestionnaires/${id}`);
@@ -202,6 +215,16 @@ function MedecinGestionnaireLiaisons() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmDialog.open}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmLabel={confirmDialog.confirmLabel}
+        variant={confirmDialog.variant}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={closeConfirmDialog}
+      />
     </div>
   );
 }

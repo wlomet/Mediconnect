@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "../../../api/axios";
+import ConfirmDialog from "../../../components/ConfirmDialog";
 import "./MedecinLiaisons.css";
 
 function MedecinLiaisons() {
@@ -18,6 +19,9 @@ function MedecinLiaisons() {
   });
   const [formError, setFormError] = useState("");
   const [formLoading, setFormLoading] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ open: false });
+
+  const closeConfirmDialog = () => setConfirmDialog({ open: false });
 
   useEffect(() => {
     fetchDemandes();
@@ -60,8 +64,18 @@ function MedecinLiaisons() {
   };
 
   const handleRefuse = async (id) => {
-    if (!window.confirm("Voulez-vous vraiment refuser cette demande ?")) return;
+    setConfirmDialog({
+      open: true,
+      title: "Refuser la demande",
+      message: "Voulez-vous vraiment refuser cette demande ?",
+      confirmLabel: "Refuser",
+      variant: "danger",
+      onConfirm: () => confirmRefuse(id),
+    });
+  };
 
+  const confirmRefuse = async (id) => {
+    closeConfirmDialog();
     setLoading(true);
     setError("");
     setSuccess("");
@@ -79,8 +93,18 @@ function MedecinLiaisons() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Voulez-vous vraiment supprimer cette liaison ?")) return;
+    setConfirmDialog({
+      open: true,
+      title: "Supprimer la liaison",
+      message: "Voulez-vous vraiment supprimer cette liaison ?",
+      confirmLabel: "Supprimer",
+      variant: "danger",
+      onConfirm: () => confirmDelete(id),
+    });
+  };
 
+  const confirmDelete = async (id) => {
+    closeConfirmDialog();
     try {
       await axiosInstance.delete(`/medecin/liaisons-secretaire/${id}`);
       setSuccess("Liaison supprimée avec succès");
@@ -350,6 +374,16 @@ function MedecinLiaisons() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDialog.open}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmLabel={confirmDialog.confirmLabel}
+        variant={confirmDialog.variant}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={closeConfirmDialog}
+      />
     </div>
   );
 }

@@ -9,42 +9,14 @@ import NavbarMedecin from "../components/NavbarMedecin";
 import styles from "./PlanningMedecin.module.css";
 import api from "../../../api/axios";
 import { AuthContext } from "../../../context/AuthContext";
-
-const formatDateKey = (date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-const parseDateKey = (dateKey) => new Date(`${dateKey}T00:00:00`);
-
-const addDays = (date, days) => {
-  const copy = new Date(date);
-  copy.setDate(copy.getDate() + days);
-  return copy;
-};
-
-const addMinutes = (date, minutes) => {
-  const copy = new Date(date);
-  copy.setMinutes(copy.getMinutes() + minutes);
-  return copy;
-};
-
-const parseDateTime = (dateKey, time) => new Date(`${dateKey}T${time}`);
-
-const convertJourToNumber = (jour) => {
-  const jours = {
-    dimanche: 0,
-    lundi: 1,
-    mardi: 2,
-    mercredi: 3,
-    jeudi: 4,
-    vendredi: 5,
-    samedi: 6,
-  };
-  return jours[jour.toLowerCase()] ?? 0;
-};
+import {
+  formatDateKey,
+  parseDateKey,
+  parseDateTime,
+  addDays,
+  addMinutes,
+  convertJourToNumber,
+} from "../../../utils/dateHelpers";
 
 const buildEvents = (horaires, indisponibilitesRaw, range, rendezvousRaw = []) => {
   if (!range) {
@@ -215,7 +187,6 @@ export default function PlanningMedecin() {
   const fetchEvents = useCallback(async () => {
     try {
       const res = await api.get("/medecin/planning");
-      console.log("Réponse brute du planning :", res.data);
       const nextHoraires = res.data.horaires || [];
       const nextIndispos = res.data.indisponibilites || [];
       const nextRendezvous = res.data.rendez_vous || [];
@@ -231,7 +202,6 @@ export default function PlanningMedecin() {
           currentRangeRef.current,
           nextRendezvous
         );
-        console.log("Événements recalculés :", newEvents);
         setEvents(newEvents);
       }
     } catch (err) {

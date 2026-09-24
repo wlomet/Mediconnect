@@ -1,5 +1,4 @@
-import { useContext, useState, useEffect } from "react";
-import { AuthContext } from "../../../context/AuthContext";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import NavbarMedecin from "../components/NavbarMedecin";
 import styles from "./DashboardMedecin.module.css";
@@ -8,7 +7,6 @@ import ModalNouveauRendezVous from "./modals/ModalNouveauRendezVous";
 import api from "../../../api/axios";
 
 const DashboardMedecin = () => {
-  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [todayAppointments, setTodayAppointments] = useState([]);
@@ -41,7 +39,6 @@ const DashboardMedecin = () => {
 
         // Récupérer les infos du médecin
         const medecinResponse = await api.get("/medecin/profile");
-        console.log("Medecin profile response:", medecinResponse.data);
         setMedecinInfo(medecinResponse.data);
       } catch (err) {
         console.error("Erreur lors du chargement des rendez-vous:", err);
@@ -53,15 +50,6 @@ const DashboardMedecin = () => {
 
     loadAppointmentsData();
   }, []);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate("/login");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
-  };
 
   return (
     <div className={styles.container}>

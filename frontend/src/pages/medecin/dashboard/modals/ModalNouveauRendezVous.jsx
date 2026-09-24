@@ -3,6 +3,7 @@ import { AuthContext } from "../../../../context/AuthContext";
 import { X, Calendar, Clock, AlertCircle } from "lucide-react";
 import api from "../../../../api/axios";
 import ModalReservationCreneau from "../../planning/modals/ModalReservationCreneau";
+import { formatDateKey, getDayName } from "../../../../utils/dateHelpers";
 import styles from "./ModalNouveauRendezVous.module.css";
 
 const ModalNouveauRendezVous = ({ onClose }) => {
@@ -115,18 +116,6 @@ const ModalNouveauRendezVous = ({ onClose }) => {
     });
 
     return disponibles;
-  };
-
-  const formatDateKey = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
-
-  const getDayName = (dayNumber) => {
-    const days = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
-    return days[dayNumber];
   };
 
   const formatTime = (date) => {

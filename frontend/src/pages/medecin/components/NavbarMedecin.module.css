@@ -7,7 +7,7 @@
 }
 
 .navbarInner {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 1rem;
 }
@@ -16,8 +16,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 4rem;
+  min-height: 4rem;
   flex-wrap: wrap;
+  gap: 1.5rem;
+  padding: 0.5rem 0;
 }
 
 .logoLink {
@@ -77,7 +79,7 @@
 .navLinks {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .navLink {
