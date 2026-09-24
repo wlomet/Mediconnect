@@ -65,6 +65,11 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && error.response?.data?.isDisabled) {
       localStorage.removeItem("token");
       if (!window.location.pathname.startsWith("/login")) {
+        // Le message survit au rechargement complet de la page provoqué par la redirection
+        sessionStorage.setItem(
+          "logoutReason",
+          error.response.data.message || "Votre compte a été désactivé par un administrateur."
+        );
         window.location.href = "/login";
       }
     }

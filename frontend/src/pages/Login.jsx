@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, Stethoscope } from "lucide-react";
@@ -11,6 +11,22 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({ email: "", password: "" });
   const navigate = useNavigate();
+
+  // Prévenir l'utilisateur s'il a été redirigé ici suite à une déconnexion forcée (compte désactivé en session)
+  useEffect(() => {
+    const logoutReason = sessionStorage.getItem("logoutReason");
+    if (logoutReason) {
+      toast.error(logoutReason, {
+        position: "top-right",
+        autoClose: false,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      sessionStorage.removeItem("logoutReason");
+    }
+  }, []);
 
   // Validation côté frontend
   const validateIdentifier = (identifier) => {

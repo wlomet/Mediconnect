@@ -14,8 +14,11 @@ class CheckActive
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check() && !Auth::user()->is_active) {
-            Auth::logout();
+        // auth:sanctum resolves to the 'sanctum' RequestGuard (no logout()); the real session lives on the 'web' guard
+        $guard = Auth::guard('web');
+
+        if ($guard->check() && !$guard->user()->is_active) {
+            $guard->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
