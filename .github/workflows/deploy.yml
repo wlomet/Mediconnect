@@ -40,9 +40,9 @@ jobs:
             ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }}:/var/www/Mediconnect/backend/laravel/
 
       # 4️⃣ Optimisation Laravel
-      - name: Optimize Laravel
+      - name: Migrate and optimize Laravel
         run: |
-          ssh -i ~/.ssh/deploy_key ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }} "cd /var/www/Mediconnect/backend/laravel && php artisan optimize"
+          ssh -i ~/.ssh/deploy_key ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }} "cd /var/www/Mediconnect/backend/laravel && php artisan migrate --force && php artisan optimize"
 
       # 5️⃣ Déploiement React (sans dist, node_modules)
       - name: Deploy React frontend
