@@ -26,6 +26,8 @@ return [
         'http://194.62.99.208',
         'http://localhost',
         'http://127.0.0.1:8000',
+        'https://www.mediconnect.wlomet.fr',
+        'https://mediconnect.wlomet.fr',
     ],
 
     'allowed_origins_patterns' => [],
