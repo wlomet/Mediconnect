@@ -24,6 +24,11 @@
   gap: 1rem;
 }
 
+.logoLink {
+  color: white;
+  text-decoration: none;
+}
+
 .logoTitle {
   font-size: 1.25rem;
   font-weight: bold;
@@ -72,6 +77,21 @@
 }
 
 .logoutButton:hover {
+  background-color: #1e3a8a;
+}
+
+.homeButton {
+  background-color: #1e40af;
+  border: none;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+  font-size: 1rem;
+}
+
+.homeButton:hover {
   background-color: #1e3a8a;
 }
 

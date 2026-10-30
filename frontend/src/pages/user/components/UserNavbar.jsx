@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { AuthContext } from "../../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import styles from "./UserNavbar.module.css";
 
@@ -30,7 +30,9 @@ const UserNavbar = () => {
       <div className={styles.navbarInner}>
         <div className={styles.navbarContent}>
           <div className={styles.logo}>
-            <h1 className={styles.logoTitle}>Espace Client</h1>
+            <Link to="/user/dashboard" className={styles.logoLink}>
+              <h1 className={styles.logoTitle}>Espace Client</h1>
+            </Link>
           </div>
 
           <div className={styles.navLinks}>
@@ -61,6 +63,9 @@ const UserNavbar = () => {
 
           <div className={styles.userSection}>
             <span className={styles.userGreeting}>Bonjour, {user?.name}</span>
+            <button onClick={() => navigate("/user/dashboard")} className={styles.homeButton}>
+              Accueil
+            </button>
             <button onClick={handleLogout} className={styles.logoutButton}>
               <svg className={styles.logoutIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path

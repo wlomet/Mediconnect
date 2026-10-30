@@ -108,7 +108,7 @@ const DashboardUser = () => {
 
             {/* User info et déconnexion */}
             <div className={styles.userSection}>
-              <span className={styles.userGreeting}>Bonjour, {user.name}</span>
+              <span className={styles.userGreeting}>Bonjour, {user?.name}</span>
               <button onClick={handleLogout} className={styles.logoutButton}>
                 <svg
                   className={styles.logoutIcon}
