@@ -75,6 +75,7 @@ const ChangePasswordModal = ({ user, onClose, onSuccess }) => {
             <input
               type="password"
               placeholder="Entrez le nouveau mot de passe"
+              autoComplete="new-password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               style={inputStyle}
@@ -87,6 +88,7 @@ const ChangePasswordModal = ({ user, onClose, onSuccess }) => {
             <input
               type="password"
               placeholder="Confirmez le mot de passe"
+              autoComplete="new-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               style={inputStyle}

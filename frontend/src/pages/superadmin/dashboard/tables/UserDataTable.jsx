@@ -244,6 +244,9 @@ const UserDataTable = ({ users }) => {
       dom: 'lfrtip'
     });
 
+    // Empêche l'autofill du navigateur (mot de passe enregistré) de remplir la recherche
+    tableRef.current.closest('.dataTables_wrapper')?.querySelector('.dataTables_filter input')?.setAttribute('autocomplete', 'off');
+
     return () => {
       if (dataTableRef.current) {
         dataTableRef.current.destroy();
@@ -270,14 +273,14 @@ const UserDataTable = ({ users }) => {
     if (dataTableRef.current && window.$ && localUsers.length > 0) {
       const $ = window.$;
       const dt = dataTableRef.current;
-      
+
       // Supprimer les anciens filtres personnalisés
       $.fn.dataTable.ext.search.pop();
-      
+
       // Ajouter un nouveau filtre personnalisé
       if (selectedRole) {
         $.fn.dataTable.ext.search.push(
-          function(settings, data, dataIndex) {
+          function (settings, data, dataIndex) {
             const user = localUsers[dataIndex];
             if (!user) return false;
             const role = user.roles[0]?.name || 'Aucun rôle';
@@ -285,7 +288,7 @@ const UserDataTable = ({ users }) => {
           }
         );
       }
-      
+
       // Redessiner le tableau
       dt.draw();
     }
