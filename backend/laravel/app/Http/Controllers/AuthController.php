@@ -124,6 +124,7 @@ class AuthController extends Controller
             }
 
             Auth::login($user);
+            $user->forceFill(['last_login_at' => now()])->save();
             $request->session()->regenerate();
 
             return response()->json([
