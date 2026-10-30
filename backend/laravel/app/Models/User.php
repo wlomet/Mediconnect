@@ -24,6 +24,7 @@ class User extends Authenticatable
         'hide',
         'document_identite',
         'justificatif_validite',
+        'antecedents_commentaire',
     ];
 
     protected $hidden = [
@@ -95,6 +96,11 @@ class User extends Authenticatable
     public function directeur()
     {
         return $this->hasOne(Directeur::class);
+    }
+
+    public function antecedentOptions()
+    {
+        return $this->belongsToMany(AntecedentOption::class, 'client_antecedent_options');
     }
 
     public function isDirecteur()

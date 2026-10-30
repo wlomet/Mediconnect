@@ -6,6 +6,7 @@ import api from "../../../api/axios";
 import UserNavbar from "../components/UserNavbar";
 import styles from "../../public/rdv/SearchMedecin.module.css";
 import { validatePhone } from "../../../utils/phoneValidation";
+import ClientAntecedents from "./ClientAntecedents";
 
 export default function ClientProfile() {
   const { user, loading } = useContext(AuthContext);
@@ -180,16 +181,14 @@ export default function ClientProfile() {
           {/* Messages */}
           {message.text && (
             <div
-              className={`mb-6 p-4 rounded-lg border ${
-                message.type === "success"
+              className={`mb-6 p-4 rounded-lg border ${message.type === "success"
                   ? "bg-green-50 border-green-200"
                   : "bg-red-50 border-red-200"
-              }`}
+                }`}
             >
               <p
-                className={`text-sm font-medium ${
-                  message.type === "success" ? "text-green-600" : "text-red-600"
-                }`}
+                className={`text-sm font-medium ${message.type === "success" ? "text-green-600" : "text-red-600"
+                  }`}
               >
                 {message.text}
               </p>
@@ -233,11 +232,10 @@ export default function ClientProfile() {
                   <h2 className="text-xl font-semibold text-gray-800">Informations Personnelles</h2>
                   <button
                     onClick={() => setEditMode(!editMode)}
-                    className={`px-4 py-2 rounded-lg transition ${
-                      editMode
+                    className={`px-4 py-2 rounded-lg transition ${editMode
                         ? "bg-gray-300 hover:bg-gray-400 text-gray-800"
                         : "bg-blue-500 hover:bg-blue-600 text-white"
-                    }`}
+                      }`}
                   >
                     {editMode ? "Annuler" : "Modifier"}
                   </button>
@@ -326,6 +324,9 @@ export default function ClientProfile() {
                 )}
               </div>
 
+              {/* Antécédents médicaux */}
+              <ClientAntecedents />
+
               {/* Change Password Section */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <div className="flex justify-between items-center mb-6">
@@ -337,11 +338,10 @@ export default function ClientProfile() {
                   </div>
                   <button
                     onClick={() => setShowPasswordForm(!showPasswordForm)}
-                    className={`px-4 py-2 rounded-lg transition ${
-                      showPasswordForm
+                    className={`px-4 py-2 rounded-lg transition ${showPasswordForm
                         ? "bg-gray-300 hover:bg-gray-400 text-gray-800"
                         : "bg-blue-500 hover:bg-blue-600 text-white"
-                    }`}
+                      }`}
                   >
                     {showPasswordForm ? "Annuler" : "Changer le mot de passe"}
                   </button>

@@ -17,6 +17,7 @@ use App\Http\Controllers\Directeur\HopitalController;
 use App\Http\Controllers\Client\RendezVousController as ClientRendezVousController;
 use App\Http\Controllers\Client\SearchController as ClientSearchController;
 use App\Http\Controllers\Client\ProfileController as ClientProfileController;
+use App\Http\Controllers\Client\AntecedentController as ClientAntecedentController;
 use App\Http\Controllers\Medecin\RendezVousController as MedecinRendezVousController;
 use App\Http\Controllers\Medecin\LiaisonController as MedecinLiaisonController;
 use App\Http\Controllers\Medecin\ProfileController as MedecinProfileControllerNamespace;
@@ -118,6 +119,10 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         // Profile
         Route::get('/profile', [ClientProfileController::class, 'show']);
         Route::put('/profile', [ClientProfileController::class, 'update']);
+
+        // Antécédents médicaux
+        Route::get('/antecedents', [ClientAntecedentController::class, 'show']);
+        Route::put('/antecedents', [ClientAntecedentController::class, 'update']);
 
         // Rendez-vous
         Route::post('/rendez-vous', [ClientRendezVousController::class, 'store'])->middleware('medecin.bookable');
