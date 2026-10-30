@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ProfileCompletionController;
 use App\Http\Controllers\MedecinProfileController;
 use App\Http\Controllers\SpecialiteController;
@@ -55,6 +56,8 @@ use App\Http\Controllers\Admin\InactivityController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword'])->middleware('throttle:5,1');
+Route::post('/reset-password', [PasswordResetController::class, 'resetPassword'])->middleware('throttle:10,1');
 Route::post('/logout', [AuthController::class, 'logout']);
 Route::get('/user', [AuthController::class, 'user']);
 

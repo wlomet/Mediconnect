@@ -8,6 +8,8 @@ import { AuthProvider } from "./context/AuthContext";
 import Login from "./pages/public/Login";
 import Register from "./pages/public/Register";
 import DirectorRequest from "./pages/public/DirectorRequest";
+import ForgotPassword from "./pages/public/ForgotPassword";
+import ResetPassword from "./pages/public/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import MedecinProfile from "./pages/medecin/profile/MedecinProfile";
 import PlanningMedecin from "./pages/medecin/planning/PlanningMedecin";
@@ -57,6 +59,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<SearchMedecin />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/mot-de-passe-oublie" element={<ForgotPassword />} />
+        <Route path="/reinitialiser-mot-de-passe" element={<ResetPassword />} />
         <Route path="/register" element={<Register />} />
         <Route path="/pending-approval" element={<PendingApproval />} />
         <Route path="/demande-directeur" element={<DirectorRequest />} />

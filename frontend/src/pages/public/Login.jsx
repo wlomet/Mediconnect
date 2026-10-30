@@ -284,7 +284,7 @@ export default function Login() {
                   <input type="checkbox" className="w-4 h-4 rounded border-gray-300" />
                   <span className="text-gray-600">Se souvenir de moi</span>
                 </label>
-                <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
+                <a href="/mot-de-passe-oublie" className="text-blue-600 hover:text-blue-700 font-medium">
                   Mot de passe oublié ?
                 </a>
               </div>
