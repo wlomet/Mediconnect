@@ -15,7 +15,6 @@ export const AuthProvider = ({ children }) => {
   const checkAuth = async () => {
     try {
       const response = await api.get("/user");
-      console.log("Réponse API /user:", response.data);
       setUser(response.data.user);
       setRoles(response.data.roles);
     } catch (error) {
