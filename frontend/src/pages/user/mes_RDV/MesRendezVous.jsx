@@ -1,14 +1,13 @@
 import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
 import api from "../../../api/axios";
 import styles from "./MesRendezVous.module.css";
-import { ArrowLeft, Calendar, User, FileText } from "lucide-react";
+import { Calendar, User, FileText } from "lucide-react";
 import ModalDetailRendezVous from "./ModalDetailRendezVous";
+import UserNavbar from "../components/UserNavbar";
 
 const MesRendezVous = () => {
-  const { user, logout } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); // all, upcoming, past
@@ -80,54 +79,16 @@ const MesRendezVous = () => {
     return <span className={`${styles.badge} ${config.className}`}>{config.label}</span>;
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate("/login");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
-  };
-
   const filteredAppointments = getFilteredAppointments();
 
   return (
     <div className={styles.container}>
-      {/* Navbar */}
-      <nav className={styles.navbar}>
-        <div className={styles.navbarInner}>
-          <div className={styles.navbarContent}>
-            <button onClick={() => navigate("/dashboard")} className={styles.backButton}>
-              <ArrowLeft size={20} />
-              <span>Retour</span>
-            </button>
-            <h1 className={styles.navTitle}>Mes Rendez-vous</h1>
-            <div className={styles.userSection}>
-              <span className={styles.userGreeting}>Bonjour, {user?.name}</span>
-              <button onClick={handleLogout} className={styles.logoutButton}>
-                <svg
-                  className={styles.logoutIcon}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  />
-                </svg>
-                <span>Déconnexion</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <UserNavbar />
 
       {/* Contenu principal */}
       <main className={styles.main}>
         <div className={styles.content}>
+          <h1 className={styles.navTitle}>Mes Rendez-vous</h1>
           {/* Filtres */}
           <div className={styles.filters}>
             <button

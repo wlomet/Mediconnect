@@ -37,6 +37,16 @@ const UserNavbar = () => {
 
           <div className={styles.navLinks}>
             <a
+              href="#accueil"
+              className={styles.navLink}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/user/dashboard");
+              }}
+            >
+              Accueil
+            </a>
+            <a
               href="#rdv"
               className={styles.navLink}
               onClick={(e) => {
@@ -63,9 +73,6 @@ const UserNavbar = () => {
 
           <div className={styles.userSection}>
             <span className={styles.userGreeting}>Bonjour, {user?.name}</span>
-            <button onClick={() => navigate("/user/dashboard")} className={styles.homeButton}>
-              Accueil
-            </button>
             <button onClick={handleLogout} className={styles.logoutButton}>
               <svg className={styles.logoutIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
