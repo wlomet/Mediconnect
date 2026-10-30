@@ -82,5 +82,6 @@ class TestPendingAppointmentsSeeder extends Seeder
             ], $appointments)
         );
         $this->command->info('Seuls les 3 premiers rendez-vous doivent generer une notification.');
+        $this->command->info('suppresion : php artisan db:seed --class=\'Database\Seeders\Test\RemoveTestPendingAppointmentsSeeder\'');
     }
 }
