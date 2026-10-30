@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../../api/axios";
 import { toast } from "react-toastify";
 import UserDataTable from "./tables/UserDataTable";
+import InactivityTable from "../../../components/InactivityTable";
 import CreateDirectorModal from "./modals/CreateDirectorModal";
 import CreateAdminModal from "./modals/CreateAdminModal";
 import CreateClientModal from "./modals/CreateClientModal";
@@ -199,6 +200,12 @@ const DashboardSuperAdmin = () => {
       <div className={styles.section}>
         <h2 style={{ margin: "0 0 15px 0" }}>Tous les utilisateurs</h2>
         <UserDataTable users={users} />
+      </div>
+
+      {/* Comptes et établissements inactifs (suppression prévue) */}
+      <div className={styles.section}>
+        <h2 style={{ margin: "0 0 15px 0" }}>Comptes inactifs à supprimer</h2>
+        <InactivityTable endpoint="/super-admin/inactivity" />
       </div>
 
       {/* Liste des rôles */}

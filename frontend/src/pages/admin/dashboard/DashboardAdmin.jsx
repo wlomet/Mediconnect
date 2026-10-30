@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { AuthContext } from "../../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import InactivityTable from "../../../components/InactivityTable";
 import styles from "./DashboardAdmin.module.css";
 
 const DashboardAdmin = () => {
@@ -75,6 +76,11 @@ const DashboardAdmin = () => {
                 </button>
               </div>
             </div>
+          </div>
+
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Comptes inactifs à supprimer</h3>
+            <InactivityTable endpoint="/admin/inactivity" />
           </div>
         </div>
       </main>

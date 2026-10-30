@@ -37,6 +37,7 @@ use App\Http\Controllers\SuperAdmin\UserCreationController as SuperAdminUserCrea
 use App\Http\Controllers\SuperAdminController;
 // Admin Controllers
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\InactivityController;
 
 /*
 |--------------------------------------------------------------------------
@@ -309,6 +310,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         // Dashboard
         Route::get('/dashboard', [SuperAdminDashboardController::class, 'show']);
         Route::get('/users/by-role/{role}', [SuperAdminDashboardController::class, 'getUsersByRole']);
+        Route::get('/inactivity', [InactivityController::class, 'index']);
 
         // User Management
         Route::prefix('users')->name('users.')->group(function () {
@@ -370,5 +372,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::put('/utilisateurs/{id}/reject', [AdminUserController::class, 'rejectUser']);
         Route::get('/utilisateurs/{id}/documents/{type}', [AdminUserController::class, 'getDocument'])
             ->where('type', 'identite|justificatif');
+
+        // Comptes et établissements inactifs (suppression prévue)
+        Route::get('/inactivity', [InactivityController::class, 'index']);
     });
 });
