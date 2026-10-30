@@ -3,7 +3,7 @@ import { AuthContext } from "../../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, User, Phone, Copy, Check } from "lucide-react";
 import api from "../../../api/axios";
-import Navbar from "../../public/Navbar";
+import UserNavbar from "../components/UserNavbar";
 import styles from "../../public/rdv/SearchMedecin.module.css";
 import { validatePhone } from "../../../utils/phoneValidation";
 
@@ -154,7 +154,7 @@ export default function ClientProfile() {
   if (loading) {
     return (
       <>
-        <Navbar />
+        <UserNavbar />
         <div className="flex justify-center items-center h-64">Chargement...</div>
       </>
     );
@@ -166,7 +166,7 @@ export default function ClientProfile() {
 
   return (
     <>
-      <Navbar />
+      <UserNavbar />
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 py-12 px-4">
         <div className="max-w-2xl mx-auto">
           {/* Page Title */}
