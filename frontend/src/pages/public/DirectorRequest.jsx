@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, User, Building, UserCheck, MapPin, Phone } from "lucide-react";
 import axios from "../../api/axios";
+import { validatePhone } from "../../utils/phoneValidation";
 
 export default function DirectorRequest() {
   const [form, setForm] = useState({
@@ -49,6 +50,7 @@ export default function DirectorRequest() {
 
   const validateField = (fieldName, value) => {
     if (!value.trim()) return `Ce champ est requis`;
+    if (fieldName === "hopital_telephone") return validatePhone(value);
     return "";
   };
 

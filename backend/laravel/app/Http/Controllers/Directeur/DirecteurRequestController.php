@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Directeur;
 
+use App\Rules\PhoneNumber;
+
 use App\Http\Controllers\Controller;
 use App\Models\DemandeDirecteur;
 use App\Models\User;
@@ -22,7 +24,7 @@ class DirecteurRequestController extends Controller
             'password' => 'required|string|min:6',
             'hopital_name' => 'required|string|max:255',
             'hopital_adresse' => 'required|string|max:255',
-            'hopital_telephone' => 'required|string|max:20',
+            'hopital_telephone' => ['required', 'string', 'max:20', new PhoneNumber],
             'hopital_ville' => 'required|string|max:255',
         ], [
             'name.required' => 'Le nom est requis',

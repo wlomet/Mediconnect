@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Rules\PhoneNumber;
+
 use App\Models\Directeur;
 use App\Models\Gestionnaire;
 use App\Models\Hopital;
@@ -64,7 +66,7 @@ class ProfileCompletionController extends Controller
         $validated = $request->validate([
             'hopital_id' => 'nullable|integer|exists:hopitals,id',
             'specialite_id' => 'required|integer|exists:specialites,id',
-            'telephone' => 'required|string|max:20',
+            'telephone' => ['required', 'string', 'max:20', new PhoneNumber],
             'adresse' => 'nullable|string|max:255',
             'ville' => 'nullable|string|max:255',
             'description' => 'nullable|string',
@@ -131,7 +133,7 @@ class ProfileCompletionController extends Controller
             'name' => 'required|string|max:255',
             'hopital_name' => 'required_without:hopital_id|nullable|string|max:255',
             'hopital_adresse' => 'required_without:hopital_id|nullable|string|max:255',
-            'hopital_telephone' => 'required_without:hopital_id|nullable|string|max:20',
+            'hopital_telephone' => ['required_without:hopital_id', 'nullable', 'string', 'max:20', new PhoneNumber],
             'hopital_ville' => 'required_without:hopital_id|nullable|string|max:255',
         ]);
 

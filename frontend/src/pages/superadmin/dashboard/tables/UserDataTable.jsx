@@ -7,6 +7,7 @@ import { AuthContext } from "../../../../context/AuthContext";
 import ShowUserModal from "../modals/ShowUserModal";
 import EditUserModal from "../modals/EditUserModal";
 import ChangePasswordModal from "../modals/ChangePasswordModal";
+import { validatePhone } from "../../../../utils/phoneValidation";
 
 const UserDataTable = ({ users }) => {
   const tableRef = useRef(null);
@@ -296,6 +297,12 @@ const UserDataTable = ({ users }) => {
 
   const handleUpdateUser = async () => {
     if (!editFormData) return;
+
+    const phoneError = validatePhone(editFormData.phone);
+    if (phoneError) {
+      toast.error(phoneError);
+      return;
+    }
 
     try {
       await axiosInstance.put(`/super-admin/users/${editFormData.id}`, {

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, Calendar, Clock, User, Stethoscope, MessageSquare, Phone } from "lucide-react";
 import { toast } from "react-toastify";
 import axiosInstance from "../../../../api/axios";
+import { validatePhone } from "../../../../utils/phoneValidation";
 import styles from "./ModalReservationCreneau.module.css";
 
 const ModalReservationCreneau = ({ medecin, creneau, onClose, onSuccess }) => {
@@ -46,6 +47,12 @@ const ModalReservationCreneau = ({ medecin, creneau, onClose, onSuccess }) => {
 
     if (!formData.email.trim() && !formData.phone.trim()) {
       showToast("Veuillez indiquer au moins un email ou un téléphone", "error");
+      return;
+    }
+
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) {
+      showToast(phoneError, "error");
       return;
     }
 

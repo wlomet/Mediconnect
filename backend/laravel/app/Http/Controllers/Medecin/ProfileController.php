@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Medecin;
 
+use App\Rules\PhoneNumber;
+
 use App\Http\Controllers\Controller;
 use App\Models\MedecinProfile;
 use Illuminate\Http\Request;
@@ -70,7 +72,7 @@ class ProfileController extends Controller
             'description' => 'nullable|string',
             'adresse' => 'nullable|string|max:255',
             'ville' => 'nullable|string|max:255',
-            'telephone' => 'nullable|string|max:20',
+            'telephone' => ['nullable', 'string', 'max:20', new PhoneNumber],
         ]);
 
         $profile = $user->medecinProfile;

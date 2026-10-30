@@ -3,6 +3,7 @@ import { X, Calendar, Clock, User, Stethoscope, MessageSquare, Trash2, Phone } f
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import axiosInstance from "../../../../api/axios";
+import { validatePhone } from "../../../../utils/phoneValidation";
 import styles from "./ModalUpdateRendezVous.module.css";
 
 const ModalUpdateRendezVous = ({ rendezVous, onClose, onSuccess }) => {
@@ -76,6 +77,12 @@ const ModalUpdateRendezVous = ({ rendezVous, onClose, onSuccess }) => {
 
     if (!formData.email.trim() && !formData.phone.trim()) {
       showToast("Veuillez indiquer au moins un email ou un téléphone", "error");
+      return;
+    }
+
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) {
+      showToast(phoneError, "error");
       return;
     }
 

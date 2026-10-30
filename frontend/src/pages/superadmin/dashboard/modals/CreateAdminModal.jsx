@@ -14,6 +14,7 @@ import {
   buttonPrimaryStyle,
   formGroupStyle,
 } from "../styles/modalStyles";
+import { validatePhone } from "../../../../utils/phoneValidation";
 
 const CreateAdminModal = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -45,6 +46,12 @@ const CreateAdminModal = ({ onClose, onSuccess }) => {
 
     if (formData.password.length < 6) {
       toast.error("Le mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
+
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) {
+      toast.error(phoneError);
       return;
     }
 

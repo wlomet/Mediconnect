@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\SuperAdmin;
 
+use App\Rules\PhoneNumber;
+
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -34,7 +36,7 @@ class UserCreationController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
-            'phone' => 'nullable|string',
+            'phone' => ['nullable', 'string', new PhoneNumber],
         ]);
 
         $user = User::create([
@@ -62,7 +64,7 @@ class UserCreationController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
-            'phone' => 'nullable|string',
+            'phone' => ['nullable', 'string', new PhoneNumber],
         ]);
 
         $user = User::create([
@@ -157,7 +159,7 @@ class UserCreationController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
             'specialite_id' => 'required|integer|exists:specialites,id',
-            'telephone' => 'required|string',
+            'telephone' => ['required', 'string', new PhoneNumber],
             'adresse' => 'nullable|string',
             'ville' => 'nullable|string',
             'description' => 'nullable|string',

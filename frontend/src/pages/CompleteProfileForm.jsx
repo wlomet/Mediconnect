@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axiosInstance from "../api/axios";
 import { toast } from "react-toastify";
 import styles from "./CompleteProfileForm.module.css";
+import { validatePhone } from "../utils/phoneValidation";
 
 const ROLE_LABELS = {
   medecin: "médecin",
@@ -55,6 +56,14 @@ const CompleteProfileForm = ({ role, onCompleted }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const phoneError = validatePhone(
+      role === "medecin" ? formData.telephone : useNewHopital ? formData.hopital_telephone : ""
+    );
+    if (phoneError) {
+      toast.warning(phoneError);
+      return;
+    }
 
     if (role === "directeur" && !useNewHopital && !formData.hopital_id) {
       toast.warning("Veuillez sélectionner un hôpital ou en créer un nouveau");

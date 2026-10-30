@@ -4,6 +4,7 @@ import { X, Calendar, Clock, User, Stethoscope, MessageSquare, Phone, Mail } fro
 import { toast } from "react-toastify";
 import api from "../../../api/axios";
 import styles from "./ModalRendezVous.module.css";
+import { validatePhone } from "../../../utils/phoneValidation";
 
 const ModalRendezVous = ({ medecin, creneau, onClose, onSuccess }) => {
   const { user } = useContext(AuthContext);
@@ -54,6 +55,12 @@ const ModalRendezVous = ({ medecin, creneau, onClose, onSuccess }) => {
     // Pour les utilisateurs non connectés, vérifier qu'au moins email ou phone est fourni
     if (!isConnected && !formData.email.trim() && !formData.phone.trim()) {
       toast.error("Veuillez fournir soit un email, soit un numéro de téléphone");
+      return;
+    }
+
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) {
+      toast.error(phoneError);
       return;
     }
 

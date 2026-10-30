@@ -18,6 +18,7 @@ import {
   sectionStyle,
   sectionTitleStyle,
 } from "../styles/modalStyles";
+import { validatePhone } from "../../../../utils/phoneValidation";
 
 const CreateDirectorModal = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -65,6 +66,12 @@ const CreateDirectorModal = ({ onClose, onSuccess }) => {
 
     if (formData.password.length < 6) {
       toast.error("Le mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
+
+    const phoneError = validatePhone(formData.phone) || validatePhone(formData.hopital_telephone);
+    if (phoneError) {
+      toast.error(phoneError);
       return;
     }
 

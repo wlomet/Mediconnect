@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { AuthContext } from "../../../context/AuthContext";
 import axiosInstance from "../../../api/axios";
+import { validatePhone } from "../../../utils/phoneValidation";
 import DirectorNavbar from "../utils/navbar";
 import styles from "./HopitalInfo.module.css";
 import { Building2, Loader } from "lucide-react";
@@ -58,6 +59,13 @@ const HopitalInfo = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const phoneError = validatePhone(hopitalData.telephone);
+    if (phoneError) {
+      toast.error(phoneError);
+      return;
+    }
+
     setSubmitting(true);
 
     try {

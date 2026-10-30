@@ -5,6 +5,7 @@ import { User } from "lucide-react";
 import NavbarMedecin from "../components/NavbarMedecin";
 import CropImageModal from "../../../components/CropImageModal";
 import styles from "./MedecinProfile.module.css";
+import { validatePhone } from "../../../utils/phoneValidation";
 
 export default function MedecinProfile() {
   const { user } = useContext(AuthContext);
@@ -96,6 +97,15 @@ export default function MedecinProfile() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const phoneError = validatePhone(profile.telephone);
+    if (phoneError) {
+      setMessage(phoneError);
+      setMessageType("error");
+      setTimeout(() => setMessage(""), 5000);
+      return;
+    }
+
     try {
       const res = await api.put("/medecin/profile", profile);
       setMessage("✅ Profil mis à jour avec succès !");

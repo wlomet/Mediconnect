@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Directeur;
 
+use App\Rules\PhoneNumber;
+
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -404,7 +406,7 @@ class DirecteurController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
             'specialite_id' => 'required|integer|exists:specialites,id',
-            'telephone' => 'required|string',
+            'telephone' => ['required', 'string', new PhoneNumber],
             'adresse' => 'nullable|string',
             'ville' => 'nullable|string',
             'description' => 'nullable|string',
@@ -572,7 +574,7 @@ class DirecteurController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'adresse' => 'sometimes|nullable|string',
-            'telephone' => 'sometimes|nullable|string',
+            'telephone' => ['sometimes', 'nullable', 'string', new PhoneNumber],
             'ville' => 'sometimes|nullable|string',
             'email' => 'sometimes|nullable|email',
             'description' => 'sometimes|nullable|string',
@@ -697,7 +699,7 @@ class DirecteurController extends Controller
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
             'specialite_id' => 'sometimes|exists:specialites,id',
-            'telephone' => 'sometimes|nullable|string',
+            'telephone' => ['sometimes', 'nullable', 'string', new PhoneNumber],
             'adresse' => 'sometimes|nullable|string',
             'ville' => 'sometimes|nullable|string',
             'description' => 'sometimes|nullable|string',

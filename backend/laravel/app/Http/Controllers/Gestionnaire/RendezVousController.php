@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Gestionnaire;
 
+use App\Rules\PhoneNumber;
+
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\RendezVous;
@@ -121,7 +123,7 @@ class RendezVousController extends Controller
             'motif' => 'nullable|string|max:500',
             'notes' => 'nullable|string|max:1000',
             'name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => ['nullable', 'string', 'max:20', new PhoneNumber],
         ]);
 
         // Vérifier qu'au moins l'email ou le téléphone est fourni
@@ -182,7 +184,7 @@ class RendezVousController extends Controller
             'motif' => 'nullable|string|max:500',
             'notes' => 'nullable|string|max:1000',
             'name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => ['nullable', 'string', 'max:20', new PhoneNumber],
             'statut' => 'sometimes|string'
         ]);
 

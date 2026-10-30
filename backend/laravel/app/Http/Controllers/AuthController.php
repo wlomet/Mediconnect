@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Rules\PhoneNumber;
+
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,7 +19,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
-            'phone' => 'nullable|string|max:15',
+            'phone' => ['nullable', 'string', 'max:15', new PhoneNumber],
             'role' => 'required|string|in:client,medecin,admin',
             'document_identite' => 'required_if:role,medecin|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'justificatif_validite' => 'required_if:role,medecin|file|mimes:pdf,jpg,jpeg,png|max:5120',

@@ -5,6 +5,7 @@ import { Mail, Lock, User, Phone, Copy, Check } from "lucide-react";
 import api from "../../../api/axios";
 import Navbar from "../../public/Navbar";
 import styles from "../../public/rdv/SearchMedecin.module.css";
+import { validatePhone } from "../../../utils/phoneValidation";
 
 export default function ClientProfile() {
   const { user, loading } = useContext(AuthContext);
@@ -65,6 +66,13 @@ export default function ClientProfile() {
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
+
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) {
+      setMessage({ type: "error", text: phoneError });
+      return;
+    }
+
     setSubmitting(true);
     setMessage({ type: "", text: "" });
 

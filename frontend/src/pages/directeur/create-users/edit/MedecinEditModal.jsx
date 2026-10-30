@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import axiosInstance from "../../../../api/axios";
+import { validatePhone } from "../../../../utils/phoneValidation";
 import styles from "./MedecinEditModal.module.css";
 
 const MedecinEditModal = ({ isOpen, user, onClose, onSuccess, specialites }) => {
@@ -42,6 +43,12 @@ const MedecinEditModal = ({ isOpen, user, onClose, onSuccess, specialites }) => 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    const phoneError = validatePhone(form.telephone);
+    if (phoneError) {
+      setError(phoneError);
+      return;
+    }
 
     setLoading(true);
     try {

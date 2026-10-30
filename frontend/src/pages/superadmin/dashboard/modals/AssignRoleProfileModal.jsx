@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "../../../../api/axios";
+import { validatePhone } from "../../../../utils/phoneValidation";
 import { toast } from "react-toastify";
 import {
   modalOverlayStyle,
@@ -66,6 +67,14 @@ const AssignRoleProfileModal = ({ userId, userName, role, onClose, onSuccess }) 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const phoneError = validatePhone(
+      role === "medecin" ? formData.telephone : useNewHopital ? formData.hopital_telephone : ""
+    );
+    if (phoneError) {
+      toast.warning(phoneError);
+      return;
+    }
 
     let payload = { user_id: userId, role };
 

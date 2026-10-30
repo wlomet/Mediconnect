@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Client;
 
+use App\Rules\PhoneNumber;
+
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -42,7 +44,7 @@ class ProfileController extends Controller
         $rules = [
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|string|email|max:255|unique:users,email,' . $client->id,
-            'phone' => 'sometimes|nullable|string|max:15',
+            'phone' => ['sometimes', 'nullable', 'string', 'max:15', new PhoneNumber],
             'address' => 'sometimes|string|max:255'
         ];
 

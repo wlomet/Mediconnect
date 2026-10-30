@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Rules\PhoneNumber;
+
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Hopital;
@@ -149,11 +151,11 @@ class SuperAdminController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
-            'phone' => 'required|string',
+            'phone' => ['required', 'string', new PhoneNumber],
             // Infos Hopital
             'hopital_name' => 'required|string|max:255',
             'hopital_adresse' => 'required|string',
-            'hopital_telephone' => 'required|string',
+            'hopital_telephone' => ['required', 'string', new PhoneNumber],
             'hopital_ville' => 'required|string|max:255',
             'hopital_email' => 'nullable|email',
             'hopital_description' => 'nullable|string',

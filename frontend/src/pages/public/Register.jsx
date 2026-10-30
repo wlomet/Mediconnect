@@ -3,6 +3,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, User, Stethoscope, UserCheck, Phone } from "lucide-react";
 import Navbar from "./Navbar";
+import { validatePhone } from "../../utils/phoneValidation";
 
 export default function Register() {
   const { register } = useContext(AuthContext);
@@ -46,11 +47,6 @@ export default function Register() {
   const validatePassword = (password) => {
     if (!password) return "Le mot de passe est requis";
     if (password.length < 6) return "Le mot de passe doit contenir au moins 6 caractères";
-    return "";
-  };
-
-  const validatePhone = (phone) => {
-    if (phone && phone.length > 15) return "Le téléphone ne peut pas dépasser 15 caractères";
     return "";
   };
 

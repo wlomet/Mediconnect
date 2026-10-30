@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import axiosInstance from "../../../../api/axios";
+import { validatePhone } from "../../../../utils/phoneValidation";
 import styles from "./MedecinModal.module.css";
 
 const MedecinModal = ({ isOpen, onClose, onSuccess, specialites }) => {
@@ -39,6 +40,12 @@ const MedecinModal = ({ isOpen, onClose, onSuccess, specialites }) => {
 
     if (form.password !== form.confirmPassword) {
       setError("Les mots de passe ne correspondent pas");
+      return;
+    }
+
+    const phoneError = validatePhone(form.telephone);
+    if (phoneError) {
+      setError(phoneError);
       return;
     }
 

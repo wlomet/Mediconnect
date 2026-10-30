@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Directeur;
 
+use App\Rules\PhoneNumber;
+
 use App\Http\Controllers\Controller;
 use App\Models\Hopital;
 use Illuminate\Http\Request;
@@ -28,7 +30,7 @@ class HopitalController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'adresse' => 'required|string|max:255',
-            'telephone' => 'required|string|max:20',
+            'telephone' => ['required', 'string', 'max:20', new PhoneNumber],
             'ville' => 'required|string|max:255',
         ], [
             'name.required' => 'Le nom de l\'hôpital est requis',
@@ -73,7 +75,7 @@ class HopitalController extends Controller
         $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'adresse' => 'sometimes|required|string|max:255',
-            'telephone' => 'sometimes|required|string|max:20',
+            'telephone' => ['sometimes', 'required', 'string', 'max:20', new PhoneNumber],
             'ville' => 'sometimes|required|string|max:255',
         ], [
             'name.required' => 'Le nom de l\'hôpital est requis',

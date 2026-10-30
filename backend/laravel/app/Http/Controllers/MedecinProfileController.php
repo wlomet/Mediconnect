@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Rules\PhoneNumber;
+
 use App\Models\MedecinProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -58,7 +60,7 @@ class MedecinProfileController extends Controller
             'description' => 'nullable|string',
             'adresse' => 'nullable|string|max:255',
             'ville' => 'nullable|string|max:255',
-            'telephone' => 'nullable|string|max:20',
+            'telephone' => ['nullable', 'string', 'max:20', new PhoneNumber],
             'horaires' => 'nullable|array',
         ]);
 
