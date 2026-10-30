@@ -36,7 +36,7 @@ Une plateforme web complète de gestion médicale permettant la communication et
 - **Base de Données** : MySQL/MariaDB
 - **Cache** : Redis (optionnel)
 - **File Storage** : Stockage local (Amazon S3 compatible)
-- **Mail** : Configuration SMTP
+- **Mail** : API Brevo (variables `BREVO_API_KEY`, `MAIL_SEND_ENABLED`, `MAIL_DEV_*`)
 
 ---
 
@@ -495,11 +495,13 @@ DB_DATABASE=mediconnect
 DB_USERNAME=root
 DB_PASSWORD=...
 
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USERNAME=...
-MAIL_PASSWORD=...
+BREVO_API_KEY=...
+
+MAIL_SEND_ENABLED=true
+MAIL_DEV_TO=
+MAIL_DEV_CC=
+MAIL_DEV_BCC=
+MAIL_DEV_FROM=
 
 SANCTUM_STATEFUL_DOMAINS=mediconnect.com
 SESSION_DOMAIN=mediconnect.com
@@ -511,6 +513,21 @@ SESSION_DOMAIN=mediconnect.com
 VITE_API_URL=
 VITE_APP_NAME=Mediconnect
 ```
+
+### Envoi d'emails en local
+
+Les emails sont envoyés via l'API Brevo. En local (`APP_ENV=local`), ils peuvent être simulés ou redirigés :
+
+| Variable | Rôle |
+|----------|------|
+| `MAIL_SEND_ENABLED` | `false` : aucun appel Brevo, le contenu est écrit dans `storage/logs/laravel.log`. `true` : envoi réel vers les adresses de test. Défaut `true`. |
+| `MAIL_DEV_TO` | Destinataire de test. Obligatoire si `MAIL_SEND_ENABLED=true` en local. |
+| `MAIL_DEV_CC` / `MAIL_DEV_BCC` | Cc / Bcc de test. Vide = supprimés. |
+| `MAIL_DEV_FROM` | Expéditeur de test. Vide = expéditeur inchangé. |
+
+Lors d'une redirection, le sujet est préfixé `[LOCAL]`. En production, ces variables sont ignorées.
+
+Après modification du `.env` : `php artisan config:clear`.
 
 ---
 

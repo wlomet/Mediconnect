@@ -23,6 +23,16 @@ Projet : `backend/laravel`. Langue des messages et des commentaires : francais.
 - L'adresse expediteur doit etre verifiee dans Brevo.
 - Ne pas ajouter de nouveau mode d'envoi (SMTP, Mailable) sans demande explicite.
 
+## Mode local (simulation et redirection)
+
+- Actif uniquement si `APP_ENV=local`. En production, aucun effet.
+- `MAIL_SEND_ENABLED` (lu par `config('services.brevo.enabled')`, defaut `true`) :
+  - `false` : aucun appel Brevo, retourne `['messageId' => 'simulated-...']`, log du contenu dans `laravel.log`. La cle `BREVO_API_KEY` n'est pas requise.
+  - `true` : envoi reel, mais redirige vers les adresses de test.
+- Variables de redirection (`config('services.brevo.dev')`) : `MAIL_DEV_TO` (obligatoire si envoi actif en local, sinon exception), `MAIL_DEV_CC`, `MAIL_DEV_BCC`, `MAIL_DEV_FROM`. Vide = cc/bcc supprimes, expediteur inchange.
+- Le sujet est prefixe par `[LOCAL]` lors de la redirection.
+- Les validations (destinataires, contenu, pieces jointes, date) restent actives dans les deux cas.
+
 ## Templates Blade : `backend/laravel/resources/views/emails/`
 
 - `base.blade.php` : layout commun (en-tete MediConnect, pied de page).

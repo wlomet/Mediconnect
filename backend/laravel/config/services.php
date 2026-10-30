@@ -33,6 +33,13 @@ return [
 
     'brevo' => [
         'key' => env('BREVO_API_KEY'),
+        'enabled' => env('MAIL_SEND_ENABLED', true),
+        'dev' => [
+            'to' => env('MAIL_DEV_TO'),
+            'cc' => env('MAIL_DEV_CC'),
+            'bcc' => env('MAIL_DEV_BCC'),
+            'from' => env('MAIL_DEV_FROM'),
+        ],
     ],
 
 ];

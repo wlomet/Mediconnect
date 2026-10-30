@@ -5,6 +5,8 @@ namespace App\Services;
 use Carbon\Carbon;
 use DateTimeInterface;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -27,11 +29,6 @@ class MailService
      */
     public function send(array|string $to, string $subject, array $options = []): array
     {
-        $apiKey = config('services.brevo.key');
-        if (! $apiKey) {
-            throw new RuntimeException('BREVO_API_KEY est absent du fichier .env.');
-        }
-
         $recipients = $this->recipients($to);
         if (empty($recipients)) {
             throw new InvalidArgumentException('Au moins un destinataire est requis.');
@@ -71,6 +68,21 @@ class MailService
             $payload['scheduledAt'] = $this->scheduledAt($options['scheduled_at']);
         }
 
+        if ($this->isSimulated()) {
+            $this->logSimulation($payload);
+
+            return ['messageId' => 'simulated-' . Str::uuid()];
+        }
+
+        if ($this->isLocal()) {
+            $payload = $this->redirectToDev($payload);
+        }
+
+        $apiKey = config('services.brevo.key');
+        if (! $apiKey) {
+            throw new RuntimeException('BREVO_API_KEY est absent du fichier .env.');
+        }
+
         $response = Http::withHeaders([
             'api-key' => $apiKey,
             'accept' => 'application/json',
@@ -79,7 +91,7 @@ class MailService
             ->post(self::ENDPOINT, $payload);
 
         if ($response->failed()) {
-            throw new RuntimeException('Echec envoi Brevo ('.$response->status().') : '.$response->body());
+            throw new RuntimeException('Echec envoi Brevo (' . $response->status() . ') : ' . $response->body());
         }
 
         return $response->json() ?? [];
@@ -98,7 +110,7 @@ class MailService
             $contact = is_string($item) ? ['email' => $item] : $item;
 
             if (! filter_var($contact['email'] ?? null, FILTER_VALIDATE_EMAIL)) {
-                throw new InvalidArgumentException('Adresse email invalide : '.json_encode($contact['email'] ?? null));
+                throw new InvalidArgumentException('Adresse email invalide : ' . json_encode($contact['email'] ?? null));
             }
 
             return array_filter([
@@ -129,7 +141,7 @@ class MailService
             $path = is_string($file) ? $file : ($file['path'] ?? '');
 
             if (! is_file($path)) {
-                throw new InvalidArgumentException('Piece jointe introuvable : '.$path);
+                throw new InvalidArgumentException('Piece jointe introuvable : ' . $path);
             }
 
             return [
@@ -148,5 +160,64 @@ class MailService
         }
 
         return $date->toIso8601String();
+    }
+
+    private function isLocal(): bool
+    {
+        return app()->environment('local');
+    }
+
+    private function isSimulated(): bool
+    {
+        return $this->isLocal() && ! config('services.brevo.enabled');
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function logSimulation(array $payload): void
+    {
+        Log::info('Envoi email simule (MAIL_SEND_ENABLED=false)', [
+            'to' => $payload['to'],
+            'cc' => $payload['cc'] ?? null,
+            'bcc' => $payload['bcc'] ?? null,
+            'sender' => $payload['sender'],
+            'subject' => $payload['subject'],
+            'attachments' => array_column($payload['attachment'] ?? [], 'name'),
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function redirectToDev(array $payload): array
+    {
+        $dev = config('services.brevo.dev');
+
+        if (empty($dev['to'])) {
+            throw new RuntimeException('MAIL_DEV_TO est requis en local pour rediriger les emails.');
+        }
+
+        $payload['to'] = $this->recipients($dev['to']);
+        $payload['subject'] = '[LOCAL] ' . $payload['subject'];
+
+        if (empty($dev['cc'])) {
+            unset($payload['cc']);
+        } else {
+            $payload['cc'] = $this->recipients($dev['cc']);
+        }
+
+        if (empty($dev['bcc'])) {
+            unset($payload['bcc']);
+        } else {
+            $payload['bcc'] = $this->recipients($dev['bcc']);
+        }
+
+        if (! empty($dev['from'])) {
+            $payload['sender'] = $this->sender(['email' => $dev['from'], 'name' => $payload['sender']['name'] ?? null]);
+        }
+
+        return $payload;
     }
 }
