@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, useCallback, useContext } from "react";
+import { useState, useEffect, useRef, useCallback, useContext, useMemo } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import ModalHorairesHebdo from "./modals/ModalHorairesHebdo";
 import ModalIndisponibilite from "./modals/ModalIndisponibilite";
 import ModalReservationCreneau from "./modals/ModalReservationCreneau";
 import ModalUpdateRendezVous from "./modals/ModalUpdateRendezVous";
+import ModalNouveauRendezVous from "../dashboard/modals/ModalNouveauRendezVous";
 import NavbarMedecin from "../components/NavbarMedecin";
 import styles from "./PlanningMedecin.module.css";
 import api from "../../../api/axios";
@@ -165,9 +166,109 @@ const buildEvents = (horaires, indisponibilitesRaw, range, rendezvousRaw = []) =
   return [...disponibilites, ...indisponibilites, ...creneauxDisponibles, ...rendezvousEvents];
 };
 
+const VIEW_MODES = [
+  { value: "calendar", label: "Calendrier" },
+  { value: "table", label: "Tableau" },
+  { value: "list", label: "Liste" },
+];
+
+const TYPE_LABELS = {
+  creneau: "Créneau libre",
+  rendezvous: "Rendez-vous",
+  indisponibilite: "Indisponibilité",
+};
+
+const TYPE_STYLES = {
+  creneau: "bg-emerald-100 text-emerald-700",
+  rendezvous: "bg-amber-100 text-amber-700",
+  indisponibilite: "bg-red-100 text-red-700",
+};
+
+const NAV_BUTTON_CLASS =
+  "px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-sm text-[#0A1E3D] hover:bg-gray-50";
+
+const escapeHtml = (value) =>
+  String(value ?? "").replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]
+  );
+
+const formatTime = (date) =>
+  `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+
+const formatDayLabel = (date) =>
+  date.toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+const getMonday = (date) => {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  copy.setDate(copy.getDate() - ((copy.getDay() + 6) % 7));
+  return copy;
+};
+
+// Liste à plat des créneaux, RDV et indisponibilités sur la plage donnée (utilisée par le tableau et la liste)
+const buildListItems = (planning, range) => {
+  if (!range) {
+    return [];
+  }
+
+  const inRange = (date) => date >= range.start && date < range.end;
+
+  const calendarEvents = buildEvents(
+    planning.horaires,
+    planning.indisponibilites,
+    range,
+    planning.rendezVous
+  );
+
+  const creneaux = calendarEvents
+    .filter((e) => e.extendedProps?.type === "creneau")
+    .map((e) => ({ type: "creneau", start: e.start, end: e.end, detail: "Disponible" }));
+
+  const rendezVous = calendarEvents
+    .filter((e) => e.extendedProps?.type === "rendezvous" && inRange(e.start))
+    .map((e) => ({
+      type: "rendezvous",
+      start: e.start,
+      end: e.end,
+      detail: `${e.title} (${(e.extendedProps.statut || "").replace("_", " ")})`,
+      rdv: e.extendedProps.rdvData,
+    }));
+
+  const indisponibilites = planning.indisponibilites.flatMap((i) => {
+    const days = [];
+    let cursor = parseDateKey(i.date_debut.slice(0, 10));
+    const last = parseDateKey(i.date_fin.slice(0, 10));
+    while (cursor <= last) {
+      if (inRange(cursor)) {
+        days.push({
+          type: "indisponibilite",
+          start: cursor,
+          end: cursor,
+          detail: i.motif || "Indisponible",
+        });
+      }
+      cursor = addDays(cursor, 1);
+    }
+    return days;
+  });
+
+  return [...creneaux, ...rendezVous, ...indisponibilites]
+    .sort((a, b) => a.start - b.start)
+    .map((item, index) => ({ ...item, key: `${item.type}-${index}` }));
+};
+
 export default function PlanningMedecin() {
   const { user } = useContext(AuthContext);
   const [events, setEvents] = useState([]);
+  const [planning, setPlanning] = useState({ horaires: [], indisponibilites: [], rendezVous: [] });
+  const [viewMode, setViewMode] = useState("calendar");
+  const [listStart, setListStart] = useState(() => getMonday(new Date()));
   const [currentView, setCurrentView] = useState(() =>
     window.innerWidth >= 768 ? "timeGridWeek" : "timeGridDay"
   );
@@ -180,6 +281,7 @@ export default function PlanningMedecin() {
   const [showIndispoModal, setShowIndispoModal] = useState(false);
   const [showRendezVousModal, setShowRendezVousModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showNewRdvModal, setShowNewRdvModal] = useState(false);
   const [selectedCreneau, setSelectedCreneau] = useState(null);
   const [selectedRendezVous, setSelectedRendezVous] = useState(null);
   const currentMedecinId = horairesRef.current[0]?.medecin_id ?? user?.id;
@@ -194,6 +296,11 @@ export default function PlanningMedecin() {
       horairesRef.current = nextHoraires;
       indisposRef.current = nextIndispos;
       rendezvousRef.current = nextRendezvous;
+      setPlanning({
+        horaires: nextHoraires,
+        indisponibilites: nextIndispos,
+        rendezVous: nextRendezvous,
+      });
 
       if (currentRangeRef.current) {
         const newEvents = buildEvents(
@@ -230,6 +337,116 @@ export default function PlanningMedecin() {
     return () => window.removeEventListener("resize", handleResize);
   }, [currentView]);
 
+  const tableRef = useRef(null);
+  const dataTableRef = useRef(null);
+  const openItemRef = useRef(null);
+
+  const listRange = useMemo(() => ({ start: listStart, end: addDays(listStart, 7) }), [listStart]);
+  const listDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(listStart, i)), [listStart]);
+  const listItems = useMemo(() => buildListItems(planning, listRange), [planning, listRange]);
+
+  const itemsByDay = useMemo(
+    () =>
+      listItems
+        .filter((item) => item.type !== "creneau")
+        .reduce((acc, item) => {
+        const key = formatDateKey(item.start);
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+        acc[key].push(item);
+        return acc;
+      }, {}),
+    [listItems]
+  );
+
+  const tableRows = useMemo(
+    () =>
+      listItems
+        .filter((item) => item.type !== "creneau")
+        .map((item) => ({
+        date: item.start.toLocaleDateString("fr-FR"),
+        jour: item.start.toLocaleDateString("fr-FR", { weekday: "long" }),
+        debut: item.type === "indisponibilite" ? "Journée" : formatTime(item.start),
+        fin: item.type === "indisponibilite" ? "" : formatTime(item.end),
+        type: TYPE_LABELS[item.type],
+        detail: escapeHtml(item.detail),
+        item,
+      })),
+    [listItems]
+  );
+
+  const periodLabel = `Du ${listStart.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+  })} au ${addDays(listStart, 6).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })}`;
+
+  const openItem = (item) => {
+    if (item.type === "creneau") {
+      setSelectedCreneau({ start: item.start, end: item.end });
+      setShowRendezVousModal(true);
+    } else if (item.type === "rendezvous") {
+      setSelectedRendezVous(item.rdv);
+      setShowUpdateModal(true);
+    }
+  };
+  openItemRef.current = openItem;
+
+  // DataTables est initialisé une seule fois, les lignes sont ensuite mises à jour
+  useEffect(() => {
+    if (!tableRef.current || !window.$) return undefined;
+
+    const $table = window.$(tableRef.current);
+    const dt = $table.DataTable({
+      data: [],
+      columns: [
+        { data: "date" },
+        { data: "jour" },
+        { data: "debut" },
+        { data: "fin" },
+        { data: "type" },
+        { data: "detail" },
+      ],
+      order: [],
+      pageLength: 25,
+      autoWidth: false,
+    });
+    dataTableRef.current = dt;
+
+    const handleRowClick = function () {
+      const row = dt.row(this).data();
+      if (row?.item) {
+        openItemRef.current?.(row.item);
+      }
+    };
+    $table.on("click", "tbody tr", handleRowClick);
+
+    return () => {
+      $table.off("click", "tbody tr", handleRowClick);
+      dt.destroy();
+      dataTableRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const dt = dataTableRef.current;
+    if (!dt) return;
+    dt.clear().rows.add(tableRows).draw();
+  }, [tableRows]);
+
+  // Recalcule la taille des composants masqués lors du changement de vue
+  useEffect(() => {
+    if (viewMode === "calendar") {
+      calendarRef.current?.getApi().updateSize();
+    } else if (viewMode === "table") {
+      dataTableRef.current?.columns.adjust().draw(false);
+    }
+  }, [viewMode]);
+
   return (
     <div className={styles.container}>
       <NavbarMedecin />
@@ -259,6 +476,58 @@ export default function PlanningMedecin() {
         </div>
 
         <div className="p-4">
+          <div className="flex flex-col gap-3 mb-4">
+            <div className="inline-flex self-start rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
+              {VIEW_MODES.map((mode) => (
+                <button
+                  key={mode.value}
+                  type="button"
+                  onClick={() => setViewMode(mode.value)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                    viewMode === mode.value
+                      ? "bg-[#0596DE] text-white"
+                      : "text-[#0A1E3D] hover:bg-gray-100"
+                  }`}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+            {viewMode !== "calendar" && (
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNewRdvModal(true)}
+                  className="px-3 py-1.5 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-600"
+                >
+                  Nouveau Rendez-vous
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setListStart((d) => addDays(d, -7))}
+                  className={NAV_BUTTON_CLASS}
+                >
+                  ‹ Précédente
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setListStart(getMonday(new Date()))}
+                  className={NAV_BUTTON_CLASS}
+                >
+                  Cette semaine
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setListStart((d) => addDays(d, 7))}
+                  className={NAV_BUTTON_CLASS}
+                >
+                  Suivante ›
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: viewMode === "calendar" ? "block" : "none" }}>
           <FullCalendar
             ref={calendarRef}
             plugins={[timeGridPlugin]}
@@ -304,7 +573,77 @@ export default function PlanningMedecin() {
               );
             }}
           />
+          </div>
+
+          <div
+            className="bg-white rounded-xl shadow-sm p-4"
+            style={{ display: viewMode === "table" ? "block" : "none" }}
+          >
+            <table ref={tableRef} className="display stripe hover w-full">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Jour</th>
+                  <th>Début</th>
+                  <th>Fin</th>
+                  <th>Type</th>
+                  <th>Détail</th>
+                </tr>
+              </thead>
+              <tbody />
+            </table>
+          </div>
+
+          {viewMode === "list" && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-500">{periodLabel}</p>
+              {listDays.map((day) => {
+                const dayKey = formatDateKey(day);
+                const dayItems = itemsByDay[dayKey] || [];
+                return (
+                  <section key={dayKey} className="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <h3 className="px-4 py-2 bg-[#f8f9fb] border-b border-gray-200 font-semibold text-[#0A1E3D] capitalize">
+                      {formatDayLabel(day)}
+                    </h3>
+                    {dayItems.length === 0 ? (
+                      <p className="px-4 py-3 text-sm text-gray-400">Aucun créneau</p>
+                    ) : (
+                      <ul className="divide-y divide-gray-100">
+                        {dayItems.map((item) => (
+                          <li key={item.key}>
+                            <button
+                              type="button"
+                              onClick={() => openItem(item)}
+                              disabled={item.type === "indisponibilite"}
+                              className="w-full flex flex-wrap items-center gap-3 px-4 py-2 text-left hover:bg-gray-50 disabled:hover:bg-white disabled:cursor-default"
+                            >
+                              <span className="w-32 font-medium text-[#0A1E3D]">
+                                {item.type === "indisponibilite"
+                                  ? "Journée"
+                                  : `${formatTime(item.start)} - ${formatTime(item.end)}`}
+                              </span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${TYPE_STYLES[item.type]}`}>
+                                {TYPE_LABELS[item.type]}
+                              </span>
+                              <span className="text-sm text-gray-600">{item.detail}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+          )}
         </div>
+
+        {showNewRdvModal && (
+          <ModalNouveauRendezVous
+            onClose={() => setShowNewRdvModal(false)}
+            onSuccess={fetchEvents}
+          />
+        )}
 
         {showHoraireModal && (
           <ModalHorairesHebdo onClose={() => setShowHoraireModal(false)} onUpdate={fetchEvents} />

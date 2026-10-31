@@ -1,18 +1,19 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useMemo } from "react";
 import { AuthContext } from "../../../../context/AuthContext";
-import { X, Calendar, Clock, AlertCircle } from "lucide-react";
+import { X, Calendar, Clock, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import api from "../../../../api/axios";
 import ModalReservationCreneau from "../../planning/modals/ModalReservationCreneau";
-import { formatDateKey, getDayName } from "../../../../utils/dateHelpers";
+import { formatDateKey, getDayName, parseDateKey } from "../../../../utils/dateHelpers";
 import styles from "./ModalNouveauRendezVous.module.css";
 
-const ModalNouveauRendezVous = ({ onClose }) => {
+const ModalNouveauRendezVous = ({ onClose, onSuccess }) => {
   const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [horaires, setHoraires] = useState([]);
   const [medecinId, setMedecinId] = useState(null);
-  const [creneaux, setCreneaux] = useState([]);
+  const [rendezvous, setRendezvous] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [selectedCreneau, setSelectedCreneau] = useState(null);
   const [showReservationModal, setShowReservationModal] = useState(false);
 
@@ -31,14 +32,11 @@ const ModalNouveauRendezVous = ({ onClose }) => {
       const rendezvousData = response.data.rendez_vous || [];
 
       setHoraires(horairesData);
+      setRendezvous(rendezvousData);
 
       // Extraire le medecin_id des horaires
       const medecinIdFromHoraires = horairesData[0]?.medecin_id || user?.id;
       setMedecinId(medecinIdFromHoraires);
-
-      // Calculer les créneaux disponibles pour aujourd'hui
-      const creneauxAujourdhui = calculateTodayCreneaux(horairesData, rendezvousData);
-      setCreneaux(creneauxAujourdhui);
     } catch (err) {
       console.error("Erreur lors du chargement du planning:", err);
       setError("Impossible de charger le planning");
@@ -47,8 +45,8 @@ const ModalNouveauRendezVous = ({ onClose }) => {
     }
   };
 
-  const calculateTodayCreneaux = (horaires, rendezvous) => {
-    const today = new Date();
+  const calculateCreneaux = (horaires, rendezvous, targetDate) => {
+    const today = new Date(targetDate);
     const dayName = getDayName(today.getDay());
     const dateKey = formatDateKey(today);
     const slotDurationMinutes = 30;
@@ -118,6 +116,19 @@ const ModalNouveauRendezVous = ({ onClose }) => {
     return disponibles;
   };
 
+  const creneaux = useMemo(
+    () => calculateCreneaux(horaires, rendezvous, selectedDate),
+    [horaires, rendezvous, selectedDate]
+  );
+
+  const shiftDay = (days) => {
+    setSelectedDate((d) => {
+      const next = new Date(d);
+      next.setDate(next.getDate() + days);
+      return next;
+    });
+  };
+
   const formatTime = (date) => {
     return date.toLocaleTimeString("fr-FR", {
       hour: "2-digit",
@@ -143,6 +154,7 @@ const ModalNouveauRendezVous = ({ onClose }) => {
     setShowReservationModal(false);
     setSelectedCreneau(null);
     loadPlanningData();
+    onSuccess?.();
   };
 
   return (
@@ -160,8 +172,20 @@ const ModalNouveauRendezVous = ({ onClose }) => {
           </div>
 
           <div className={styles.dateInfo}>
+            <button type="button" onClick={() => shiftDay(-1)} aria-label="Jour précédent">
+              <ChevronLeft size={20} />
+            </button>
             <Calendar size={20} />
-            <span>{formatFullDate(new Date())}</span>
+            <span>{formatFullDate(selectedDate)}</span>
+            <button type="button" onClick={() => shiftDay(1)} aria-label="Jour suivant">
+              <ChevronRight size={20} />
+            </button>
+            <input
+              type="date"
+              value={formatDateKey(selectedDate)}
+              onChange={(e) => e.target.value && setSelectedDate(parseDateKey(e.target.value))}
+              className="ml-2 rounded border border-gray-300 px-2 py-1 text-sm"
+            />
           </div>
 
           <div className={styles.conteneurCreneaux}>
@@ -192,7 +216,7 @@ const ModalNouveauRendezVous = ({ onClose }) => {
             ) : (
               <div className={styles.noCreneaux}>
                 <AlertCircle size={24} />
-                <p>Aucun créneau disponible pour aujourd'hui</p>
+                <p>Aucun créneau disponible pour cette date</p>
               </div>
             )}
           </div>

@@ -227,7 +227,7 @@ const DashboardMedecin = () => {
                       className={`${styles.actionButton} ${styles.actionButtonGreen}`}
                       onClick={() => setShowNewRdvModal(true)}
                     >
-                      Nouvelle Consultation
+                      Nouveau Rendez-vous
                     </button>
                     <button
                       className={`${styles.actionButton} ${styles.actionButtonBlue}`}
