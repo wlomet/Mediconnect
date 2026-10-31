@@ -263,6 +263,35 @@ const buildListItems = (planning, range) => {
     .map((item, index) => ({ ...item, key: `${item.type}-${index}` }));
 };
 
+const toCsvCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+
+const buildRdvCsv = (rdvs) => {
+  const header = ["Date", "Heure début", "Heure fin", "Patient", "Email", "Statut"];
+  const rows = rdvs.map((rdv) => {
+    const start = new Date(rdv.date_debut);
+    const end = new Date(rdv.date_fin);
+    return [
+      start.toLocaleDateString("fr-FR"),
+      formatTime(start),
+      formatTime(end),
+      rdv.client?.name,
+      rdv.client?.email,
+      rdv.statut,
+    ];
+  });
+  return [header, ...rows].map((row) => row.map(toCsvCell).join(";")).join("\r\n");
+};
+
+const downloadCsv = (content, filename) => {
+  const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
 export default function PlanningMedecin() {
   const { user } = useContext(AuthContext);
   const [events, setEvents] = useState([]);
@@ -284,6 +313,38 @@ export default function PlanningMedecin() {
   const [showNewRdvModal, setShowNewRdvModal] = useState(false);
   const [selectedCreneau, setSelectedCreneau] = useState(null);
   const [selectedRendezVous, setSelectedRendezVous] = useState(null);
+  const [showExport, setShowExport] = useState(false);
+  const [exportPeriod, setExportPeriod] = useState("week");
+  const [exportFrom, setExportFrom] = useState(() => formatDateKey(new Date()));
+  const [exportTo, setExportTo] = useState(() => formatDateKey(new Date()));
+
+  const handleExport = () => {
+    let start;
+    let end;
+    if (exportPeriod === "week") {
+      start = getMonday(listStart);
+      end = addDays(start, 7);
+    } else if (exportPeriod === "month") {
+      start = new Date(listStart.getFullYear(), listStart.getMonth(), 1);
+      end = new Date(listStart.getFullYear(), listStart.getMonth() + 1, 1);
+    } else {
+      start = parseDateKey(exportFrom);
+      end = addDays(parseDateKey(exportTo), 1);
+    }
+
+    const rdvs = planning.rendezVous
+      .filter((rdv) => {
+        const date = new Date(rdv.date_debut);
+        return date >= start && date < end;
+      })
+      .sort((a, b) => new Date(a.date_debut) - new Date(b.date_debut));
+
+    const suffix = `${formatDateKey(start)}_${formatDateKey(addDays(end, -1))}`;
+    downloadCsv(buildRdvCsv(rdvs), `rendez-vous_${suffix}.csv`);
+  };
+
+  const exportInvalid =
+    exportPeriod === "custom" && (!exportFrom || !exportTo || exportFrom > exportTo);
   const currentMedecinId = horairesRef.current[0]?.medecin_id ?? user?.id;
 
   const fetchEvents = useCallback(async () => {
@@ -477,22 +538,77 @@ export default function PlanningMedecin() {
 
         <div className="p-4">
           <div className="flex flex-col gap-3 mb-4">
-            <div className="inline-flex self-start rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
-              {VIEW_MODES.map((mode) => (
-                <button
-                  key={mode.value}
-                  type="button"
-                  onClick={() => setViewMode(mode.value)}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-                    viewMode === mode.value
-                      ? "bg-[#0596DE] text-white"
-                      : "text-[#0A1E3D] hover:bg-gray-100"
-                  }`}
-                >
-                  {mode.label}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
+                {VIEW_MODES.map((mode) => (
+                  <button
+                    key={mode.value}
+                    type="button"
+                    onClick={() => setViewMode(mode.value)}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                      viewMode === mode.value
+                        ? "bg-[#0596DE] text-white"
+                        : "text-[#0A1E3D] hover:bg-gray-100"
+                    }`}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowExport((v) => !v)}
+                className="ml-auto px-3 py-1.5 rounded-lg bg-[#0596DE] text-white text-sm font-medium hover:opacity-90"
+              >
+                Exporter CSV
+              </button>
             </div>
+            {showExport && (
+              <div className="flex flex-wrap items-end gap-2 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
+                <label className="flex flex-col gap-1 text-xs text-[#0A1E3D]">
+                  Période
+                  <select
+                    value={exportPeriod}
+                    onChange={(e) => setExportPeriod(e.target.value)}
+                    className="rounded border border-gray-300 px-2 py-1.5 text-sm"
+                  >
+                    <option value="week">Semaine affichée</option>
+                    <option value="month">Mois de la semaine affichée</option>
+                    <option value="custom">Entre deux dates</option>
+                  </select>
+                </label>
+                {exportPeriod === "custom" && (
+                  <>
+                    <label className="flex flex-col gap-1 text-xs text-[#0A1E3D]">
+                      Du
+                      <input
+                        type="date"
+                        value={exportFrom}
+                        onChange={(e) => setExportFrom(e.target.value)}
+                        className="rounded border border-gray-300 px-2 py-1.5 text-sm"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1 text-xs text-[#0A1E3D]">
+                      Au
+                      <input
+                        type="date"
+                        value={exportTo}
+                        onChange={(e) => setExportTo(e.target.value)}
+                        className="rounded border border-gray-300 px-2 py-1.5 text-sm"
+                      />
+                    </label>
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  disabled={exportInvalid}
+                  className="px-3 py-1.5 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-600 disabled:opacity-50"
+                >
+                  Télécharger
+                </button>
+              </div>
+            )}
             {viewMode !== "calendar" && (
               <div className="flex flex-wrap gap-2">
                 <button
