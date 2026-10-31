@@ -69,13 +69,6 @@ const NavbarMedecin = () => {
               Planning
             </a>
             <a
-              href="#patients"
-              className={styles.navLink}
-              onClick={() => setMenuOpen(false)}
-            >
-              Dossiers Patients
-            </a>
-            <a
               href="#consultations"
               className={styles.navLink}
               onClick={() => setMenuOpen(false)}

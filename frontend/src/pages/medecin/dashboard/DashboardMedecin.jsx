@@ -19,6 +19,8 @@ const DashboardMedecin = () => {
   const [showNewRdvModal, setShowNewRdvModal] = useState(false);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [medecinInfo, setMedecinInfo] = useState(null);
+  const [agendaPeriod, setAgendaPeriod] = useState("today");
+  const [weekAppointments, setWeekAppointments] = useState([]);
 
   // Charger les données des rendez-vous au montage du composant
   useEffect(() => {
@@ -42,12 +44,27 @@ const DashboardMedecin = () => {
 
         // Récupérer tous les rendez-vous pour compter ceux à valider
         const allResponse = await api.get("/medecin/rendez-vous");
+        const allRdv = allResponse.data.rendez_vous || [];
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
         setPendingCount(
-          (allResponse.data.rendez_vous || []).filter(
+          allRdv.filter(
             (rdv) => rdv.statut === "en_attente" && new Date(rdv.date_debut) >= startOfToday
           ).length
+        );
+
+        // Semaine courante (lundi 00:00 à lundi suivant 00:00)
+        const startOfWeek = new Date(startOfToday);
+        startOfWeek.setDate(startOfWeek.getDate() - ((startOfWeek.getDay() + 6) % 7));
+        const startOfNextWeek = new Date(startOfWeek);
+        startOfNextWeek.setDate(startOfNextWeek.getDate() + 7);
+        setWeekAppointments(
+          allRdv
+            .filter((rdv) => {
+              const date = new Date(rdv.date_debut);
+              return date >= startOfWeek && date < startOfNextWeek;
+            })
+            .sort((a, b) => new Date(a.date_debut) - new Date(b.date_debut))
         );
 
         // Récupérer les infos du médecin
@@ -63,6 +80,15 @@ const DashboardMedecin = () => {
 
     loadAppointmentsData();
   }, []);
+
+  const displayedAppointments = agendaPeriod === "today" ? todayAppointments : weekAppointments;
+
+  const formatAppointmentDate = (value) =>
+    new Date(value).toLocaleString("fr-FR",
+      agendaPeriod === "today"
+        ? { hour: "2-digit", minute: "2-digit" }
+        : { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }
+    );
 
   return (
     <div className={styles.container}>
@@ -126,7 +152,25 @@ const DashboardMedecin = () => {
 
               <div className={styles.contentGrid}>
                 <div className={styles.section}>
-                  <h3 className={styles.sectionTitle}>Rendez-vous du Jour</h3>
+                  <div className={styles.sectionHeader}>
+                    <h3 className={styles.sectionTitle}>
+                      {agendaPeriod === "today" ? "Rendez-vous du Jour" : "Rendez-vous de la Semaine"}
+                    </h3>
+                    <div className={styles.periodToggle}>
+                      <button
+                        className={`${styles.periodButton} ${agendaPeriod === "today" ? styles.periodButtonActive : ""}`}
+                        onClick={() => setAgendaPeriod("today")}
+                      >
+                        Jour
+                      </button>
+                      <button
+                        className={`${styles.periodButton} ${agendaPeriod === "week" ? styles.periodButtonActive : ""}`}
+                        onClick={() => setAgendaPeriod("week")}
+                      >
+                        Semaine
+                      </button>
+                    </div>
+                  </div>
                   <ul className={styles.appointmentsList}>
                     {loading ? (
                       <li className={styles.appointmentItem}>
@@ -136,14 +180,11 @@ const DashboardMedecin = () => {
                       <li className={styles.appointmentItem}>
                         <span style={{ color: "red" }}>{error}</span>
                       </li>
-                    ) : todayAppointments.length > 0 ? (
-                      todayAppointments.map((appointment) => (
+                    ) : displayedAppointments.length > 0 ? (
+                      displayedAppointments.map((appointment) => (
                         <li key={appointment.id} className={styles.appointmentItem}>
                           <span className={styles.appointmentTime}>
-                            {new Date(appointment.date_debut).toLocaleTimeString("fr-FR", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}{" "}
+                            {formatAppointmentDate(appointment.date_debut)}{" "}
                             - {appointment.name}
                           </span>
                           <span
@@ -169,7 +210,11 @@ const DashboardMedecin = () => {
                       ))
                     ) : (
                       <li className={styles.appointmentItem}>
-                        <span>Aucun rendez-vous aujourd'hui</span>
+                        <span>
+                          {agendaPeriod === "today"
+                            ? "Aucun rendez-vous aujourd'hui"
+                            : "Aucun rendez-vous cette semaine"}
+                        </span>
                       </li>
                     )}
                   </ul>
@@ -189,9 +234,6 @@ const DashboardMedecin = () => {
                       onClick={() => navigate("/medecin/planning")}
                     >
                       Voir le Planning
-                    </button>
-                    <button className={`${styles.actionButton} ${styles.actionButtonPurple}`}>
-                      Gérer les Dossiers
                     </button>
                     <button
                       className={`${styles.actionButton} ${styles.actionButtonOrange}`}
