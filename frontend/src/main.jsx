@@ -82,6 +82,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/directeur/dashboard" element={<DashboardDirecteur />} />
         <Route path="/directeur/create-users" element={<CreateUsers />} />
         <Route path="/directeur/hopital" element={<HopitalInfo />} />
+        <Route path="/directeur/pdf-templates" element={<PdfTemplatesList role="directeur" />} />
+        <Route path="/directeur/pdf-templates/logos" element={<PdfLogosPage role="directeur" />} />
+        <Route path="/directeur/pdf-templates/:id" element={<PdfTemplateEditor role="directeur" />} />
         <Route path="/secretaire/dashboard" element={<DashboardSecretaire />} />
         <Route path="/super-admin/dashboard" element={<DashboardSuperAdmin />} />
         <Route path="/super-admin/etablissements" element={<EtablissementsSuperAdmin />} />

@@ -185,6 +185,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::prefix('pdf-templates')->name('pdf-templates.')->group(function () {
             Route::get('/', [PdfTemplateController::class, 'index']);
             Route::post('/', [PdfTemplateController::class, 'store']);
+            Route::post('/from-default', [PdfTemplateController::class, 'storeFromDefault']);
             Route::get('/{id}', [PdfTemplateController::class, 'show']);
             Route::put('/{id}', [PdfTemplateController::class, 'update']);
             Route::delete('/{id}', [PdfTemplateController::class, 'destroy']);
@@ -291,6 +292,23 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('/personnel-datatable', [DirecteurController::class, 'getPersonnelDatatable']);
         Route::get('/hopital', [DirecteurController::class, 'getHopital']);
         Route::put('/hopital', [DirecteurController::class, 'updateHopital']);
+
+        // Modèles PDF de l'établissement (ordonnances et factures)
+        Route::prefix('pdf-images')->name('pdf-images.')->group(function () {
+            Route::get('/', [PdfImageController::class, 'index']);
+            Route::post('/', [PdfImageController::class, 'store']);
+            Route::get('/{id}/file', [PdfImageController::class, 'file']);
+            Route::delete('/{id}', [PdfImageController::class, 'destroy']);
+        });
+
+        Route::prefix('pdf-templates')->name('pdf-templates.')->group(function () {
+            Route::get('/', [PdfTemplateController::class, 'index']);
+            Route::post('/', [PdfTemplateController::class, 'store']);
+            Route::post('/from-default', [PdfTemplateController::class, 'storeFromDefault']);
+            Route::get('/{id}', [PdfTemplateController::class, 'show']);
+            Route::put('/{id}', [PdfTemplateController::class, 'update']);
+            Route::delete('/{id}', [PdfTemplateController::class, 'destroy']);
+        });
 
         // Création d'utilisateurs
         Route::post('/create-medecin', [DirecteurController::class, 'createMedecin']);

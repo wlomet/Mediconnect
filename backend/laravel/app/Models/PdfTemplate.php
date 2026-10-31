@@ -13,6 +13,7 @@ class PdfTemplate extends Model
 
     protected $fillable = [
         'medecin_profile_id',
+        'hopital_id',
         'nom',
         'type',
         'format',

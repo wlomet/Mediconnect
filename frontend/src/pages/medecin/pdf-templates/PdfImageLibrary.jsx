@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify";
-import { pdfApi } from "../../../api/pdfApi";
+import { pdfApi as defaultPdfApi } from "../../../api/pdfApi";
 import styles from "./PdfImageLibrary.module.css";
 
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/png", "image/jpeg"];
 
-export default function PdfImageLibrary({ selectedId = null, onUse = null, onChange = null }) {
+export default function PdfImageLibrary({ selectedId = null, onUse = null, onChange = null, api = defaultPdfApi }) {
   const [images, setImages] = useState([]);
   const [thumbnails, setThumbnails] = useState({});
   const [loading, setLoading] = useState(true);
@@ -17,7 +17,7 @@ export default function PdfImageLibrary({ selectedId = null, onUse = null, onCha
   const loadImages = async () => {
     try {
       setLoading(true);
-      setImages(await pdfApi.listImages());
+      setImages(await api.listImages());
     } catch {
       toast.error("Impossible de charger les logos");
     } finally {
@@ -37,7 +37,7 @@ export default function PdfImageLibrary({ selectedId = null, onUse = null, onCha
       const next = {};
       for (const image of images) {
         try {
-          const { bytes, mime } = await pdfApi.fetchImageBytes(image.id);
+          const { bytes, mime } = await api.fetchImageBytes(image.id);
           const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
           created.push(url);
           next[image.id] = url;
@@ -71,7 +71,7 @@ export default function PdfImageLibrary({ selectedId = null, onUse = null, onCha
 
     try {
       setUploading(true);
-      await pdfApi.uploadImage(file);
+      await api.uploadImage(file);
       toast.success("Logo ajouté");
       loadImages();
       onChange?.();
@@ -94,7 +94,7 @@ export default function PdfImageLibrary({ selectedId = null, onUse = null, onCha
     if (!result.isConfirmed) return;
 
     try {
-      await pdfApi.deleteImage(image.id);
+      await api.deleteImage(image.id);
       toast.success("Logo supprimé");
       loadImages();
       onChange?.();

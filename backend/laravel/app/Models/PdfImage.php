@@ -11,6 +11,7 @@ class PdfImage extends Model
 
     protected $fillable = [
         'medecin_profile_id',
+        'hopital_id',
         'nom',
         'chemin',
         'mime',

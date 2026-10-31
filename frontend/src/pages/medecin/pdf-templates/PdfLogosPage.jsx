@@ -1,23 +1,24 @@
 import { useNavigate } from "react-router-dom";
-import NavbarMedecin from "../components/NavbarMedecin";
 import PdfImageLibrary from "./PdfImageLibrary";
+import { getPdfContext } from "./pdfContexts";
 import styles from "./PdfLogosPage.module.css";
 
-export default function PdfLogosPage() {
+export default function PdfLogosPage({ role = "medecin" }) {
   const navigate = useNavigate();
+  const { api, basePath, Navbar } = getPdfContext(role);
 
   return (
     <>
-      <NavbarMedecin />
+      <Navbar />
       <div className={styles.container}>
         <div className={styles.header}>
-          <button type="button" className={styles.backButton} onClick={() => navigate("/medecin/pdf-templates")}>
+          <button type="button" className={styles.backButton} onClick={() => navigate(basePath)}>
             Retour aux modèles
           </button>
           <h1 className={styles.title}>Bibliothèque de logos</h1>
         </div>
         <div className={styles.panel}>
-          <PdfImageLibrary />
+          <PdfImageLibrary api={api} />
         </div>
       </div>
     </>

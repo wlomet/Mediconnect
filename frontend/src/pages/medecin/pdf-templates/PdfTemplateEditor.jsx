@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Group, Image as KonvaImage, Layer, Line, Rect, Stage, Text, Transformer } from "react-konva";
 import { toast } from "react-toastify";
-import NavbarMedecin from "../components/NavbarMedecin";
 import PdfImageLibrary from "./PdfImageLibrary";
-import { fetchImagesForLayout, pdfApi } from "../../../api/pdfApi";
+import { getPdfContext } from "./pdfContexts";
+import { fetchImagesForLayout } from "../../../api/pdfApi";
 import { generatePdf } from "../../../utils/pdf/generatePdf";
 import { ELEMENT_TYPES, PAGE_SIZES, VARIABLES, createElement, normalizeLayout, slugify } from "../../../utils/pdf/layout";
 import styles from "./PdfTemplateEditor.module.css";
@@ -128,7 +128,7 @@ function ElementContent({ element, width, height, logoUrl }) {
   }
 }
 
-function CanvasElement({ element, isSelected, logoUrl, onSelect, onChange, registerNode }) {
+function CanvasElement({ element, isSelected, logoUrl, onSelect, onChange, registerNode, readOnly = false }) {
   const width = element.width * SCALE;
   const height = element.height * SCALE;
 
@@ -137,7 +137,7 @@ function CanvasElement({ element, isSelected, logoUrl, onSelect, onChange, regis
       ref={(node) => registerNode(element.id, node)}
       x={element.x * SCALE}
       y={element.y * SCALE}
-      draggable
+      draggable={!readOnly}
       onClick={onSelect}
       onTap={onSelect}
       onDragEnd={(e) => onChange({ x: e.target.x() / SCALE, y: e.target.y() / SCALE })}
@@ -300,9 +300,11 @@ function PropertiesPanel({ element, images, onChange, onDelete }) {
   );
 }
 
-export default function PdfTemplateEditor() {
+export default function PdfTemplateEditor({ role = "medecin" }) {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { api, basePath, Navbar } = getPdfContext(role);
+  const [readOnly, setReadOnly] = useState(false);
   const [nom, setNom] = useState("");
   const [type, setType] = useState("ordonnance");
   const [elements, setElements] = useState([]);
@@ -320,7 +322,7 @@ export default function PdfTemplateEditor() {
 
   const loadImages = useCallback(async () => {
     try {
-      setImages(await pdfApi.listImages());
+      setImages(await api.listImages());
     } catch {
       toast.error("Impossible de charger les logos");
     }
@@ -333,13 +335,14 @@ export default function PdfTemplateEditor() {
   useEffect(() => {
     const load = async () => {
       try {
-        const template = await pdfApi.getTemplate(id);
+        const template = await api.getTemplate(id);
         setNom(template.nom);
         setType(template.type);
+        setReadOnly(template.editable === false);
         setElements(normalizeLayout(template.layout).elements);
       } catch {
         toast.error("Modèle introuvable");
-        navigate("/medecin/pdf-templates");
+        navigate(basePath);
       } finally {
         setLoading(false);
       }
@@ -347,18 +350,21 @@ export default function PdfTemplateEditor() {
     load();
   }, [id, navigate]);
 
+  // Logos de la bibliothèque et logos utilisés par le modèle (ex. logo partagé par l'établissement)
+  const logoKey = [...new Set([...images.map((image) => image.id), ...elements.map((el) => el.pdf_image_id).filter(Boolean)])].join(",");
+
   useEffect(() => {
     let cancelled = false;
     const created = [];
 
     const loadUrls = async () => {
       const urls = {};
-      for (const image of images) {
+      for (const id of logoKey.split(",").filter(Boolean)) {
         try {
-          const { bytes, mime } = await pdfApi.fetchImageBytes(image.id);
+          const { bytes, mime } = await api.fetchImageBytes(id);
           const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
           created.push(url);
-          urls[image.id] = url;
+          urls[id] = url;
         } catch {
           // Logo non disponible : affiché en placeholder
         }
@@ -371,7 +377,7 @@ export default function PdfTemplateEditor() {
       cancelled = true;
       created.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [images]);
+  }, [logoKey]);
 
   useEffect(() => {
     const transformer = transformerRef.current;
@@ -408,7 +414,7 @@ export default function PdfTemplateEditor() {
   useEffect(() => {
     const onKeyDown = (event) => {
       const tag = event.target.tagName;
-      if (event.key === "Delete" && selectedId && !["INPUT", "TEXTAREA", "SELECT"].includes(tag)) {
+      if (event.key === "Delete" && selectedId && !readOnly && !(["INPUT", "TEXTAREA", "SELECT"].includes(tag))) {
         removeElement(selectedId);
       }
     };
@@ -432,7 +438,7 @@ export default function PdfTemplateEditor() {
 
     try {
       setSaving(true);
-      await pdfApi.updateTemplate(id, {
+      await api.updateTemplate(id, {
         nom: nom.trim(),
         type,
         format: "A4",
@@ -453,7 +459,7 @@ export default function PdfTemplateEditor() {
         layout: { format: "A4", elements },
         data: buildSampleData(),
         values: buildSampleValues(elements),
-        images: await fetchImagesForLayout(elements),
+        images: await fetchImagesForLayout(elements, api),
       });
       const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
       window.open(url, "_blank");
@@ -465,7 +471,7 @@ export default function PdfTemplateEditor() {
   if (loading) {
     return (
       <>
-        <NavbarMedecin />
+        <Navbar />
         <p className={styles.loading}>Chargement du modèle...</p>
       </>
     );
@@ -473,39 +479,47 @@ export default function PdfTemplateEditor() {
 
   return (
     <>
-      <NavbarMedecin />
+      <Navbar />
       <div className={styles.container}>
         <aside className={styles.toolbar}>
-          <button type="button" className={styles.secondaryButton} onClick={() => navigate("/medecin/pdf-templates")}>
+          <button type="button" className={styles.secondaryButton} onClick={() => navigate(basePath)}>
             Retour aux modèles
           </button>
 
           <label className={styles.field}>
             Nom du modèle
-            <input className={styles.input} value={nom} maxLength={255} onChange={(e) => setNom(e.target.value)} />
+            <input className={styles.input} value={nom} maxLength={255} disabled={readOnly} onChange={(e) => setNom(e.target.value)} />
           </label>
           <label className={styles.field}>
             Type
-            <select className={styles.input} value={type} onChange={(e) => setType(e.target.value)}>
+            <select className={styles.input} value={type} disabled={readOnly} onChange={(e) => setType(e.target.value)}>
               <option value="ordonnance">Ordonnance</option>
               <option value="facture">Facture</option>
             </select>
           </label>
 
-          <h3 className={styles.sectionTitle}>Ajouter un élément</h3>
-          {Object.entries(ELEMENT_TYPES).map(([elementType, label]) => (
-            <button key={elementType} type="button" className={styles.addButton} onClick={() => addElement(elementType)}>
-              {label}
-            </button>
-          ))}
+          {readOnly ? (
+            <p className={styles.hint}>Modèle de l'établissement : consultation uniquement.</p>
+          ) : (
+            <>
+              <h3 className={styles.sectionTitle}>Ajouter un élément</h3>
+              {Object.entries(ELEMENT_TYPES).map(([elementType, label]) => (
+                <button key={elementType} type="button" className={styles.addButton} onClick={() => addElement(elementType)}>
+                  {label}
+                </button>
+              ))}
+            </>
+          )}
 
           <div className={styles.actions}>
             <button type="button" className={styles.secondaryButton} onClick={handlePreview}>
               Aperçu PDF
             </button>
-            <button type="button" className={styles.primaryButton} onClick={handleSave} disabled={saving}>
-              {saving ? "Enregistrement..." : "Enregistrer"}
-            </button>
+            {!readOnly && (
+              <button type="button" className={styles.primaryButton} onClick={handleSave} disabled={saving}>
+                {saving ? "Enregistrement..." : "Enregistrer"}
+              </button>
+            )}
           </div>
         </aside>
 
@@ -525,8 +539,9 @@ export default function PdfTemplateEditor() {
                     key={element.id}
                     element={element}
                     isSelected={element.id === selectedId}
+                    readOnly={readOnly}
                     logoUrl={imageUrls[element.pdf_image_id]}
-                    onSelect={() => setSelectedId(element.id)}
+                    onSelect={readOnly ? undefined : () => setSelectedId(element.id)}
                     onChange={(changes) => updateElement(element.id, changes)}
                     registerNode={registerNode}
                   />
@@ -544,22 +559,29 @@ export default function PdfTemplateEditor() {
         </main>
 
         <aside className={styles.sidePanel}>
-          {selected ? (
-            <PropertiesPanel
-              element={selected}
-              images={images}
-              onChange={(changes) => updateElement(selected.id, changes)}
-              onDelete={() => removeElement(selected.id)}
-            />
+          {readOnly ? (
+            <p className={styles.hint}>Ce modèle est partagé par votre établissement. Vous pouvez le consulter et générer un aperçu.</p>
           ) : (
-            <p className={styles.hint}>Sélectionnez un élément sur le modèle pour le modifier.</p>
-          )}
+            <>
+              {selected ? (
+                <PropertiesPanel
+                  element={selected}
+                  images={images}
+                  onChange={(changes) => updateElement(selected.id, changes)}
+                  onDelete={() => removeElement(selected.id)}
+                />
+              ) : (
+                <p className={styles.hint}>Sélectionnez un élément sur le modèle pour le modifier.</p>
+              )}
 
-          <PdfImageLibrary
-            selectedId={selected?.type === "image" ? selected.pdf_image_id : null}
-            onUse={handleUseImage}
-            onChange={loadImages}
-          />
+              <PdfImageLibrary
+                api={api}
+                selectedId={selected?.type === "image" ? selected.pdf_image_id : null}
+                onUse={handleUseImage}
+                onChange={loadImages}
+              />
+            </>
+          )}
         </aside>
       </div>
     </>

@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\GeneratedDocument;
 use App\Models\PdfTemplate;
 use App\Models\RendezVous;
+use App\Services\PdfScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class GeneratedDocumentController extends Controller
 {
@@ -38,14 +40,14 @@ class GeneratedDocumentController extends Controller
                 'nullable',
                 Rule::exists('rendez_vous', 'id')->where('medecin_id', $profile->id),
             ],
-            'pdf_template_id' => [
-                'nullable',
-                Rule::exists('pdf_templates', 'id')
-                    ->where('medecin_profile_id', $profile->id)
-                    ->whereNull('deleted_at'),
-            ],
+            'pdf_template_id' => 'nullable|integer',
             'donnees' => 'nullable|json',
         ]);
+
+        if (!empty($validated['pdf_template_id'])
+            && !PdfScope::applyVisible(PdfTemplate::query(), $request->user())->whereKey($validated['pdf_template_id'])->exists()) {
+            throw ValidationException::withMessages(['pdf_template_id' => 'Modèle introuvable.']);
+        }
 
         $file = $request->file('pdf');
         $chemin = $file->store("generated-documents/{$profile->id}", 'local');
@@ -101,7 +103,7 @@ class GeneratedDocumentController extends Controller
         $document = $this->findOwned($request, $id);
         abort_unless(Storage::disk('local')->exists($document->chemin), 404);
 
-        return Storage::disk('local')->response($document->chemin, null, [
+        return response()->file(storage_path('app/' . $document->chemin), [
             'Content-Type' => 'application/pdf',
         ]);
     }

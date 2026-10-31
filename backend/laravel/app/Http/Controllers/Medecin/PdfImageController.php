@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Medecin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PdfImage;
+use App\Services\PdfScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -11,10 +12,7 @@ class PdfImageController extends Controller
 {
     public function index(Request $request)
     {
-        $profile = $request->user()->medecinProfile;
-        abort_unless($profile, 403);
-
-        $images = PdfImage::where('medecin_profile_id', $profile->id)
+        $images = PdfScope::applyWritable(PdfImage::query(), $request->user())
             ->latest()
             ->get(['id', 'nom', 'mime', 'taille', 'created_at']);
 
@@ -23,18 +21,17 @@ class PdfImageController extends Controller
 
     public function store(Request $request)
     {
-        $profile = $request->user()->medecinProfile;
-        abort_unless($profile, 403);
+        $owner = PdfScope::ownerAttributes($request->user());
+        abort_unless($owner, 403);
 
         $request->validate([
             'image' => 'required|file|image|mimes:png,jpg,jpeg|max:2048',
         ]);
 
         $file = $request->file('image');
-        $chemin = $file->store("pdf-images/{$profile->id}", 'local');
+        $chemin = $file->store(PdfScope::imageFolder($owner), 'local');
 
-        $image = PdfImage::create([
-            'medecin_profile_id' => $profile->id,
+        $image = PdfImage::create($owner + [
             'nom' => $file->getClientOriginalName(),
             'chemin' => $chemin,
             'mime' => $file->getMimeType(),
@@ -49,13 +46,10 @@ class PdfImageController extends Controller
 
     public function file(Request $request, int $id)
     {
-        $profile = $request->user()->medecinProfile;
-        abort_unless($profile, 403);
-
-        $image = PdfImage::where('medecin_profile_id', $profile->id)->findOrFail($id);
+        $image = PdfScope::applyVisible(PdfImage::query(), $request->user())->findOrFail($id);
         abort_unless(Storage::disk('local')->exists($image->chemin), 404);
 
-        return Storage::disk('local')->response($image->chemin, null, [
+        return response()->file(storage_path('app/' . $image->chemin), [
             'Content-Type' => $image->mime,
             'Cache-Control' => 'private, max-age=3600',
         ]);
@@ -63,10 +57,7 @@ class PdfImageController extends Controller
 
     public function destroy(Request $request, int $id)
     {
-        $profile = $request->user()->medecinProfile;
-        abort_unless($profile, 403);
-
-        $image = PdfImage::where('medecin_profile_id', $profile->id)->findOrFail($id);
+        $image = PdfScope::applyWritable(PdfImage::query(), $request->user())->findOrFail($id);
         Storage::disk('local')->delete($image->chemin);
         $image->delete();
 
