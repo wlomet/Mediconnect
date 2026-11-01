@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\GestionnaireMedecin;
 use App\Models\Gestionnaire;
 use Carbon\Carbon;
+use App\Services\RendezVousNotificationService;
 use App\Services\RendezVousStatutGuard;
 use Illuminate\Validation\Rule;
 
@@ -165,7 +166,7 @@ class RendezVousController extends Controller
      * Vérifie que le gestionnaire a accès au rendez-vous
      * Vérifie qu'au moins l'email ou le téléphone est fourni
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, RendezVousNotificationService $notifications)
     {
         $gestionnaire = $request->user();
         $gestionnaireProfile = Gestionnaire::where('user_id', $gestionnaire->id)->first();
@@ -210,7 +211,9 @@ class RendezVousController extends Controller
         }
 
         RendezVousStatutGuard::verifier($rendezVous, $validated['statut'] ?? null);
+        $statutAvant = $rendezVous->statut;
         $rendezVous->update($validated);
+        $notifications->rendezVousConfirme($rendezVous, $statutAvant);
 
         return response()->json([
             'message' => 'Rendez-vous mis à jour avec succès',

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\AntecedentOption;
 use App\Models\Consultation;
 use App\Models\User;
+use App\Services\MailService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -121,6 +122,7 @@ class ConsultationTest extends TestCase
         $rdv = $this->makeRendezVous($profil);
         $consultation = $this->makeConsultation($profil, $rdv);
         $dateDebut = $rdv->date_debut->toDateTimeString();
+        $this->mock(MailService::class, fn ($mock) => $mock->shouldReceive('send')->once()->andReturn([]));
         Sanctum::actingAs($user);
 
         $this->postJson("/api/medecin/consultations/{$consultation->id}/terminer")

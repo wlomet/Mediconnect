@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\SecretaireMedecin;
 use App\Models\Secretaire;
 use Carbon\Carbon;
+use App\Services\RendezVousNotificationService;
 use App\Services\RendezVousStatutGuard;
 use Illuminate\Validation\Rule;
 
@@ -165,7 +166,7 @@ class RendezVousController extends Controller
      * Vérifie que la secrétaire a accès au rendez-vous
      * Vérifie qu'au moins l'email ou le téléphone est fourni
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, RendezVousNotificationService $notifications)
     {
         $secretaire = $request->user();
         $secretaireProfile = Secretaire::where('user_id', $secretaire->id)->first();
@@ -210,7 +211,9 @@ class RendezVousController extends Controller
         }
 
         RendezVousStatutGuard::verifier($rendezVous, $validated['statut'] ?? null);
+        $statutAvant = $rendezVous->statut;
         $rendezVous->update($validated);
+        $notifications->rendezVousConfirme($rendezVous, $statutAvant);
 
         return response()->json([
             'message' => 'Rendez-vous mis à jour avec succès',

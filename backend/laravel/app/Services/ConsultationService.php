@@ -16,8 +16,10 @@ use Illuminate\Support\Facades\DB;
 
 class ConsultationService
 {
-    public function __construct(private RendezVousBookingService $bookings)
-    {
+    public function __construct(
+        private RendezVousBookingService $bookings,
+        private RendezVousNotificationService $notifications,
+    ) {
     }
 
     public function demarrerRendezVous(MedecinProfile $profil, User $user, RendezVous $rendezVous): Consultation
@@ -148,7 +150,7 @@ class ConsultationService
 
     public function terminer(MedecinProfile $profil, User $user, int $id): Consultation
     {
-        return $this->verrouiller($profil, function () use ($profil, $user, $id) {
+        $terminee = $this->verrouiller($profil, function () use ($profil, $user, $id) {
             $consultation = $this->enCours($profil, $id);
 
             if (!$consultation->facture?->lignes()->exists()) {
@@ -164,6 +166,10 @@ class ConsultationService
 
             return $this->charger($consultation);
         });
+
+        $this->notifications->consultationTerminee($terminee);
+
+        return $terminee;
     }
 
     public function formater(Consultation $c): array

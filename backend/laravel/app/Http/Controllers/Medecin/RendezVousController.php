@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\RendezVous;
 use App\Models\User;
 use App\Services\RendezVousBookingService;
+use App\Services\RendezVousNotificationService;
 use App\Services\RendezVousStatutGuard;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
@@ -129,7 +130,7 @@ class RendezVousController extends Controller
     /**
      * Médecin met à jour un rendez-vous (statut, notes, email, name, phone, etc)
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, RendezVousNotificationService $notifications)
     {
         $user = $request->user();
 
@@ -178,7 +179,9 @@ class RendezVousController extends Controller
         }
 
         RendezVousStatutGuard::verifier($rendezVous, $validated['statut'] ?? null);
+        $statutAvant = $rendezVous->statut;
         $rendezVous->update($validated);
+        $notifications->rendezVousConfirme($rendezVous, $statutAvant);
 
         return response()->json([
             'message' => 'Rendez-vous mis à jour avec succès',
