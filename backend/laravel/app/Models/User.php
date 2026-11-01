@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -30,12 +31,14 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'email_verification_token',
         'document_identite',
         'justificatif_validite',
     ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'email_verification_expires_at' => 'datetime',
         'last_login_at' => 'datetime',
         'is_active' => 'boolean',
         'hide' => 'boolean',
@@ -106,6 +109,34 @@ class User extends Authenticatable
     public function isDirecteur()
     {
         return $this->hasRole('directeur');
+    }
+
+    public function hasVerifiedEmail(): bool
+    {
+        return $this->email_verified_at !== null;
+    }
+
+    /**
+     * Les comptes admin et super-admin ne sont pas bloqués par un email non vérifié.
+     */
+    public function isEmailExempt(): bool
+    {
+        return $this->hasAnyRole(['admin', 'super-admin']);
+    }
+
+    /**
+     * Génère un token d'activation : retourne le token en clair, seul son hash est stocké.
+     */
+    public function issueEmailVerificationToken(): string
+    {
+        $token = Str::random(64);
+
+        $this->forceFill([
+            'email_verification_token' => hash('sha256', $token),
+            'email_verification_expires_at' => now()->addHours(24),
+        ])->save();
+
+        return $token;
     }
 
     /**

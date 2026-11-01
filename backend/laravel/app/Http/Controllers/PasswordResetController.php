@@ -27,10 +27,15 @@ class PasswordResetController extends Controller
         ]);
 
         // Même réponse que le compte existe ou non, pour ne pas révéler les adresses enregistrées
-        Password::broker()->sendResetLink(
-            ['email' => $validated['email']],
-            fn(User $user, string $token) => $this->sendResetEmail($mail, $user, $token)
-        );
+        $compte = User::where('email', $validated['email'])->first();
+
+        // Pas de lien pour un email non vérifié (admin et super-admin exemptés)
+        if ($compte && ($compte->hasVerifiedEmail() || $compte->isEmailExempt())) {
+            Password::broker()->sendResetLink(
+                ['email' => $validated['email']],
+                fn (User $user, string $token) => $this->sendResetEmail($mail, $user, $token)
+            );
+        }
 
         return response()->json([
             'message' => 'Si un compte existe pour cette adresse, un email de réinitialisation a été envoyé.',
@@ -64,6 +69,11 @@ class PasswordResetController extends Controller
             function (User $user, string $password) {
                 $user->forceFill(['password' => Hash::make($password)])
                     ->setRememberToken(Str::random(60));
+
+                // Le lien reçu par email prouve la possession de la boîte
+                if (! $user->hasVerifiedEmail()) {
+                    $user->forceFill(['email_verified_at' => now()]);
+                }
 
                 $user->save();
             }

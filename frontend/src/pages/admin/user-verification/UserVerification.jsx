@@ -122,6 +122,16 @@ const UserVerification = () => {
                 data: "email",
               },
               {
+                title: "Email vérifié",
+                data: "email_verified",
+                orderable: false,
+                render: function (data) {
+                  return data
+                    ? '<span style="display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; background:#dcfce7; color:#166534;">Vérifié</span>'
+                    : '<span style="display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; background:#fee2e2; color:#991b1b;">Non vérifié</span>';
+                },
+              },
+              {
                 title: "Téléphone",
                 data: "phone",
                 render: function (data) {
@@ -333,6 +343,7 @@ const UserVerification = () => {
                 <th>ID</th>
                 <th>Nom</th>
                 <th>Email</th>
+                <th>Email vérifié</th>
                 <th>Téléphone</th>
                 <th>Rôle</th>
                 <th>Date d'enregistrement</th>

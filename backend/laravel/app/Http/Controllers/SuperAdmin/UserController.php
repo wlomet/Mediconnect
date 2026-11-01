@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Rules\PhoneNumber;
-
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Directeur;
@@ -30,6 +29,7 @@ class UserController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'email_verified' => $user->hasVerifiedEmail(),
                     'is_active' => $user->is_active,
                     'hide' => $user->hide,
                     'created_at' => $user->created_at,
@@ -58,6 +58,7 @@ class UserController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'email_verified' => $user->hasVerifiedEmail(),
                 'phone' => $user->phone ?? null,
                 'address' => $user->address ?? null,
                 'is_active' => $user->is_active,
@@ -81,7 +82,7 @@ class UserController extends Controller
         $request->validate([
             'name' => 'nullable|string|max:255',
             'email' => 'nullable|email|unique:users,email,' . $id,
-            'phone' => ['nullable', 'string', 'max:20', new PhoneNumber],
+            'phone' => ['nullable', 'string', 'max:20', new PhoneNumber()],
             'address' => 'nullable|string|max:255',
         ]);
 
@@ -270,7 +271,7 @@ class UserController extends Controller
             'medecin' => $request->validate([
                 'hopital_id' => 'nullable|integer|exists:hopitals,id',
                 'specialite_id' => 'required|integer|exists:specialites,id',
-                'telephone' => ['required', 'string', 'max:20', new PhoneNumber],
+                'telephone' => ['required', 'string', 'max:20', new PhoneNumber()],
                 'adresse' => 'nullable|string|max:255',
                 'ville' => 'nullable|string|max:255',
                 'description' => 'nullable|string',
@@ -289,7 +290,7 @@ class UserController extends Controller
                 'name' => 'required|string|max:255',
                 'hopital_name' => 'required_without:hopital_id|nullable|string|max:255',
                 'hopital_adresse' => 'required_without:hopital_id|nullable|string|max:255',
-                'hopital_telephone' => ['required_without:hopital_id', 'nullable', 'string', 'max:20', new PhoneNumber],
+                'hopital_telephone' => ['required_without:hopital_id', 'nullable', 'string', 'max:20', new PhoneNumber()],
                 'hopital_ville' => 'required_without:hopital_id|nullable|string|max:255',
             ], [
                 'name.required' => 'Le nom du profil est requis pour assigner le rôle directeur',

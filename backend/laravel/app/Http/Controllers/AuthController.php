@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Rules\PhoneNumber;
-
 use App\Models\User;
+use App\Services\EmailVerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -12,14 +12,14 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
+    public function register(Request $request, EmailVerificationService $emailVerification)
     {
         // Validation avec messages en français
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
-            'phone' => ['nullable', 'string', 'max:15', new PhoneNumber],
+            'phone' => ['nullable', 'string', 'max:15', new PhoneNumber()],
             'role' => 'required|string|in:client,medecin,admin',
             'document_identite' => 'required_if:role,medecin|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'justificatif_validite' => 'required_if:role,medecin|file|mimes:pdf,jpg,jpeg,png|max:5120',
@@ -65,7 +65,11 @@ class AuthController extends Controller
             ]);
         }
 
+        $emailVerification->recordAttempt($user->email);
+        $emailVerification->sendActivation($user);
+
         return response()->json([
+            'message' => 'Un email d\'activation a été envoyé à ' . $user->email . '. Activez votre compte avant de vous connecter.',
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -105,21 +109,36 @@ class AuthController extends Controller
             $user = \App\Models\User::where('client_id', strtoupper($identifier))->first();
         }
 
-        // Vérifier le mot de passe et isVerified si l'utilisateur existe
+        // Vérifier le mot de passe puis les conditions de connexion si l'utilisateur existe
         if ($user && Hash::check($request->input('password'), $user->password)) {
+            if (!$user->hasVerifiedEmail() && !$user->isEmailExempt()) {
+                return response()->json([
+                    'message' => 'Votre adresse email n\'est pas encore vérifiée. Activez votre compte depuis le lien reçu par email.',
+                    'isEmailUnverified' => true,
+                    'email' => $user->email,
+                ], 403);
+            }
+
+            if ((int) $user->isVerified === -1) {
+                return response()->json([
+                    'message' => 'Votre demande d\'inscription a été refusée. Veuillez contacter le support pour plus d\'informations.',
+                    'isRejected' => true
+                ], 403);
+            }
+
+            // Avant is_active : un médecin en attente a is_active = 0
+            if ((int) $user->isVerified !== 1) {
+                return response()->json([
+                    'message' => 'Votre compte est en attente de vérification par un administrateur',
+                    'isPending' => true
+                ], 403);
+            }
+
             // Compte désactivé par un administrateur : message explicite, distinct du cas "en attente"
             if (!$user->is_active) {
                 return response()->json([
                     'message' => 'Votre compte a été désactivé par un administrateur. Veuillez contacter le support pour plus d\'informations.',
                     'isDisabled' => true
-                ], 403);
-            }
-
-            // Vérifier que l'utilisateur est vérifié
-            if (!$user->isVerified) {
-                return response()->json([
-                    'message' => 'Votre compte est en attente de vérification par un administrateur',
-                    'isPending' => true
                 ], 403);
             }
 
@@ -166,6 +185,7 @@ class AuthController extends Controller
     {
         try {
             if (Auth::check()) {
+                /** @var \App\Models\User $user */
                 $user = Auth::user();
 
                 return response()->json([

@@ -182,6 +182,14 @@ const UserDataTable = ({ users }) => {
         { data: 'name', title: 'Nom' },
         { data: 'email', title: 'Email' },
         {
+          data: 'email_verified',
+          title: 'Email vérifié',
+          orderable: false,
+          render: (value) => value
+            ? '<span style="display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; background:#dcfce7; color:#166534;">Vérifié</span>'
+            : '<span style="display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; background:#fee2e2; color:#991b1b;">Non vérifié</span>'
+        },
+        {
           data: null,
           title: 'Rôle',
           render: (data) => {
@@ -381,6 +389,7 @@ const UserDataTable = ({ users }) => {
               <th>ID</th>
               <th>Nom</th>
               <th>Email</th>
+              <th>Email vérifié</th>
               <th>Rôle</th>
               <th>Statut</th>
               <th>Visible</th>

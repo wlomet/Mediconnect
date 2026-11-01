@@ -82,6 +82,25 @@ export default function Login() {
     } catch (error) {
       setLoading(false);
 
+      // Email non vérifié : page d'activation (admin et super-admin exemptés côté backend)
+      if (error.response?.data?.isEmailUnverified) {
+        navigate("/activation-compte", { state: { email: error.response.data.email || email } });
+        return;
+      }
+
+      // Demande médecin refusée par un administrateur
+      if (error.response?.data?.isRejected) {
+        toast.error(error.response.data.message, {
+          position: "top-right",
+          autoClose: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        setErrors({ email: "", password: "Demande refusée" });
+        return;
+      }
+
       // Gérer le cas du compte désactivé par un administrateur
       if (error.response?.data?.isDisabled) {
         toast.error(

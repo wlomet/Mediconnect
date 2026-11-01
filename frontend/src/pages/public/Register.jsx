@@ -107,17 +107,9 @@ export default function Register() {
       await register(form.name, form.email, form.password, form.phone, form.role, documents);
       setSuccess(true);
 
-      // Si médecin, rediriger vers la page de vérification
-      if (form.role === "medecin") {
-        setTimeout(() => {
-          navigate("/pending-approval");
-        }, 1500);
-      } else {
-        // Sinon rediriger vers login
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
-      }
+      setTimeout(() => {
+        navigate("/activation-compte", { state: { email: form.email, medecin: form.role === "medecin" } });
+      }, 2000);
     } catch (err) {
       setLoading(false);
 
@@ -241,7 +233,7 @@ export default function Register() {
           {success && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-green-600 text-sm font-medium">
-                Inscription réussie ! Redirection...
+                Inscription réussie ! Un email d'activation vous a été envoyé. Redirection...
               </p>
             </div>
           )}

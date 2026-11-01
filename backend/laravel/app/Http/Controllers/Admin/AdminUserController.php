@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\MedecinProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class AdminUserController extends Controller
@@ -63,6 +64,7 @@ class AdminUserController extends Controller
                     'id' => (int)$user->id,
                     'name' => (string)$user->name,
                     'email' => (string)$user->email,
+                    'email_verified' => $user->hasVerifiedEmail(),
                     'phone' => (string)($user->phone ?? ''),
                     'role' => isset($user->roles[0]) ? (string)$user->roles[0]->name : 'user',
                     'created_at' => $user->created_at->format('d/m/Y H:i'),
@@ -79,7 +81,7 @@ class AdminUserController extends Controller
             ])->header('Content-Type', 'application/json; charset=utf-8');
 
         } catch (\Exception $e) {
-            \Log::error('AdminUserController getUnverifiedUsers Error: ' . $e->getMessage());
+            Log::error('AdminUserController getUnverifiedUsers Error: ' . $e->getMessage());
 
             return response()->json([
                 'draw' => intval($request->input('draw', 0)),
@@ -114,7 +116,9 @@ class AdminUserController extends Controller
                 ->paginate($perPage, ['*'], 'page', $page);
 
             return response()->json([
-                'data' => $users->items(),
+                'data' => collect($users->items())->map(fn (User $user) => array_merge($user->toArray(), [
+                    'email_verified' => $user->hasVerifiedEmail(),
+                ]))->values(),
                 'paginate' => [
                     'total' => $users->total(),
                     'per_page' => $users->perPage(),
@@ -124,7 +128,7 @@ class AdminUserController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('AdminUserController getUnverifiedUsersList Error: ' . $e->getMessage());
+            Log::error('AdminUserController getUnverifiedUsersList Error: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erreur lors de la récupération des utilisateurs',
                 'error' => $e->getMessage()
@@ -148,8 +152,8 @@ class AdminUserController extends Controller
 
             DB::beginTransaction();
 
-            // Mettre à jour isVerified
-            $user->update(['isVerified' => 1]);
+            // Valider le compte : isVerified et is_active (connexion possible)
+            $user->update(['isVerified' => 1, 'is_active' => 1]);
 
             // Assigner automatiquement le rôle "medecin" à l'utilisateur
             $user->assignRole('medecin');
@@ -179,7 +183,7 @@ class AdminUserController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('AdminUserController verifyUser Error: ' . $e->getMessage());
+            Log::error('AdminUserController verifyUser Error: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Utilisateur non trouvé',
                 'error' => $e->getMessage()
@@ -201,9 +205,12 @@ class AdminUserController extends Controller
         $user = User::findOrFail($id);
         $path = $user->{$column};
 
-        abort_unless($path && Storage::disk('local')->exists($path), 404);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('local');
 
-        return Storage::disk('local')->response($path);
+        abort_unless($path && $disk->exists($path), 404);
+
+        return $disk->response($path);
     }
 
     /**
@@ -234,7 +241,7 @@ class AdminUserController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
-            \Log::error('AdminUserController rejectUser Error: ' . $e->getMessage());
+            Log::error('AdminUserController rejectUser Error: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Utilisateur non trouvé',
                 'error' => $e->getMessage()

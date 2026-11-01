@@ -10,6 +10,8 @@ import Register from "./pages/public/Register";
 import DirectorRequest from "./pages/public/DirectorRequest";
 import ForgotPassword from "./pages/public/ForgotPassword";
 import ResetPassword from "./pages/public/ResetPassword";
+import ActivationRequise from "./pages/public/ActivationRequise";
+import VerifyEmail from "./pages/public/VerifyEmail";
 import Dashboard from "./pages/Dashboard";
 import MedecinProfile from "./pages/medecin/profile/MedecinProfile";
 import PlanningMedecin from "./pages/medecin/planning/PlanningMedecin";
@@ -65,6 +67,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/login" element={<Login />} />
         <Route path="/mot-de-passe-oublie" element={<ForgotPassword />} />
         <Route path="/reinitialiser-mot-de-passe" element={<ResetPassword />} />
+        <Route path="/activation-compte" element={<ActivationRequise />} />
+        <Route path="/verifier-email" element={<VerifyEmail />} />
         <Route path="/register" element={<Register />} />
         <Route path="/pending-approval" element={<PendingApproval />} />
         <Route path="/demande-directeur" element={<DirectorRequest />} />
