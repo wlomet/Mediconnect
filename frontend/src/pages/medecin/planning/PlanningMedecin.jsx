@@ -21,6 +21,12 @@ import {
 } from "../../../utils/dateHelpers";
 import { telechargerCsv } from "../../../utils/csvExport";
 
+const couleurRendezVous = (statut) => {
+  if (statut === "confirmé") return { backgroundColor: "#10b981", borderColor: "#059669" };
+  if (statut === "terminé") return { backgroundColor: "#2054bd", borderColor: "#2054bd" };
+  return { backgroundColor: "#f59e0b", borderColor: "#d97706" };
+};
+
 const buildEvents = (horaires, indisponibilitesRaw, range, rendezvousRaw = []) => {
   if (!range) {
     return [];
@@ -29,8 +35,7 @@ const buildEvents = (horaires, indisponibilitesRaw, range, rendezvousRaw = []) =
   const rendezvousEvents = rendezvousRaw
     .filter((rdv) => rdv.statut !== "annulé")
     .map((rdv) => {
-      const backgroundColor = rdv.statut === "confirmé" ? "#10b981" : "#f59e0b";
-      const borderColor = rdv.statut === "confirmé" ? "#059669" : "#d97706";
+      const { backgroundColor, borderColor } = couleurRendezVous(rdv.statut);
       return {
         id: `rdv-${rdv.id}`,
         title: rdv.patient?.name || "RDV",

@@ -136,6 +136,17 @@
   opacity: 0.8;
 }
 
+/* Rendez-vous terminé (gris) */
+.container :global(.fc-event[style*="background-color: rgb(107, 114, 128)"]) {
+  background-color: #6b7280 !important;
+  border-color: #4b5563 !important;
+  cursor: pointer;
+}
+
+.container :global(.fc-event[style*="background-color: rgb(107, 114, 128)"]:hover) {
+  opacity: 0.8;
+}
+
 /* Aujourd'hui */
 .container :global(.fc .fc-day-today) {
   background-color: #f0f9ff !important;

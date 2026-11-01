@@ -76,7 +76,7 @@ class RendezVousController extends Controller
     public function destroy($id)
     {
         $rendezVous = RendezVous::findOrFail($id);
-        $rendezVous->delete();
+        $rendezVous->supprimer();
 
         return response()->json([
             'message' => 'Rendez-vous supprimé avec succès'
