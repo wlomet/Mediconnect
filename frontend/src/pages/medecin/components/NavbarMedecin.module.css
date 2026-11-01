@@ -95,6 +95,11 @@
   color: #d1fae5;
 }
 
+.navLinkActive {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
 .userInfo {
   display: flex;
   align-items: center;

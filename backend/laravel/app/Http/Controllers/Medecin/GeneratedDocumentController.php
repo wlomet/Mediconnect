@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Medecin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Consultation;
 use App\Models\GeneratedDocument;
 use App\Models\PdfTemplate;
 use App\Models\RendezVous;
@@ -21,8 +22,9 @@ class GeneratedDocumentController extends Controller
 
         $documents = GeneratedDocument::where('medecin_profile_id', $profile->id)
             ->when($request->filled('rendez_vous_id'), fn ($query) => $query->where('rendez_vous_id', $request->integer('rendez_vous_id')))
+            ->when($request->filled('consultation_id'), fn ($query) => $query->where('consultation_id', $request->integer('consultation_id')))
             ->latest()
-            ->get(['id', 'rendez_vous_id', 'pdf_template_id', 'type', 'titre', 'taille', 'created_at', 'updated_at']);
+            ->get(['id', 'rendez_vous_id', 'consultation_id', 'pdf_template_id', 'type', 'titre', 'taille', 'created_at', 'updated_at']);
 
         return response()->json(['documents' => $documents]);
     }
@@ -42,7 +44,21 @@ class GeneratedDocumentController extends Controller
             ],
             'pdf_template_id' => 'nullable|integer',
             'donnees' => 'nullable|json',
+            'consultation_id' => [
+                'nullable',
+                Rule::exists('consultations', 'id')
+                    ->where('medecin_profile_id', $profile->id)
+                    ->where('statut', Consultation::EN_COURS),
+            ],
         ]);
+
+        $consultation = isset($validated['consultation_id']) ? Consultation::find($validated['consultation_id']) : null;
+
+        if ($consultation && isset($validated['rendez_vous_id']) && (int) $validated['rendez_vous_id'] !== $consultation->rendez_vous_id) {
+            throw ValidationException::withMessages(['rendez_vous_id' => 'Le rendez-vous ne correspond pas à la consultation.']);
+        }
+
+        $rendezVousId = $validated['rendez_vous_id'] ?? $consultation?->rendez_vous_id;
 
         if (!empty($validated['pdf_template_id'])
             && !PdfScope::applyVisible(PdfTemplate::query(), $request->user())->whereKey($validated['pdf_template_id'])->exists()) {
@@ -54,7 +70,8 @@ class GeneratedDocumentController extends Controller
 
         $document = GeneratedDocument::create([
             'medecin_profile_id' => $profile->id,
-            'rendez_vous_id' => $validated['rendez_vous_id'] ?? null,
+            'rendez_vous_id' => $rendezVousId,
+            'consultation_id' => $consultation?->id,
             'pdf_template_id' => $validated['pdf_template_id'] ?? null,
             'type' => $validated['type'],
             'titre' => $validated['titre'],

@@ -14,6 +14,7 @@ class GeneratedDocument extends Model
     protected $fillable = [
         'medecin_profile_id',
         'rendez_vous_id',
+        'consultation_id',
         'pdf_template_id',
         'type',
         'titre',
@@ -39,5 +40,10 @@ class GeneratedDocument extends Model
     public function template()
     {
         return $this->belongsTo(PdfTemplate::class, 'pdf_template_id');
+    }
+
+    public function consultation()
+    {
+        return $this->belongsTo(Consultation::class, 'consultation_id');
     }
 }

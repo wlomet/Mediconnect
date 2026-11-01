@@ -25,6 +25,7 @@ use App\Http\Controllers\Medecin\PdfImageController;
 use App\Http\Controllers\Medecin\PdfTemplateController;
 use App\Http\Controllers\Medecin\PdfDataController;
 use App\Http\Controllers\Medecin\GeneratedDocumentController;
+use App\Http\Controllers\Medecin\ConsultationController;
 use App\Http\Controllers\Secretaire\RendezVousController as SecretaireRendezVousController;
 use App\Http\Controllers\Secretaire\LiaisonController as SecretaireLiaisonController;
 use App\Http\Controllers\Secretaire\DashboardController as SecretaireDashboardController;
@@ -146,8 +147,23 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('/rendez-vous/month', [MedecinRendezVousController::class, 'getThisMonth']);
         Route::get('/rendez-vous/{id}', [MedecinRendezVousController::class, 'show']);
         Route::put('/rendez-vous/{id}', [MedecinRendezVousController::class, 'update']);
-        Route::post('/rendez-vous', [ClientRendezVousController::class, 'store'])->middleware('medecin.bookable');
+        Route::post('/rendez-vous', [MedecinRendezVousController::class, 'store'])->middleware('medecin.bookable');
         Route::delete('/rendez-vous/{id}', [MedecinRendezVousController::class, 'destroy']);
+
+        // Consultations
+        Route::prefix('consultations')->name('consultations.')->group(function () {
+            Route::get('/', [ConsultationController::class, 'index']);
+            Route::get('/en-cours', [ConsultationController::class, 'enCours']);
+            Route::get('/rendez-vous-disponibles', [ConsultationController::class, 'rendezVousDisponibles']);
+            Route::post('/', [ConsultationController::class, 'store']);
+            Route::get('/{id}', [ConsultationController::class, 'show']);
+            Route::put('/{id}/heure-debut', [ConsultationController::class, 'updateHeureDebut']);
+            Route::put('/{id}/ordonnance', [ConsultationController::class, 'saveOrdonnance']);
+            Route::put('/{id}/facture', [ConsultationController::class, 'saveFacture']);
+            Route::post('/{id}/abandon', [ConsultationController::class, 'abandon']);
+            Route::post('/{id}/reprendre', [ConsultationController::class, 'reprendre']);
+            Route::post('/{id}/terminer', [ConsultationController::class, 'terminer']);
+        });
 
 
 

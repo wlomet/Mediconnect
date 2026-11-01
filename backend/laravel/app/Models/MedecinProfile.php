@@ -54,6 +54,11 @@ class MedecinProfile extends Model
         return $this->hasMany(RendezVous::class, 'medecin_id');
     }
 
+    public function consultations()
+    {
+        return $this->hasMany(Consultation::class, 'medecin_profile_id');
+    }
+
     // Helper pour obtenir le nom de la spécialité
     public function getSpecialiteNomAttribute()
     {

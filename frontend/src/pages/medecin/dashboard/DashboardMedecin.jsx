@@ -5,6 +5,7 @@ import styles from "./DashboardMedecin.module.css";
 import MedecinLiaisons from "../liaisons/MedecinLiaisons";
 import ModalNouveauRendezVous from "./modals/ModalNouveauRendezVous";
 import GenerateDocumentModal from "../pdf-templates/GenerateDocumentModal";
+import ModalDemarrerConsultation from "../consultations/ModalDemarrerConsultation";
 import api from "../../../api/axios";
 
 const DashboardMedecin = () => {
@@ -18,6 +19,7 @@ const DashboardMedecin = () => {
   const [error, setError] = useState(null);
   const [showNewRdvModal, setShowNewRdvModal] = useState(false);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [showConsultationModal, setShowConsultationModal] = useState(false);
   const [medecinInfo, setMedecinInfo] = useState(null);
   const [agendaPeriod, setAgendaPeriod] = useState("today");
   const [weekAppointments, setWeekAppointments] = useState([]);
@@ -225,6 +227,12 @@ const DashboardMedecin = () => {
                   <div className={styles.actionsGrid}>
                     <button
                       className={`${styles.actionButton} ${styles.actionButtonGreen}`}
+                      onClick={() => setShowConsultationModal(true)}
+                    >
+                      Démarrer une consultation
+                    </button>
+                    <button
+                      className={`${styles.actionButton} ${styles.actionButtonGreen}`}
                       onClick={() => setShowNewRdvModal(true)}
                     >
                       Nouveau Rendez-vous
@@ -260,6 +268,10 @@ const DashboardMedecin = () => {
 
       {showDocumentModal && (
         <GenerateDocumentModal onClose={() => setShowDocumentModal(false)} />
+      )}
+
+      {showConsultationModal && (
+        <ModalDemarrerConsultation onClose={() => setShowConsultationModal(false)} />
       )}
     </div>
   );

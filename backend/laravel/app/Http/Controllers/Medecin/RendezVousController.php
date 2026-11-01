@@ -7,6 +7,10 @@ use App\Rules\PhoneNumber;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\RendezVous;
+use App\Models\User;
+use App\Services\RendezVousBookingService;
+use App\Services\RendezVousStatutGuard;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
 class RendezVousController extends Controller
@@ -143,7 +147,7 @@ class RendezVousController extends Controller
         }
 
         $validated = $request->validate([
-            'statut' => 'sometimes|string',
+            'statut' => ['sometimes', Rule::in(RendezVous::STATUTS)],
             'notes' => 'sometimes|nullable|string|max:1000',
             'email' => 'sometimes|email|max:255',
             'name' => 'sometimes|string|max:255',
@@ -174,6 +178,7 @@ class RendezVousController extends Controller
             }
         }
 
+        RendezVousStatutGuard::verifier($rendezVous, $validated['statut'] ?? null);
         $rendezVous->update($validated);
 
         return response()->json([
@@ -208,26 +213,29 @@ class RendezVousController extends Controller
                 'date_fin' => $rendezVous->date_fin,
                 'motif' => $rendezVous->motif,
                 'statut' => $rendezVous->statut,
+                'consultation_statut' => $rendezVous->consultation?->statut,
                 'notes' => $rendezVous->notes
             ]
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, RendezVousBookingService $bookings)
     {
+        $profil = $request->user()->medecinProfile;
+        abort_unless($profil, 403);
+
         $validated = $request->validate([
-            'email' => 'nullable|email',
-            'medecin_id' => 'required|integer|exists:medecin_profiles,id',
-            'date_debut' => 'required|date',
-            'date_fin' => 'required|date',
-            'motif' => 'nullable|string|max:500',
-            'notes' => 'nullable|string|max:1000',
+            'medecin_id' => ['required', 'integer', Rule::in([$profil->id])],
+            'email' => 'nullable|email|max:255',
             'name' => 'required|string|max:255',
             'phone' => ['nullable', 'string', 'max:20', new PhoneNumber],
-            'statut' => 'required'
+            'motif' => 'nullable|string|max:500',
+            'notes' => 'nullable|string|max:1000',
+            'date_debut' => 'required|date',
+            'date_fin' => 'required|date|after:date_debut',
+            'statut' => ['required', Rule::in(['en_attente', 'confirmé'])],
         ]);
 
-        // Vérifier qu'au moins l'email ou le téléphone est fourni
         if (empty($validated['email']) && empty($validated['phone'])) {
             return response()->json(
                 ['message' => 'Vous devez fournir au moins un email ou un téléphone'],
@@ -235,29 +243,26 @@ class RendezVousController extends Controller
             );
         }
 
-        // Chercher l'utilisateur par email
-        if (!empty($validated['email'])) {
-            $user = User::where('email', $validated['email'])->first();
+        $rendezVous = $bookings->createByMedecin($profil, $request->user(), $validated);
 
-            if ($user) {
-                $validated['client_id'] = $user->id;
-            }
-        }
-
-        // Ajouter automatiquement l'author_id (l'utilisateur connecté)
-        $validated['author_id'] = auth()->user()->id;
-
-        $rendezVous = RendezVous::create($validated);
         return response()->json([
             'message' => 'Rendez-vous créé avec succès',
             'rendez_vous' => $rendezVous
         ], 201);
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        $profil = $request->user()->medecinProfile;
+        abort_unless($profil, 403);
+
         $rendezVous = RendezVous::findOrFail($id);
-        $rendezVous->delete();
+
+        if ($rendezVous->medecin_id !== $profil->id) {
+            return response()->json(['message' => 'Non autorisé'], 403);
+        }
+
+        $rendezVous->supprimer();
 
         return response()->json([
             'message' => 'Rendez-vous supprimé avec succès'

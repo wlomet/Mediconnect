@@ -1,12 +1,14 @@
 import { useContext, useState } from "react";
 import { AuthContext } from "../../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import styles from "./NavbarMedecin.module.css";
 
 const NavbarMedecin = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const consultationsActive = location.pathname.startsWith("/medecin/consultations");
 
   const handleLogout = async () => {
     try {
@@ -69,8 +71,8 @@ const NavbarMedecin = () => {
               Planning
             </a>
             <a
-              href="#consultations"
-              className={styles.navLink}
+              href="/medecin/consultations"
+              className={`${styles.navLink} ${consultationsActive ? styles.navLinkActive : ""}`}
               onClick={() => setMenuOpen(false)}
             >
               Consultations

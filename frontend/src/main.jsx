@@ -40,6 +40,9 @@ import PendingApproval from "./pages/public/PendingApproval";
 import PdfTemplatesList from "./pages/medecin/pdf-templates/PdfTemplatesList";
 import PdfLogosPage from "./pages/medecin/pdf-templates/PdfLogosPage";
 import PdfTemplateEditor from "./pages/medecin/pdf-templates/PdfTemplateEditor";
+import ConsultationPopup from "./pages/medecin/consultations/ConsultationPopup";
+import ConsultationsListe from "./pages/medecin/consultations/ConsultationsListe";
+import ConsultationPage from "./pages/medecin/consultations/ConsultationPage";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <AuthProvider>
@@ -55,6 +58,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       pauseOnHover
     />
     <BrowserRouter>
+      <ConsultationPopup />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<SearchMedecin />} />
@@ -75,6 +79,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/medecin/profile" element={<MedecinProfile />} />
         <Route path="/medecin/planning" element={<PlanningMedecin />} />
         <Route path="/medecin/dashboard" element={<DashboardMedecin />} />
+        <Route path="/medecin/consultations" element={<ConsultationsListe />} />
+        <Route path="/medecin/consultations/:id" element={<ConsultationPage />} />
         <Route path="/medecin/pdf-templates" element={<PdfTemplatesList />} />
         <Route path="/medecin/pdf-templates/logos" element={<PdfLogosPage />} />
         <Route path="/medecin/pdf-templates/:id" element={<PdfTemplateEditor />} />

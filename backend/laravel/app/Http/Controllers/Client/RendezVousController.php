@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\RendezVous;
 use App\Models\User;
+use App\Services\RendezVousStatutGuard;
 use Illuminate\Support\Facades\Log;
 
 class RendezVousController extends Controller
@@ -155,6 +156,7 @@ class RendezVousController extends Controller
             return response()->json(['message' => 'Non autorisé'], 403);
         }
 
+        RendezVousStatutGuard::verifier($rendezVous, 'annulé');
         $rendezVous->update(['statut' => 'annulé']);
 
         return response()->json([

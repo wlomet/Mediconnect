@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Models\GestionnaireMedecin;
 use App\Models\Gestionnaire;
 use Carbon\Carbon;
+use App\Services\RendezVousStatutGuard;
+use Illuminate\Validation\Rule;
 
 class RendezVousController extends Controller
 {
@@ -99,6 +101,7 @@ class RendezVousController extends Controller
                 'motif' => $rendezVous->motif,
                 'notes' => $rendezVous->notes,
                 'statut' => $rendezVous->statut,
+                'consultation_statut' => $rendezVous->consultation?->statut,
             ]
         ]);
     }
@@ -185,7 +188,7 @@ class RendezVousController extends Controller
             'notes' => 'nullable|string|max:1000',
             'name' => 'required|string|max:255',
             'phone' => ['nullable', 'string', 'max:20', new PhoneNumber],
-            'statut' => 'sometimes|string'
+            'statut' => ['sometimes', Rule::in(RendezVous::STATUTS)]
         ]);
 
         // Vérifier qu'au moins l'email ou le téléphone est fourni
@@ -207,6 +210,7 @@ class RendezVousController extends Controller
             }
         }
 
+        RendezVousStatutGuard::verifier($rendezVous, $validated['statut'] ?? null);
         $rendezVous->update($validated);
 
         return response()->json([
@@ -366,6 +370,7 @@ class RendezVousController extends Controller
             return response()->json(['message' => 'Accès non autorisé à ce rendez-vous'], 403);
         }
 
+        RendezVousStatutGuard::verifier($rendezVous, 'annulé');
         $rendezVous->update(['statut' => 'annulé']);
 
         return response()->json([
@@ -394,7 +399,7 @@ class RendezVousController extends Controller
             return response()->json(['message' => 'Accès non autorisé à ce rendez-vous'], 403);
         }
 
-        $rendezVous->delete();
+        $rendezVous->supprimer();
 
         return response()->json([
             'message' => 'Rendez-vous supprimé avec succès'

@@ -9,6 +9,7 @@ import styles from "./ModalUpdateRendezVous.module.css";
 const ModalUpdateRendezVous = ({ rendezVous, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
+  const [consultationStatut, setConsultationStatut] = useState(null);
   const [formData, setFormData] = useState({
     email: "",
     name: "",
@@ -25,6 +26,7 @@ const ModalUpdateRendezVous = ({ rendezVous, onClose, onSuccess }) => {
         setDataLoading(true);
         const response = await axiosInstance.get(`/secretaire/rendez-vous/${rendezVous.id}`);
         const rdv = response.data.rendez_vous;
+        setConsultationStatut(rdv.consultation_statut ?? null);
         setFormData({
           email: rdv.email || "",
           name: rdv.name || "",
@@ -274,11 +276,20 @@ const ModalUpdateRendezVous = ({ rendezVous, onClose, onSuccess }) => {
                   value={formData.statut}
                   onChange={handleInputChange}
                   className={styles.select}
+                  disabled={formData.statut === "terminé"}
                 >
                   <option value="en_attente">En attente</option>
                   <option value="confirmé">Confirmé</option>
-                  <option value="annulé">Annulé</option>
+                  <option value="annulé" disabled={consultationStatut === "en_cours"}>
+                    Annulé
+                  </option>
+                  {formData.statut === "terminé" && <option value="terminé">Terminé (fin de consultation)</option>}
                 </select>
+                {consultationStatut === "en_cours" && (
+                  <small style={{ color: "#666", marginTop: "4px", display: "block" }}>
+                    Consultation en cours : annulation impossible.
+                  </small>
+                )}
               </div>
 
               <div className={styles.formGroup}>
@@ -328,7 +339,8 @@ const ModalUpdateRendezVous = ({ rendezVous, onClose, onSuccess }) => {
                   type="button"
                   onClick={handleDelete}
                   className={styles.deleteButton}
-                  disabled={loading}
+                  disabled={loading || consultationStatut !== null}
+                  title={consultationStatut ? "Consultation liée : suppression impossible" : undefined}
                 >
                   <Trash2 size={16} />
                   Supprimer
