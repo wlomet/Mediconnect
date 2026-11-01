@@ -5,6 +5,7 @@ import api from "../../../api/axios";
 import { clientDossierApi } from "../../../api/clientDossierApi";
 import styles from "./DashboardUser.module.css";
 import SearchMedecin from "../../public/rdv/SearchMedecin";
+import ModalDetailRendezVous from "../mes_RDV/ModalDetailRendezVous";
 import { toast } from "react-toastify";
 
 const DashboardUser = () => {
@@ -14,6 +15,8 @@ const DashboardUser = () => {
   const [loading, setLoading] = useState(true);
   const [documentsNonVus, setDocumentsNonVus] = useState(null);
   const [erreurDocuments, setErreurDocuments] = useState(false);
+  const [rdvDetail, setRdvDetail] = useState(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
     const fetchNextAppointment = async () => {
@@ -81,12 +84,17 @@ const DashboardUser = () => {
     });
   };
 
-  const handleDevelopment = (e) => {
-    e.preventDefault();
-    toast.warning("En développement", {
-      position: "top-right",
-      autoClose: 3000,
-    });
+  const ouvrirDetailRendezVous = async (rendezVousId) => {
+    setLoadingDetail(true);
+    try {
+      const response = await api.get(`/client/rendez-vous/${rendezVousId}`);
+      setRdvDetail(response.data.rendezVous);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des détails:", error);
+      toast.error("Impossible de charger les détails du rendez-vous");
+    } finally {
+      setLoadingDetail(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -196,6 +204,14 @@ const DashboardUser = () => {
                   {nextAppointment.motif && (
                     <p className={styles.appointmentReason}>{nextAppointment.motif}</p>
                   )}
+                  <button
+                    type="button"
+                    className={styles.detailButton}
+                    onClick={() => ouvrirDetailRendezVous(nextAppointment.id)}
+                    disabled={loadingDetail}
+                  >
+                    {loadingDetail ? "Chargement..." : "Détail"}
+                  </button>
                 </div>
               ) : (
                 <p className={`${styles.cardText} ${styles.cardTextBlue}`}>
@@ -227,12 +243,6 @@ const DashboardUser = () => {
               >
                 Mes Consultations
               </button>
-              <button
-                className={`${styles.actionButton} ${styles.actionButtonPurple}`}
-                onClick={handleDevelopment}
-              >
-                Contacter le Support
-              </button>
             </div>
             <div>
               <SearchMedecin />
@@ -240,6 +250,10 @@ const DashboardUser = () => {
           </div>
         </div>
       </main>
+
+      {rdvDetail && (
+        <ModalDetailRendezVous appointment={rdvDetail} onClose={() => setRdvDetail(null)} />
+      )}
     </div>
   );
 };

@@ -1,5 +1,123 @@
-import { X, Calendar, Clock, User, Stethoscope, MessageSquare } from "lucide-react";
+import { X, Calendar, Clock, User, Stethoscope, MessageSquare, ClipboardList, Download } from "lucide-react";
 import styles from "./ModalDetailRendezVous.module.css";
+import {
+  STATUT_CONSULTATION_LABELS,
+  STATUT_RENDEZ_VOUS_LABELS,
+  TYPE_DOCUMENT_LABELS,
+  formatDateHeure,
+  formatMontant,
+  telechargerDocument,
+} from "../utils/clientDossier";
+
+const CLASSES_STATUT_RDV = {
+  en_attente: styles.statusPending,
+  confirmé: styles.statusConfirmed,
+  annulé: styles.statusCancelled,
+  terminé: styles.statusCompleted,
+};
+
+const CLASSES_STATUT_CONSULTATION = {
+  en_cours: styles.statusPending,
+  terminee: styles.statusConfirmed,
+  abandonnee: styles.statusCancelled,
+};
+
+const SectionConsultation = ({ consultation }) => (
+  <div className={styles.consultationSection}>
+    <div className={styles.consultationHeader}>
+      <h3 className={styles.consultationTitle}>
+        <ClipboardList className={styles.labelIcon} />
+        Consultation
+      </h3>
+      <span
+        className={`${styles.badge} ${CLASSES_STATUT_CONSULTATION[consultation.statut] ?? styles.statusDefault}`}
+      >
+        {STATUT_CONSULTATION_LABELS[consultation.statut] ?? consultation.statut}
+      </span>
+    </div>
+
+    <dl className={styles.consultationInfos}>
+      <dt>Début</dt>
+      <dd>{formatDateHeure(consultation.heure_debut_reelle)}</dd>
+      <dt>Fin</dt>
+      <dd>{formatDateHeure(consultation.ended_at)}</dd>
+      {consultation.medecin?.hopital && (
+        <>
+          <dt>Établissement</dt>
+          <dd>
+            {consultation.medecin.hopital.name}
+            {consultation.medecin.hopital.adresse && `, ${consultation.medecin.hopital.adresse}`}
+          </dd>
+        </>
+      )}
+    </dl>
+
+    <div className={styles.consultationBlock}>
+      <h4 className={styles.blockTitle}>Ordonnance</h4>
+      {consultation.ordonnance_texte ? (
+        <p className={styles.texte}>{consultation.ordonnance_texte}</p>
+      ) : (
+        <p className={styles.muted}>Aucune ordonnance rédigée.</p>
+      )}
+    </div>
+
+    <div className={styles.consultationBlock}>
+      <h4 className={styles.blockTitle}>Facture</h4>
+      {consultation.facture ? (
+        <>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Libellé</th>
+                <th>Qté</th>
+                <th>Prix unitaire</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {consultation.facture.lignes.map((ligne, index) => (
+                <tr key={`${ligne.libelle}-${index}`}>
+                  <td>{ligne.libelle}</td>
+                  <td>{Number(ligne.quantite)}</td>
+                  <td>{formatMontant(ligne.prix_unitaire)}</td>
+                  <td>{formatMontant(ligne.total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className={styles.total}>Total : {formatMontant(consultation.facture.total)}</p>
+        </>
+      ) : (
+        <p className={styles.muted}>Aucune facture.</p>
+      )}
+    </div>
+
+    <div className={styles.consultationBlock}>
+      <h4 className={styles.blockTitle}>Documents</h4>
+      {consultation.documents.length === 0 ? (
+        <p className={styles.muted}>Aucun document archivé.</p>
+      ) : (
+        <ul className={styles.documentList}>
+          {consultation.documents.map((doc) => (
+            <li key={doc.id} className={styles.documentItem}>
+              <span>
+                {TYPE_DOCUMENT_LABELS[doc.type] ?? doc.type} - {doc.titre}
+              </span>
+              <button
+                type="button"
+                className={styles.downloadButton}
+                onClick={() => telechargerDocument(doc)}
+              >
+                <Download size={14} />
+                Télécharger
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  </div>
+);
 
 const ModalDetailRendezVous = ({ appointment, onClose, loading }) => {
   const formatDate = (dateString) => {
@@ -20,17 +138,11 @@ const ModalDetailRendezVous = ({ appointment, onClose, loading }) => {
     });
   };
 
-  const getStatusBadge = (statut) => {
-    const statusConfig = {
-      confirmed: { label: "Confirmé", className: styles.statusConfirmed },
-      pending: { label: "En attente", className: styles.statusPending },
-      en_attente: { label: "En attente", className: styles.statusPending },
-      cancelled: { label: "Annulé", className: styles.statusCancelled },
-      completed: { label: "Complété", className: styles.statusCompleted },
-    };
-    const config = statusConfig[statut] || { label: statut, className: styles.statusDefault };
-    return <span className={`${styles.badge} ${config.className}`}>{config.label}</span>;
-  };
+  const getStatusBadge = (statut) => (
+    <span className={`${styles.badge} ${CLASSES_STATUT_RDV[statut] ?? styles.statusDefault}`}>
+      {STATUT_RENDEZ_VOUS_LABELS[statut] ?? statut}
+    </span>
+  );
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
@@ -117,6 +229,8 @@ const ModalDetailRendezVous = ({ appointment, onClose, loading }) => {
                 </div>
               )}
             </div>
+
+            {appointment.consultation && <SectionConsultation consultation={appointment.consultation} />}
 
             {/* Actions */}
             <div className={styles.modalActions}>

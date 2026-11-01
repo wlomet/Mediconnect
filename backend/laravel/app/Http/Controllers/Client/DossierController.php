@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
 use App\Models\Consultation;
-use App\Models\ConsultationFactureLigne;
 use App\Models\GeneratedDocument;
+use App\Services\ClientConsultationFormatter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +13,10 @@ use Illuminate\Support\Facades\Storage;
 
 class DossierController extends Controller
 {
+    public function __construct(private ClientConsultationFormatter $formatter)
+    {
+    }
+
     // Consultations des rendez-vous du patient, avec rendez-vous, facture et documents liés.
     public function consultations(Request $request)
     {
@@ -27,7 +31,7 @@ class DossierController extends Controller
             ])
             ->orderByDesc('started_at')
             ->get()
-            ->map(fn (Consultation $c) => $this->formaterConsultation($c))
+            ->map(fn (Consultation $c) => $this->formatter->formater($c))
             ->values();
 
         return response()->json(['consultations' => $consultations]);
@@ -40,7 +44,7 @@ class DossierController extends Controller
             ->with(['medecin.user', 'rendezVous'])
             ->latest()
             ->get()
-            ->map(fn (GeneratedDocument $d) => $this->formaterDocument($d) + [
+            ->map(fn (GeneratedDocument $d) => $this->formatter->formaterDocument($d) + [
                 'rendez_vous' => [
                     'id' => $d->rendezVous->id,
                     'date_debut' => $d->rendezVous->date_debut,
@@ -102,65 +106,9 @@ class DossierController extends Controller
         return response()->noContent();
     }
 
-    private function formaterConsultation(Consultation $c): array
-    {
-        $rdv = $c->rendezVous;
-        $medecin = $rdv->medecin;
-        $facture = $c->facture;
-
-        return [
-            'id' => $c->id,
-            'statut' => $c->statut,
-            'started_at' => $c->started_at,
-            'heure_debut_reelle' => $c->heure_debut_reelle,
-            'ended_at' => $c->ended_at,
-            'ordonnance_texte' => $c->ordonnance_texte,
-            'rendez_vous' => [
-                'id' => $rdv->id,
-                'date_debut' => $rdv->date_debut,
-                'date_fin' => $rdv->date_fin,
-                'motif' => $rdv->motif,
-                'statut' => $rdv->statut,
-                'notes' => $rdv->notes,
-            ],
-            'medecin' => $medecin ? [
-                'name' => $medecin->user?->name,
-                'specialite' => $medecin->specialite?->nom,
-                'hopital' => $medecin->hopital ? [
-                    'name' => $medecin->hopital->name,
-                    'adresse' => $medecin->hopital->adresse,
-                    'telephone' => $medecin->hopital->telephone,
-                ] : null,
-            ] : null,
-            'facture' => $facture ? [
-                'total' => $facture->total,
-                'lignes' => $facture->lignes->map(fn (ConsultationFactureLigne $l) => [
-                    'libelle' => $l->libelle,
-                    'quantite' => $l->quantite,
-                    'prix_unitaire' => $l->prix_unitaire,
-                    'total' => $l->total,
-                ])->values(),
-            ] : null,
-            // Le premier document de chaque type est le plus récemment archivé.
-            'documents' => $rdv->documents->sortByDesc('id')->map(fn (GeneratedDocument $d) => $this->formaterDocument($d))->values(),
-        ];
-    }
-
     private function documentsDuClient(int $userId): Builder
     {
         return GeneratedDocument::query()
             ->whereHas('rendezVous', fn ($q) => $q->duClient($userId));
-    }
-
-    private function formaterDocument(GeneratedDocument $d): array
-    {
-        return [
-            'id' => $d->id,
-            'type' => $d->type,
-            'titre' => $d->titre,
-            'taille' => $d->taille,
-            'created_at' => $d->created_at,
-            'medecin' => $d->medecin?->user?->name,
-        ];
     }
 }

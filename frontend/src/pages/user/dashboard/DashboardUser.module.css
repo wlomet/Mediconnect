@@ -248,6 +248,27 @@
   opacity: 0.9;
 }
 
+.detailButton {
+  margin-top: 0.5rem;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.9rem;
+  border-radius: 0.25rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.detailButton:hover {
+  background-color: #1d4ed8;
+}
+
+.detailButton:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .navLinks {

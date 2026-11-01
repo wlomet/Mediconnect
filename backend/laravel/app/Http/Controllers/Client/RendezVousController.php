@@ -7,11 +7,16 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\RendezVous;
 use App\Models\User;
+use App\Services\ClientConsultationFormatter;
 use App\Services\RendezVousStatutGuard;
 use Illuminate\Support\Facades\Log;
 
 class RendezVousController extends Controller
 {
+    public function __construct(private ClientConsultationFormatter $formatter)
+    {
+    }
+
     /**
      * Client crée un rendez-vous
      */
@@ -112,6 +117,7 @@ class RendezVousController extends Controller
 
         // Charger les relations
         $rendezVous->load(['medecin', 'medecin.hopital']);
+        $consultation = $this->consultationDuPatient($request, $rendezVous);
 
         return response()->json([
             'rendezVous' => [
@@ -136,7 +142,8 @@ class RendezVousController extends Controller
                         'adresse' => $rendezVous->medecin->hopital->adresse,
                         'telephone' => $rendezVous->medecin->hopital->telephone,
                     ] : null,
-                ] : null
+                ] : null,
+                'consultation' => $consultation,
             ]
         ]);
     }
@@ -161,5 +168,25 @@ class RendezVousController extends Controller
             'message' => 'Rendez-vous annulé avec succès',
             'rendez_vous' => $rendezVous
         ], 200);
+    }
+
+    // Consultation liée au rendez-vous, réservée au patient qui l'a pris.
+    private function consultationDuPatient(Request $request, RendezVous $rendezVous): ?array
+    {
+        if (! RendezVous::duClient($request->user()->id)->whereKey($rendezVous->id)->exists()) {
+            return null;
+        }
+
+        $consultation = $rendezVous->consultation()
+            ->with([
+                'facture.lignes',
+                'rendezVous.medecin.user',
+                'rendezVous.medecin.specialite',
+                'rendezVous.medecin.hopital',
+                'rendezVous.documents.medecin.user',
+            ])
+            ->first();
+
+        return $consultation ? $this->formatter->formater($consultation) : null;
     }
 }

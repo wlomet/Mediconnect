@@ -182,6 +182,50 @@ class ClientDossierTest extends TestCase
             ->assertJsonPath('documents_non_vus', 1);
     }
 
+    public function test_rendez_vous_detail_includes_its_consultation_for_the_patient(): void
+    {
+        [, $profil] = $this->makeMedecin();
+        $client = $this->makeUserWithRole('client');
+        $rdv = $this->makeRendezVous($profil, ['client_id' => $client->id]);
+        $consultation = $this->makeConsultation($profil, $rdv, Consultation::TERMINEE);
+        $consultation->update(['ordonnance_texte' => 'Paracétamol 1g']);
+
+        $facture = ConsultationFacture::create(['consultation_id' => $consultation->id, 'total' => 21]);
+        $facture->lignes()->create([
+            'libelle' => 'Consultation',
+            'quantite' => 2,
+            'prix_unitaire' => 10.5,
+            'total' => 21,
+            'position' => 0,
+        ]);
+        $this->makeDocument($profil, $rdv, 'ordonnance', $consultation);
+
+        SessionAuth::actingAs($client);
+
+        $this->getJson("/api/client/rendez-vous/{$rdv->id}")
+            ->assertOk()
+            ->assertJsonPath('rendezVous.consultation.id', $consultation->id)
+            ->assertJsonPath('rendezVous.consultation.statut', Consultation::TERMINEE)
+            ->assertJsonPath('rendezVous.consultation.ordonnance_texte', 'Paracétamol 1g')
+            ->assertJsonPath('rendezVous.consultation.facture.total', '21.00')
+            ->assertJsonPath('rendezVous.consultation.facture.lignes.0.libelle', 'Consultation')
+            ->assertJsonCount(1, 'rendezVous.consultation.documents');
+    }
+
+    public function test_rendez_vous_detail_hides_consultation_from_other_clients(): void
+    {
+        [, $profil] = $this->makeMedecin();
+        $autreClient = $this->makeUserWithRole('client');
+        $rdv = $this->makeRendezVous($profil, ['client_id' => $autreClient->id]);
+        $this->makeConsultation($profil, $rdv, Consultation::TERMINEE);
+
+        SessionAuth::actingAs($this->makeUserWithRole('client'));
+
+        $this->getJson("/api/client/rendez-vous/{$rdv->id}")
+            ->assertOk()
+            ->assertJsonPath('rendezVous.consultation', null);
+    }
+
     public function test_medecin_cannot_access_client_dossier(): void
     {
         [$medecinUser] = $this->makeMedecin();
