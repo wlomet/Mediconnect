@@ -238,6 +238,29 @@ class ConsultationService
             ->values();
     }
 
+    // Antécédents cochés par le compte client lié au rendez-vous ; null sans compte lié.
+    public function antecedentsPatient(Consultation $consultation): ?array
+    {
+        $client = $consultation->rendezVous->client;
+
+        if (!$client) {
+            return null;
+        }
+
+        return [
+            'commentaire' => $client->antecedents_commentaire,
+            'categories' => $client->antecedentOptions()
+                ->orderBy('antecedent_options.id')
+                ->get()
+                ->groupBy('categorie')
+                ->map(fn ($items, $categorie) => [
+                    'categorie' => $categorie,
+                    'libelles' => $items->pluck('libelle')->values(),
+                ])
+                ->values(),
+        ];
+    }
+
     private function verrouiller(MedecinProfile $profil, callable $action): mixed
     {
         return DB::transaction(function () use ($profil, $action) {

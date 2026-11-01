@@ -128,6 +128,13 @@
   text-align: right;
 }
 
+.texteLibre {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #111827;
+  white-space: pre-wrap;
+}
+
 .field {
   display: flex;
   flex-direction: column;

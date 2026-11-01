@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\AntecedentOption;
 use App\Models\Consultation;
+use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -172,6 +174,42 @@ class ConsultationTest extends TestCase
         $this->getJson("/api/medecin/consultations/{$courante->id}")
             ->assertOk()
             ->assertJsonCount(2, 'historique');
+    }
+
+    public function test_show_returns_antecedents_of_the_linked_client_grouped_by_category(): void
+    {
+        [$user, $profil] = $this->makeMedecin();
+        $client = User::factory()->create(['antecedents_commentaire' => 'Allergie aux penicillines']);
+        $diabete = AntecedentOption::create([
+            'categorie' => 'Categorie test', 'code' => 'test_diabete', 'libelle' => 'Diabete', 'est_aucun' => false, 'actif' => true,
+        ]);
+        $asthme = AntecedentOption::create([
+            'categorie' => 'Categorie test', 'code' => 'test_asthme', 'libelle' => 'Asthme', 'est_aucun' => false, 'actif' => true,
+        ]);
+        AntecedentOption::create([
+            'categorie' => 'Categorie test', 'code' => 'test_non_coche', 'libelle' => 'Non coche', 'est_aucun' => false, 'actif' => true,
+        ]);
+        $client->antecedentOptions()->sync([$diabete->id, $asthme->id]);
+        $consultation = $this->makeConsultation($profil, $this->makeRendezVous($profil, ['client_id' => $client->id]));
+        Sanctum::actingAs($user);
+
+        $this->getJson("/api/medecin/consultations/{$consultation->id}")
+            ->assertOk()
+            ->assertJsonPath('antecedents.commentaire', 'Allergie aux penicillines')
+            ->assertJsonCount(1, 'antecedents.categories')
+            ->assertJsonPath('antecedents.categories.0.categorie', 'Categorie test')
+            ->assertJsonPath('antecedents.categories.0.libelles', ['Diabete', 'Asthme']);
+    }
+
+    public function test_show_has_no_antecedents_when_patient_has_no_linked_account(): void
+    {
+        [$user, $profil] = $this->makeMedecin();
+        $consultation = $this->makeConsultation($profil, $this->makeRendezVous($profil));
+        Sanctum::actingAs($user);
+
+        $this->getJson("/api/medecin/consultations/{$consultation->id}")
+            ->assertOk()
+            ->assertJsonPath('antecedents', null);
     }
 
     public function test_document_is_archived_and_linked_to_the_consultation(): void

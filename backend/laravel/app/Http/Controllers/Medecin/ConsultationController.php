@@ -159,6 +159,7 @@ class ConsultationController extends Controller
         return response()->json([
             'consultation' => $this->consultations->formater($consultation),
             'historique' => $this->consultations->historiquePatient($profil, $consultation),
+            'antecedents' => $this->consultations->antecedentsPatient($consultation),
             'journal' => $consultation->events()->with('user:id,name')->get()->map(fn ($e) => [
                 'type' => $e->type,
                 'payload' => $e->payload,

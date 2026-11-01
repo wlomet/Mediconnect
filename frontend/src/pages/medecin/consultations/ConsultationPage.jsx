@@ -89,7 +89,7 @@ const ConsultationPage = () => {
     );
   }
 
-  const { consultation: c, historique, journal } = data;
+  const { consultation: c, historique, journal, antecedents } = data;
   const enCours = c.statut === "en_cours";
   const peutTerminer = enCours && Boolean(c.facture?.lignes?.length);
   const heureModifiee = heure !== versValeurDateLocale(c.heure_debut_reelle);
@@ -202,6 +202,28 @@ const ConsultationPage = () => {
                 <span className={styles.infoLabel}>Compte patient</span>
                 <span className={styles.infoValue}>{c.patient.client_id ? "Lié" : "Non lié"}</span>
               </div>
+            </section>
+
+            <section className={styles.card}>
+              <h2 className={styles.cardTitle}>Antécédents</h2>
+              {!antecedents && (
+                <p className={styles.small}>Ce patient n'a pas de compte lié : antécédents indisponibles.</p>
+              )}
+              {antecedents && antecedents.categories.length === 0 && !antecedents.commentaire && (
+                <p className={styles.small}>Aucun antécédent renseigné par le patient.</p>
+              )}
+              {antecedents?.categories.map((cat) => (
+                <div key={cat.categorie} className={styles.infoRow}>
+                  <span className={styles.infoLabel}>{cat.categorie}</span>
+                  <span className={styles.infoValue}>{cat.libelles.join(", ")}</span>
+                </div>
+              ))}
+              {antecedents?.commentaire && (
+                <div className={styles.field}>
+                  <span className={styles.label}>Commentaire du patient</span>
+                  <p className={styles.texteLibre}>{antecedents.commentaire}</p>
+                </div>
+              )}
             </section>
 
             <section className={styles.card}>
