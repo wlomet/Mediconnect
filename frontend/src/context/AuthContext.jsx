@@ -46,8 +46,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await api.post("/logout");
-    setUser(null);
+    try {
+      await api.post("/logout");
+    } finally {
+      // L'état local est réinitialisé même si la requête échoue
+      setUser(null);
+      setRoles([]);
+    }
   };
 
   return (

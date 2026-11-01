@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\MedecinProfile;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -45,6 +46,34 @@ class PdfScope
             }
             if ($profile) {
                 $q->orWhere('medecin_profile_id', $profile->id);
+            }
+        });
+    }
+
+    /**
+     * Logos utilisables par le propriétaire d'un modèle (établissement, ou médecin avec ses logos personnels et ceux de son établissement).
+     *
+     * @param  array{hopital_id?: ?int, medecin_profile_id?: ?int}  $proprietaire
+     */
+    public static function applyLibraryOf(Builder $query, array $proprietaire): Builder
+    {
+        $medecinId = $proprietaire['medecin_profile_id'] ?? null;
+        $hopitalId = $proprietaire['hopital_id'] ?? null;
+
+        if ($medecinId) {
+            $hopitalId ??= MedecinProfile::whereKey($medecinId)->value('hopital_id');
+        }
+
+        if (!$medecinId && !$hopitalId) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(function (Builder $q) use ($medecinId, $hopitalId) {
+            if ($hopitalId) {
+                $q->orWhere('hopital_id', $hopitalId);
+            }
+            if ($medecinId) {
+                $q->orWhere('medecin_profile_id', $medecinId);
             }
         });
     }

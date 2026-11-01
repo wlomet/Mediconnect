@@ -1,0 +1,91 @@
+.wrapper {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.titre {
+  color: #1e3a8a;
+  font-size: 1.5rem;
+  margin: 0 0 1rem;
+}
+
+.groupe {
+  margin-top: 1.25rem;
+}
+
+.groupeTitre {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #374151;
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.carte {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 1.1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f9fafb;
+  text-decoration: none;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.carte:hover {
+  transform: translateY(-2px);
+  border-color: #3b82f6;
+  box-shadow: 0 6px 14px rgba(59, 130, 246, 0.15);
+}
+
+.icone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #e0e7ff;
+  color: #1d4ed8;
+}
+
+.texte {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.nom {
+  color: #111827;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.description {
+  color: #6b7280;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.fleche {
+  flex-shrink: 0;
+  margin-top: 4px;
+  color: #9ca3af;
+}

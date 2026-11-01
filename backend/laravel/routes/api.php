@@ -39,6 +39,12 @@ use App\Http\Controllers\SuperAdmin\RoleController as SuperAdminRoleController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\HopitalController as SuperAdminHopitalController;
 use App\Http\Controllers\SuperAdmin\UserCreationController as SuperAdminUserCreationController;
+use App\Http\Controllers\SuperAdmin\AntecedentOptionController as SuperAdminAntecedentOptionController;
+use App\Http\Controllers\SuperAdmin\SpecialiteController as SuperAdminSpecialiteController;
+use App\Http\Controllers\SuperAdmin\RendezVousController as SuperAdminRendezVousController;
+use App\Http\Controllers\SuperAdmin\ActeurController as SuperAdminActeurController;
+use App\Http\Controllers\SuperAdmin\PdfTemplateController as SuperAdminPdfTemplateController;
+use App\Http\Controllers\SuperAdmin\PdfImageController as SuperAdminPdfImageController;
 use App\Http\Controllers\SuperAdminController;
 // Admin Controllers
 use App\Http\Controllers\Admin\AdminUserController;
@@ -383,6 +389,44 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
             Route::put('/{id}/hide', [SuperAdminHopitalController::class, 'toggleHide']);
             Route::get('/{id}/medecins', [SuperAdminHopitalController::class, 'medecins']);
             Route::put('/{id}/medecins/unhide-all', [SuperAdminHopitalController::class, 'unhideAllMedecins']);
+        });
+
+        // Référentiels : antécédents et spécialités
+        Route::prefix('antecedent-options')->name('antecedent-options.')->group(function () {
+            Route::get('/', [SuperAdminAntecedentOptionController::class, 'index']);
+            Route::post('/', [SuperAdminAntecedentOptionController::class, 'store']);
+            Route::put('/{id}', [SuperAdminAntecedentOptionController::class, 'update']);
+            Route::delete('/{id}', [SuperAdminAntecedentOptionController::class, 'destroy']);
+        });
+
+        Route::prefix('specialites')->name('specialites.')->group(function () {
+            Route::get('/', [SuperAdminSpecialiteController::class, 'index']);
+            Route::post('/', [SuperAdminSpecialiteController::class, 'store']);
+            Route::put('/{id}', [SuperAdminSpecialiteController::class, 'update']);
+            Route::delete('/{id}', [SuperAdminSpecialiteController::class, 'destroy']);
+        });
+
+        // Rendez-vous de l'application
+        Route::get('/rendez-vous', [SuperAdminRendezVousController::class, 'index']);
+        Route::get('/rendez-vous/export', [SuperAdminRendezVousController::class, 'export']);
+
+        // Établissements et médecins (filtres et attributions)
+        Route::get('/acteurs', [SuperAdminActeurController::class, 'index']);
+
+        // Modèles PDF et bibliothèque, attribués à un établissement ou à un médecin
+        Route::prefix('pdf-templates')->name('pdf-templates.')->group(function () {
+            Route::get('/', [SuperAdminPdfTemplateController::class, 'index']);
+            Route::post('/from-default', [SuperAdminPdfTemplateController::class, 'storeFromDefault']);
+            Route::get('/{id}', [SuperAdminPdfTemplateController::class, 'show']);
+            Route::put('/{id}', [SuperAdminPdfTemplateController::class, 'update']);
+            Route::delete('/{id}', [SuperAdminPdfTemplateController::class, 'destroy']);
+        });
+
+        Route::prefix('pdf-images')->name('pdf-images.')->group(function () {
+            Route::get('/', [SuperAdminPdfImageController::class, 'index']);
+            Route::post('/', [SuperAdminPdfImageController::class, 'store']);
+            Route::get('/{id}/file', [SuperAdminPdfImageController::class, 'file']);
+            Route::delete('/{id}', [SuperAdminPdfImageController::class, 'destroy']);
         });
 
         // Director Management

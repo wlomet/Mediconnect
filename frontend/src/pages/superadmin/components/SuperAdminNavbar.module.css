@@ -1,0 +1,261 @@
+.navbar {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 10px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 8px;
+  column-gap: 16px;
+}
+
+.brand {
+  order: 0;
+  color: white;
+  font-weight: 700;
+  font-size: 18px;
+  white-space: nowrap;
+}
+
+.liens {
+  order: 1;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.lien,
+.groupeBouton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: rgba(255, 255, 255, 0.9);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.lien:hover,
+.groupeBouton:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+.actif {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+}
+
+.groupe {
+  position: relative;
+}
+
+.chevron {
+  transition: transform 0.2s ease;
+}
+
+.chevronOuvert {
+  transform: rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 200;
+  min-width: 230px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
+}
+
+.dropdownLien {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  color: #1f2937;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.dropdownLien:hover {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.dropdownActif {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.actions {
+  order: 2;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.userName {
+  color: white;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease;
+}
+
+.logoutButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.hamburger {
+  display: none;
+  order: 3;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.hamburgerLine {
+  width: 1.5rem;
+  height: 2px;
+  border-radius: 1px;
+  background-color: white;
+  transition: all 0.3s ease;
+}
+
+.hamburgerOuvert .hamburgerLine:nth-child(1) {
+  transform: rotate(45deg) translate(0.5rem, 0.5rem);
+}
+
+.hamburgerOuvert .hamburgerLine:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburgerOuvert .hamburgerLine:nth-child(3) {
+  transform: rotate(-45deg) translate(0.4rem, -0.4rem);
+}
+
+/* Panneau mobile (même principe que la navbar médecin) */
+.menuMobile {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  flex-direction: column;
+  padding: 8px 16px 16px;
+  background: rgba(30, 58, 138, 0.97);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.3);
+}
+
+.mobileTitre {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 14px 0 4px;
+  color: #bfdbfe;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.mobileLien {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.mobileActif {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* Tablette : les menus passent sur une seconde ligne */
+@media (max-width: 1199px) {
+  .liens {
+    order: 3;
+    flex-basis: 100%;
+  }
+}
+
+/* Téléphone : menu hamburger */
+@media (max-width: 768px) {
+  .liens {
+    display: none;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+
+  .menuMobile {
+    display: flex;
+  }
+
+  .userName {
+    display: none;
+  }
+
+  .logoutButton {
+    padding: 8px;
+  }
+
+  .logoutButton span {
+    display: none;
+  }
+}
+

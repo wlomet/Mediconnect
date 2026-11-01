@@ -303,7 +303,7 @@ function PropertiesPanel({ element, images, onChange, onDelete }) {
 export default function PdfTemplateEditor({ role = "medecin" }) {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { api, basePath, Navbar } = getPdfContext(role);
+  const { api, basePath, Navbar } = getPdfContext(role, { template_id: id });
   const [readOnly, setReadOnly] = useState(false);
   const [nom, setNom] = useState("");
   const [type, setType] = useState("ordonnance");

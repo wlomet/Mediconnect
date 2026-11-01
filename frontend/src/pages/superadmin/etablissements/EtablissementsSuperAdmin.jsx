@@ -43,9 +43,6 @@ const EtablissementsSuperAdmin = () => {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1>🏥 Établissements</h1>
-        <button onClick={() => navigate("/super-admin/dashboard")} className={styles.btnBack}>
-          Retour au dashboard
-        </button>
       </div>
 
       <div className={styles.section}>

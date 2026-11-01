@@ -28,4 +28,9 @@ class PdfTemplate extends Model
     {
         return $this->belongsTo(MedecinProfile::class, 'medecin_profile_id');
     }
+
+    public function hopital()
+    {
+        return $this->belongsTo(Hopital::class);
+    }
 }

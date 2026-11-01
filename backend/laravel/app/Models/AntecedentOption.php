@@ -22,6 +22,11 @@ class AntecedentOption extends Model
         'actif' => 'boolean',
     ];
 
+    public function clients()
+    {
+        return $this->belongsToMany(User::class, 'client_antecedent_options', 'antecedent_option_id', 'user_id');
+    }
+
     public function scopeActif($query)
     {
         return $query->where('actif', true);

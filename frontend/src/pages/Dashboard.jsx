@@ -7,6 +7,7 @@ import DashboardAdmin from "./admin/dashboard/DashboardAdmin";
 import DashboardGestionnaire from "./gestionnaire/dashboard/DashboardGestionnaire";
 import DashboardSecretaire from "./secretaire/dashboard/DashboardSecretaire";
 import DashboardSuperAdmin from "./superadmin/dashboard/DashboardSuperAdmin";
+import SuperAdminLayout from "./superadmin/components/SuperAdminLayout";
 import DashboardDirecteur from "./directeur/dashboard/DashboardDirecteur";
 import CompleteProfileForm from "./CompleteProfileForm";
 
@@ -42,7 +43,11 @@ const Dashboard = () => {
   const renderDashboardByRole = () => {
     switch (user.role) {
       case "super-admin":
-        return <DashboardSuperAdmin />;
+        return (
+          <SuperAdminLayout>
+            <DashboardSuperAdmin />
+          </SuperAdminLayout>
+        );
       case "admin":
         return <DashboardAdmin />;
       case "medecin":

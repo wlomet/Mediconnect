@@ -31,7 +31,16 @@ import CreateUsers from "./pages/directeur/create-users";
 import HopitalInfo from "./pages/directeur/hopital/HopitalInfo";
 import DashboardSecretaire from "./pages/secretaire/dashboard/DashboardSecretaire";
 import DashboardSuperAdmin from "./pages/superadmin/dashboard/DashboardSuperAdmin";
+import UtilisateursSuperAdmin from "./pages/superadmin/utilisateurs/UtilisateursSuperAdmin";
+import RolesSuperAdmin from "./pages/superadmin/roles/RolesSuperAdmin";
+import InactiviteSuperAdmin from "./pages/superadmin/inactivite/InactiviteSuperAdmin";
 import EtablissementsSuperAdmin from "./pages/superadmin/etablissements/EtablissementsSuperAdmin";
+import AntecedentsSuperAdmin from "./pages/superadmin/antecedents/AntecedentsSuperAdmin";
+import SpecialitesSuperAdmin from "./pages/superadmin/specialites/SpecialitesSuperAdmin";
+import RendezVousSuperAdmin from "./pages/superadmin/rendez-vous/RendezVousSuperAdmin";
+import SuperAdminPdfTemplatesList from "./pages/superadmin/pdf-templates/SuperAdminPdfTemplatesList";
+import SuperAdminPdfLogosPage from "./pages/superadmin/pdf-templates/SuperAdminPdfLogosPage";
+import SuperAdminLayout from "./pages/superadmin/components/SuperAdminLayout";
 import DashboardAdmin from "./pages/admin/dashboard/DashboardAdmin";
 import DirectorRequests from "./pages/admin/directeur-requests/DirectorRequests";
 import UserVerification from "./pages/admin/user-verification/UserVerification";
@@ -96,8 +105,20 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/directeur/pdf-templates/logos" element={<PdfLogosPage role="directeur" />} />
         <Route path="/directeur/pdf-templates/:id" element={<PdfTemplateEditor role="directeur" />} />
         <Route path="/secretaire/dashboard" element={<DashboardSecretaire />} />
-        <Route path="/super-admin/dashboard" element={<DashboardSuperAdmin />} />
-        <Route path="/super-admin/etablissements" element={<EtablissementsSuperAdmin />} />
+        <Route element={<SuperAdminLayout />}>
+          <Route path="/super-admin/dashboard" element={<DashboardSuperAdmin />} />
+          <Route path="/super-admin/utilisateurs" element={<UtilisateursSuperAdmin />} />
+          <Route path="/super-admin/roles" element={<RolesSuperAdmin />} />
+          <Route path="/super-admin/inactivite" element={<InactiviteSuperAdmin />} />
+          <Route path="/super-admin/etablissements" element={<EtablissementsSuperAdmin />} />
+          <Route path="/super-admin/antecedents" element={<AntecedentsSuperAdmin />} />
+          <Route path="/super-admin/specialites" element={<SpecialitesSuperAdmin />} />
+          <Route path="/super-admin/rendez-vous" element={<RendezVousSuperAdmin />} />
+          <Route path="/super-admin/pdf-templates" element={<SuperAdminPdfTemplatesList />} />
+          <Route path="/super-admin/pdf-templates/logos" element={<SuperAdminPdfLogosPage />} />
+        </Route>
+        {/* L'éditeur fournit sa propre navbar (via getPdfContext) */}
+        <Route path="/super-admin/pdf-templates/:id" element={<PdfTemplateEditor role="super-admin" />} />
         <Route path="/admin/dashboard" element={<DashboardAdmin />} />
         <Route path="/admin/demandes-directeurs" element={<DirectorRequests />} />
         <Route path="/admin/utilisateurs-verification" element={<UserVerification />} />
