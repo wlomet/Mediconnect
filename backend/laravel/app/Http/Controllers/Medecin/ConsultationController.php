@@ -8,12 +8,19 @@ use App\Models\MedecinProfile;
 use App\Models\RendezVous;
 use App\Rules\PhoneNumber;
 use App\Services\ConsultationService;
+use App\Services\CsvExportService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class ConsultationController extends Controller
 {
+    private const STATUT_LIBELLES = [
+        Consultation::EN_COURS => 'En cours',
+        Consultation::ABANDONNEE => 'Abandonnée',
+        Consultation::TERMINEE => 'Terminée',
+    ];
+
     public function __construct(private ConsultationService $consultations)
     {
     }
@@ -32,20 +39,54 @@ class ConsultationController extends Controller
             ->with(['rendezVous', 'facture.lignes', 'documents']);
     }
 
-    public function index(Request $request)
+    private function consultationsFiltrees(Request $request)
     {
         $filtres = $request->validate([
             'statut' => ['nullable', Rule::in([Consultation::EN_COURS, Consultation::ABANDONNEE, Consultation::TERMINEE])],
         ]);
 
-        $consultations = $this->consultationsDuProfil($this->profil($request))
+        return $this->consultationsDuProfil($this->profil($request))
             ->when(isset($filtres['statut']), fn ($q) => $q->where('statut', $filtres['statut']))
-            ->orderByDesc('started_at')
-            ->get();
+            ->orderByDesc('started_at');
+    }
+
+    public function index(Request $request)
+    {
+        $consultations = $this->consultationsFiltrees($request)->get();
 
         return response()->json([
             'consultations' => $consultations->map(fn (Consultation $c) => $this->consultations->formater($c))->values(),
         ]);
+    }
+
+    public function export(Request $request, CsvExportService $csv)
+    {
+        $consultations = $this->consultationsFiltrees($request)->get();
+        $statut = $request->query('statut') ?: 'toutes';
+
+        $lignes = $consultations->map(function (Consultation $c) {
+            $rdv = $c->rendezVous;
+
+            return [
+                $rdv->name,
+                $rdv->email,
+                $rdv->date_debut->format('d/m/Y H:i'),
+                $rdv->motif,
+                $rdv->statut,
+                $c->heure_debut_reelle?->format('d/m/Y H:i'),
+                $c->ended_at?->format('d/m/Y H:i'),
+                self::STATUT_LIBELLES[$c->statut],
+                $c->ordonnance_texte,
+                $c->facture ? number_format((float) $c->facture->total, 2, ',', '') : null,
+                $c->abandon_motif,
+            ];
+        });
+
+        return $csv->telecharger(
+            "consultations_{$statut}_".now()->format('Y-m-d').'.csv',
+            ['Nom', 'Email', 'Date du rendez-vous', 'Motif', 'Statut du rendez-vous', 'Début de consultation', 'Fin de consultation', 'Statut de consultation', 'Ordonnance', 'Montant facture (EUR)', "Motif d'abandon"],
+            $lignes
+        );
     }
 
     public function enCours(Request $request)

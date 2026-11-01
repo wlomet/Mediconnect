@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useContext, useMemo } from "react";
 import FullCalendar from "@fullcalendar/react";
+import { toast } from "react-toastify";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import ModalHorairesHebdo from "./modals/ModalHorairesHebdo";
 import ModalIndisponibilite from "./modals/ModalIndisponibilite";
@@ -18,6 +19,7 @@ import {
   addMinutes,
   convertJourToNumber,
 } from "../../../utils/dateHelpers";
+import { telechargerCsv } from "../../../utils/csvExport";
 
 const buildEvents = (horaires, indisponibilitesRaw, range, rendezvousRaw = []) => {
   if (!range) {
@@ -263,34 +265,6 @@ const buildListItems = (planning, range) => {
     .map((item, index) => ({ ...item, key: `${item.type}-${index}` }));
 };
 
-const toCsvCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
-
-const buildRdvCsv = (rdvs) => {
-  const header = ["Date", "Heure début", "Heure fin", "Patient", "Email", "Statut"];
-  const rows = rdvs.map((rdv) => {
-    const start = new Date(rdv.date_debut);
-    const end = new Date(rdv.date_fin);
-    return [
-      start.toLocaleDateString("fr-FR"),
-      formatTime(start),
-      formatTime(end),
-      rdv.client?.name,
-      rdv.client?.email,
-      rdv.statut,
-    ];
-  });
-  return [header, ...rows].map((row) => row.map(toCsvCell).join(";")).join("\r\n");
-};
-
-const downloadCsv = (content, filename) => {
-  const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-};
 
 export default function PlanningMedecin() {
   const { user } = useContext(AuthContext);
@@ -318,7 +292,7 @@ export default function PlanningMedecin() {
   const [exportFrom, setExportFrom] = useState(() => formatDateKey(new Date()));
   const [exportTo, setExportTo] = useState(() => formatDateKey(new Date()));
 
-  const handleExport = () => {
+  const handleExport = async () => {
     let start;
     let end;
     if (exportPeriod === "week") {
@@ -332,15 +306,15 @@ export default function PlanningMedecin() {
       end = addDays(parseDateKey(exportTo), 1);
     }
 
-    const rdvs = planning.rendezVous
-      .filter((rdv) => {
-        const date = new Date(rdv.date_debut);
-        return date >= start && date < end;
-      })
-      .sort((a, b) => new Date(a.date_debut) - new Date(b.date_debut));
-
-    const suffix = `${formatDateKey(start)}_${formatDateKey(addDays(end, -1))}`;
-    downloadCsv(buildRdvCsv(rdvs), `rendez-vous_${suffix}.csv`);
+    try {
+      const reponse = await api.get("/medecin/planning/export", {
+        params: { from: formatDateKey(start), to: formatDateKey(addDays(end, -1)) },
+        responseType: "blob",
+      });
+      telechargerCsv(reponse);
+    } catch {
+      toast.error("Export impossible");
+    }
   };
 
   const exportInvalid =

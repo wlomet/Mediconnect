@@ -148,6 +148,9 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         // Dashboard
         Route::get('/dashboard/stats', [MedecinDashboardController::class, 'stats']);
 
+        // Planning
+        Route::get('/planning/export', [MedecinPlanningController::class, 'exportRendezVous']);
+
         // Rendez-vous Management
         Route::get('/rendez-vous', [MedecinRendezVousController::class, 'getAll']);
         Route::get('/rendez-vous/today', [MedecinRendezVousController::class, 'getToday']);
@@ -160,6 +163,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         // Consultations
         Route::prefix('consultations')->name('consultations.')->group(function () {
             Route::get('/', [ConsultationController::class, 'index']);
+            Route::get('/export', [ConsultationController::class, 'export']);
             Route::get('/en-cours', [ConsultationController::class, 'enCours']);
             Route::get('/rendez-vous-disponibles', [ConsultationController::class, 'rendezVousDisponibles']);
             Route::post('/', [ConsultationController::class, 'store']);

@@ -63,6 +63,14 @@ const ConsultationsListe = () => {
 
   const aOrdonnance = (c) => Boolean(c.ordonnance_texte);
 
+  const exporterCsv = async () => {
+    try {
+      await consultationApi.exporterCsv(filtre);
+    } catch {
+      toast.error("Export impossible");
+    }
+  };
+
   return (
     <div className={styles.page}>
       <NavbarMedecin />
@@ -73,9 +81,19 @@ const ConsultationsListe = () => {
             <h1 className={styles.title}>Consultations</h1>
             <p className={styles.subtitle}>Consultations terminées, abandonnées et en cours</p>
           </div>
-          <button type="button" className={`${styles.button} ${styles.primary}`} onClick={() => setNouvelleOuverte(true)}>
-            Nouvelle consultation
-          </button>
+          <div className={styles.headerActions}>
+            <button
+              type="button"
+              className={`${styles.button} ${styles.secondary}`}
+              onClick={exporterCsv}
+              disabled={chargement || consultations.length === 0}
+            >
+              Exporter CSV
+            </button>
+            <button type="button" className={`${styles.button} ${styles.primary}`} onClick={() => setNouvelleOuverte(true)}>
+              Nouvelle consultation
+            </button>
+          </div>
         </header>
 
         <div className={styles.tabs}>

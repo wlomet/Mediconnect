@@ -1,10 +1,16 @@
 import api from "./axios";
+import { telechargerCsv } from "../utils/csvExport";
 
 const base = "/medecin/consultations";
 
 export const consultationApi = {
   list: (statut) =>
     api.get(base, { params: statut ? { statut } : {} }).then((res) => res.data.consultations),
+
+  exporterCsv: (statut) =>
+    api
+      .get(`${base}/export`, { params: statut ? { statut } : {}, responseType: "blob" })
+      .then(telechargerCsv),
 
   enCours: () => api.get(`${base}/en-cours`).then((res) => res.data.consultation),
 

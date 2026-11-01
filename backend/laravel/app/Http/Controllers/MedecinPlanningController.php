@@ -7,10 +7,49 @@ use App\Models\HoraireMedecin;
 use App\Models\IndisponibiliteMedecin;
 use App\Models\MedecinProfile;
 use App\Models\RendezVous;
+use App\Services\CsvExportService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class MedecinPlanningController extends Controller
 {
+    /**
+     * Export CSV des rendez-vous du médecin connecté entre deux dates (incluses)
+     */
+    public function exportRendezVous(Request $request, CsvExportService $csv)
+    {
+        $filtres = $request->validate([
+            'from' => ['required', 'date_format:Y-m-d'],
+            'to' => ['required', 'date_format:Y-m-d', 'after_or_equal:from'],
+        ]);
+
+        $profil = $request->user()->medecinProfile;
+        abort_unless($profil, 403);
+
+        $rdvs = RendezVous::where('medecin_id', $profil->id)
+            ->whereBetween('date_debut', [
+                Carbon::parse($filtres['from'])->startOfDay(),
+                Carbon::parse($filtres['to'])->endOfDay(),
+            ])
+            ->orderBy('date_debut')
+            ->get();
+
+        $lignes = $rdvs->map(fn (RendezVous $rdv) => [
+            $rdv->date_debut->format('d/m/Y'),
+            $rdv->date_debut->format('H:i'),
+            $rdv->date_fin->format('H:i'),
+            $rdv->name,
+            $rdv->email,
+            $rdv->statut,
+        ]);
+
+        return $csv->telecharger(
+            "rendez-vous_{$filtres['from']}_{$filtres['to']}.csv",
+            ['Date', 'Heure début', 'Heure fin', 'Nom', 'Email', 'Statut'],
+            $lignes
+        );
+    }
+
     /**
      * 🗓️ Récupérer le planning complet du médecin connecté
      */
