@@ -169,6 +169,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('/rendez-vous/month', [MedecinRendezVousController::class, 'getThisMonth']);
         Route::get('/rendez-vous/{id}', [MedecinRendezVousController::class, 'show']);
         Route::put('/rendez-vous/{id}', [MedecinRendezVousController::class, 'update']);
+        Route::post('/rendez-vous/{id}/renvoyer-email', [MedecinRendezVousController::class, 'renvoyerEmail']);
         Route::post('/rendez-vous', [MedecinRendezVousController::class, 'store'])->middleware('medecin.bookable');
         Route::delete('/rendez-vous/{id}', [MedecinRendezVousController::class, 'destroy']);
 
@@ -295,6 +296,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
             Route::delete('/{id}', [GestionnaireRendezVousController::class, 'destroy']);
             Route::get('/medecin/{medecinId}', [GestionnaireRendezVousController::class, 'getMedecinRendezVous']);
             Route::patch('/{id}/cancel', [GestionnaireRendezVousController::class, 'cancel']);
+            Route::post('/{id}/renvoyer-email', [GestionnaireRendezVousController::class, 'renvoyerEmail']);
         });
 
         // Médecins Management

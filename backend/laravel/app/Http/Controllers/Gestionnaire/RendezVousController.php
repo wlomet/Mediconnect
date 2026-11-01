@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\GestionnaireMedecin;
 use App\Models\Gestionnaire;
 use Carbon\Carbon;
+use App\Services\RendezVousModificationService;
 use App\Services\RendezVousNotificationService;
 use App\Services\RendezVousStatutGuard;
 use Illuminate\Validation\Rule;
@@ -74,7 +75,7 @@ class RendezVousController extends Controller
      * Récupère les détails d'un rendez-vous spécifique
      * Vérifie que le gestionnaire a accès au rendez-vous
      */
-    public function show(Request $request, $id)
+    public function show(Request $request, $id, RendezVousNotificationService $notifications)
     {
         $gestionnaire = $request->user();
         $gestionnaireProfile = Gestionnaire::where('user_id', $gestionnaire->id)->first();
@@ -90,6 +91,8 @@ class RendezVousController extends Controller
             return response()->json(['message' => 'Accès non autorisé à ce rendez-vous'], 403);
         }
 
+        $rendezVous->load(['medecin.user', 'consultation']);
+
         return response()->json([
             'rendez_vous' => [
                 'id' => $rendezVous->id,
@@ -102,6 +105,13 @@ class RendezVousController extends Controller
                 'notes' => $rendezVous->notes,
                 'statut' => $rendezVous->statut,
                 'consultation_statut' => $rendezVous->consultation?->statut,
+                'medecin' => [
+                    'id' => $rendezVous->medecin?->user_id,
+                    'name' => $rendezVous->medecin?->user?->name,
+                ],
+                'patient_verrouille' => $rendezVous->clientAPrisLeRendezVous(),
+                'modifiable' => $rendezVous->consultation === null,
+                'peut_renvoyer_email' => $notifications->peutRenvoyerConfirmation($rendezVous),
             ]
         ]);
     }
@@ -166,7 +176,7 @@ class RendezVousController extends Controller
      * Vérifie que le gestionnaire a accès au rendez-vous
      * Vérifie qu'au moins l'email ou le téléphone est fourni
      */
-    public function update(Request $request, $id, RendezVousNotificationService $notifications)
+    public function update(Request $request, $id, RendezVousNotificationService $notifications, RendezVousModificationService $modifications)
     {
         $gestionnaire = $request->user();
         $gestionnaireProfile = Gestionnaire::where('user_id', $gestionnaire->id)->first();
@@ -183,17 +193,23 @@ class RendezVousController extends Controller
         }
 
         $validated = $request->validate([
-            'email' => 'nullable|email',
-            'motif' => 'nullable|string|max:500',
-            'notes' => 'nullable|string|max:1000',
-            'name' => 'required|string|max:255',
-            'phone' => ['nullable', 'string', 'max:20', new PhoneNumber()],
-            'statut' => ['sometimes', Rule::in(RendezVous::STATUTS)]
+            'name' => 'sometimes|required|string|max:255',
+            'email' => 'sometimes|nullable|email|max:255',
+            'phone' => ['sometimes', 'nullable', 'string', 'max:20', new PhoneNumber()],
+            'motif' => 'sometimes|required|string|max:500',
+            'notes' => 'sometimes|nullable|string|max:1000',
+            'statut' => ['sometimes', Rule::in(RendezVous::STATUTS)],
+            'date_debut' => 'required_with:date_fin|date',
+            'date_fin' => 'required_with:date_debut|date|after:date_debut',
+            'chevauchement_autorise' => 'sometimes|boolean',
         ]);
 
+        $chevauchementAutorise = (bool) ($validated['chevauchement_autorise'] ?? false);
+        unset($validated['chevauchement_autorise']);
+
         // Vérifier qu'au moins l'email ou le téléphone est fourni
-        $email = $validated['email'] ?? $rendezVous->email;
-        $phone = $validated['phone'] ?? $rendezVous->phone;
+        $email = array_key_exists('email', $validated) ? $validated['email'] : $rendezVous->email;
+        $phone = array_key_exists('phone', $validated) ? $validated['phone'] : $rendezVous->phone;
 
         if (empty($email) && empty($phone)) {
             return response()->json(
@@ -202,17 +218,8 @@ class RendezVousController extends Controller
             );
         }
 
-        // Si email est fourni et différent, chercher le nouvel utilisateur
-        if (isset($validated['email']) && $validated['email'] !== $rendezVous->email && !empty($validated['email'])) {
-            $user = User::where('email', $validated['email'])->first();
-            if ($user) {
-                $validated['client_id'] = $user->id;
-            }
-        }
-
-        RendezVousStatutGuard::verifier($rendezVous, $validated['statut'] ?? null);
         $statutAvant = $rendezVous->statut;
-        $rendezVous->update($validated);
+        $modifications->modifier($rendezVous, $validated, $chevauchementAutorise);
         $notifications->rendezVousConfirme($rendezVous, $statutAvant);
 
         return response()->json([
@@ -378,6 +385,32 @@ class RendezVousController extends Controller
         return response()->json([
             'message' => 'Rendez-vous annulé avec succès',
             'rendez_vous' => $rendezVous
+        ], 200);
+    }
+
+    /**
+     * Gestionnaire renvoie l'email de confirmation d'un rendez-vous confirmé
+     * Vérifie que le gestionnaire a accès au rendez-vous
+     */
+    public function renvoyerEmail(Request $request, $id, RendezVousNotificationService $notifications)
+    {
+        $gestionnaire = $request->user();
+        $gestionnaireProfile = Gestionnaire::where('user_id', $gestionnaire->id)->first();
+
+        if (!$gestionnaireProfile) {
+            return response()->json(['message' => 'Profil gestionnaire non trouvé'], 404);
+        }
+
+        $rendezVous = RendezVous::findOrFail($id);
+
+        if (!$this->canAccessRendezVous($gestionnaireProfile, $rendezVous)) {
+            return response()->json(['message' => 'Accès non autorisé à ce rendez-vous'], 403);
+        }
+
+        $notifications->renvoyerConfirmation($rendezVous);
+
+        return response()->json([
+            'message' => 'Email de confirmation renvoyé avec succès'
         ], 200);
     }
 

@@ -1,0 +1,149 @@
+.selecteur {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.entete {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.inputDate {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+}
+
+.inputDate:focus {
+  outline: none;
+  border-color: #0596de;
+  box-shadow: 0 0 0 3px rgba(5, 150, 222, 0.1);
+}
+
+.message,
+.erreur {
+  margin: 0.5rem 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.erreur {
+  color: #b91c1c;
+}
+
+.grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 0.5rem;
+}
+
+.creneau {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0.5rem 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.libre {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  color: #065f46;
+}
+
+.libre:hover {
+  background: #d1fae5;
+}
+
+.occupe {
+  background: #fff7ed;
+  border-color: #fdba74;
+  color: #9a3412;
+}
+
+.occupe:hover {
+  background: #ffedd5;
+}
+
+.creneau.choisi {
+  background: #0596de;
+  border-color: #0478b6;
+  color: #ffffff;
+}
+
+.badge {
+  margin-top: 0.125rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.pied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-top: 0.875rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.legende {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.pastille {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+}
+
+.pastilleLibre {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+}
+
+.pastilleOccupe {
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.pastilleChoisi {
+  background: #0596de;
+  border-color: #0478b6;
+}
+
+.fermer {
+  margin-left: auto;
+  border: none;
+  background: none;
+  color: #0596de;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+}

@@ -6,10 +6,9 @@ use App\Rules\PhoneNumber;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\RendezVous;
-use App\Models\User;
 use App\Services\RendezVousBookingService;
+use App\Services\RendezVousModificationService;
 use App\Services\RendezVousNotificationService;
-use App\Services\RendezVousStatutGuard;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
@@ -130,7 +129,7 @@ class RendezVousController extends Controller
     /**
      * Médecin met à jour un rendez-vous (statut, notes, email, name, phone, etc)
      */
-    public function update(Request $request, $id, RendezVousNotificationService $notifications)
+    public function update(Request $request, $id, RendezVousNotificationService $notifications, RendezVousModificationService $modifications)
     {
         $user = $request->user();
 
@@ -148,15 +147,22 @@ class RendezVousController extends Controller
 
         $validated = $request->validate([
             'statut' => ['sometimes', Rule::in(RendezVous::STATUTS)],
+            'motif' => 'sometimes|required|string|max:500',
             'notes' => 'sometimes|nullable|string|max:1000',
-            'email' => 'sometimes|email|max:255',
-            'name' => 'sometimes|string|max:255',
-            'phone' => ['sometimes', 'nullable', 'string', 'max:20', new PhoneNumber()]
+            'email' => 'sometimes|nullable|email|max:255',
+            'name' => 'sometimes|required|string|max:255',
+            'phone' => ['sometimes', 'nullable', 'string', 'max:20', new PhoneNumber()],
+            'date_debut' => 'required_with:date_fin|date',
+            'date_fin' => 'required_with:date_debut|date|after:date_debut',
+            'chevauchement_autorise' => 'sometimes|boolean',
         ]);
 
+        $chevauchementAutorise = (bool) ($validated['chevauchement_autorise'] ?? false);
+        unset($validated['chevauchement_autorise']);
+
         // Vérifier qu'au moins l'email ou le téléphone est fourni
-        $email = $validated['email'] ?? $rendezVous->email;
-        $phone = $validated['phone'] ?? $rendezVous->phone;
+        $email = array_key_exists('email', $validated) ? $validated['email'] : $rendezVous->email;
+        $phone = array_key_exists('phone', $validated) ? $validated['phone'] : $rendezVous->phone;
 
         if (empty($email) && empty($phone)) {
             return response()->json(
@@ -170,17 +176,8 @@ class RendezVousController extends Controller
             $validated['confirmed_by'] = $user->id;
         }
 
-        // Si email est fourni et différent, chercher le nouvel utilisateur
-        if (isset($validated['email']) && $validated['email'] !== $rendezVous->email && !empty($validated['email'])) {
-            $user = User::where('email', $validated['email'])->first();
-            if ($user) {
-                $validated['client_id'] = $user->id;
-            }
-        }
-
-        RendezVousStatutGuard::verifier($rendezVous, $validated['statut'] ?? null);
         $statutAvant = $rendezVous->statut;
-        $rendezVous->update($validated);
+        $modifications->modifier($rendezVous, $validated, $chevauchementAutorise);
         $notifications->rendezVousConfirme($rendezVous, $statutAvant);
 
         return response()->json([
@@ -192,7 +189,7 @@ class RendezVousController extends Controller
     /**
      * Médecin récupère un rendez-vous spécifique
      */
-    public function show(Request $request, $id)
+    public function show(Request $request, $id, RendezVousNotificationService $notifications)
     {
         $user = $request->user();
         $rendezVous = RendezVous::findOrFail($id);
@@ -205,6 +202,8 @@ class RendezVousController extends Controller
             }
         }
 
+        $rendezVous->load(['medecin.user', 'consultation']);
+
         return response()->json([
             'rendez_vous' => [
                 'id' => $rendezVous->id,
@@ -216,7 +215,14 @@ class RendezVousController extends Controller
                 'motif' => $rendezVous->motif,
                 'statut' => $rendezVous->statut,
                 'consultation_statut' => $rendezVous->consultation?->statut,
-                'notes' => $rendezVous->notes
+                'notes' => $rendezVous->notes,
+                'medecin' => [
+                    'id' => $rendezVous->medecin?->user_id,
+                    'name' => $rendezVous->medecin?->user?->name,
+                ],
+                'patient_verrouille' => $rendezVous->clientAPrisLeRendezVous(),
+                'modifiable' => $rendezVous->consultation === null,
+                'peut_renvoyer_email' => $notifications->peutRenvoyerConfirmation($rendezVous),
             ]
         ]);
     }
@@ -251,6 +257,30 @@ class RendezVousController extends Controller
             'message' => 'Rendez-vous créé avec succès',
             'rendez_vous' => $rendezVous
         ], 201);
+    }
+
+    /**
+     * Médecin renvoie l'email de confirmation d'un rendez-vous confirmé
+     */
+    public function renvoyerEmail(Request $request, $id, RendezVousNotificationService $notifications)
+    {
+        $user = $request->user();
+
+        if (!$user->hasRole('medecin')) {
+            return response()->json(['message' => 'Vous devez être médecin pour effectuer cette action'], 403);
+        }
+
+        $rendezVous = RendezVous::findOrFail($id);
+
+        if ($rendezVous->medecin_id !== $user->medecinProfile->id) {
+            return response()->json(['message' => 'Non autorisé'], 403);
+        }
+
+        $notifications->renvoyerConfirmation($rendezVous);
+
+        return response()->json([
+            'message' => 'Email de confirmation renvoyé avec succès'
+        ], 200);
     }
 
     public function destroy(Request $request, $id)
