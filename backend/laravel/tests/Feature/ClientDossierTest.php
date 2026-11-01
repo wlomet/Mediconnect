@@ -131,6 +131,57 @@ class ClientDossierTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_dashboard_counts_only_documents_not_yet_seen(): void
+    {
+        Storage::fake('local');
+
+        [, $profil] = $this->makeMedecin();
+        $client = $this->makeUserWithRole('client');
+        $rdv = $this->makeRendezVous($profil, ['client_id' => $client->id]);
+        $ordonnance = $this->makeDocument($profil, $rdv, 'ordonnance');
+        $this->makeDocument($profil, $rdv, 'facture');
+        $this->makeDocument($profil, $this->makeRendezVous($profil, ['email' => 'autre@example.test']), 'ordonnance');
+        Storage::disk('local')->put($ordonnance->chemin, '%PDF-1.4 test');
+
+        SessionAuth::actingAs($client);
+
+        $this->getJson('/api/client/dashboard/stats')
+            ->assertOk()
+            ->assertJsonPath('documents_non_vus', 2);
+
+        $this->get("/api/client/documents/{$ordonnance->id}/download")->assertOk();
+
+        $this->getJson('/api/client/dashboard/stats')
+            ->assertJsonPath('documents_non_vus', 1);
+    }
+
+    public function test_opening_documents_page_marks_documents_seen_for_this_client_only(): void
+    {
+        [, $profil] = $this->makeMedecin();
+        $client = $this->makeUserWithRole('client');
+        $this->makeDocument($profil, $this->makeRendezVous($profil, ['client_id' => $client->id]), 'ordonnance');
+        $this->makeDocument($profil, $this->makeRendezVous($profil, ['client_id' => $client->id]), 'facture');
+
+        $autreClient = $this->makeUserWithRole('client');
+        $this->makeDocument(
+            $profil,
+            $this->makeRendezVous($profil, ['client_id' => $autreClient->id, 'email' => 'autre@example.test']),
+            'facture'
+        );
+
+        SessionAuth::actingAs($client);
+
+        $this->postJson('/api/client/documents/marquer-vus')->assertNoContent();
+
+        $this->getJson('/api/client/dashboard/stats')
+            ->assertJsonPath('documents_non_vus', 0);
+
+        SessionAuth::actingAs($autreClient);
+
+        $this->getJson('/api/client/dashboard/stats')
+            ->assertJsonPath('documents_non_vus', 1);
+    }
+
     public function test_medecin_cannot_access_client_dossier(): void
     {
         [$medecinUser] = $this->makeMedecin();

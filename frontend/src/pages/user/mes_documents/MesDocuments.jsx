@@ -28,6 +28,9 @@ const MesDocuments = () => {
       .listDocuments()
       .then((liste) => {
         if (actif) setDocuments(liste);
+        clientDossierApi
+          .marquerDocumentsVus()
+          .catch((error) => console.error("Marquage des documents comme vus impossible:", error));
       })
       .catch(() => {
         if (actif) setErreur("Impossible de charger vos documents");

@@ -145,7 +145,11 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         // Consultations, documents archivés (ordonnances, factures) et leur téléchargement
         Route::get('/consultations', [ClientDossierController::class, 'consultations']);
         Route::get('/documents', [ClientDossierController::class, 'documents']);
+        Route::post('/documents/marquer-vus', [ClientDossierController::class, 'marquerDocumentsVus']);
         Route::get('/documents/{id}/download', [ClientDossierController::class, 'downloadDocument']);
+
+        // Tableau de bord
+        Route::get('/dashboard/stats', [ClientDossierController::class, 'dashboardStats']);
     });
 
     // ============================================

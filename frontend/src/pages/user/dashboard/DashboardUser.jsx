@@ -2,6 +2,7 @@ import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import api from "../../../api/axios";
+import { clientDossierApi } from "../../../api/clientDossierApi";
 import styles from "./DashboardUser.module.css";
 import SearchMedecin from "../../public/rdv/SearchMedecin";
 import { toast } from "react-toastify";
@@ -11,6 +12,8 @@ const DashboardUser = () => {
   const navigate = useNavigate();
   const [nextAppointment, setNextAppointment] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [documentsNonVus, setDocumentsNonVus] = useState(null);
+  const [erreurDocuments, setErreurDocuments] = useState(false);
 
   useEffect(() => {
     const fetchNextAppointment = async () => {
@@ -38,6 +41,33 @@ const DashboardUser = () => {
       fetchNextAppointment();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    let actif = true;
+
+    clientDossierApi
+      .getDocumentsNonVus()
+      .then((nombre) => {
+        if (actif) setDocumentsNonVus(nombre);
+      })
+      .catch(() => {
+        if (actif) setErreurDocuments(true);
+      });
+
+    return () => {
+      actif = false;
+    };
+  }, [user]);
+
+  const texteDocuments = () => {
+    if (erreurDocuments) return "Impossible de charger vos documents";
+    if (documentsNonVus === null) return "Chargement...";
+    if (documentsNonVus === 0) return "Aucun nouveau document";
+    const pluriel = documentsNonVus > 1;
+    return `${documentsNonVus} nouveau${pluriel ? "x" : ""} document${pluriel ? "s" : ""}`;
+  };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -175,13 +205,7 @@ const DashboardUser = () => {
             </div>
             <div className={`${styles.card} ${styles.cardGreen}`}>
               <h3 className={`${styles.cardTitle} ${styles.cardTitleGreen}`}>Documents</h3>
-              <p className={`${styles.cardText} ${styles.cardTextGreen}`}>
-                3 documents disponibles
-              </p>
-            </div>
-            <div className={`${styles.card} ${styles.cardPurple}`}>
-              <h3 className={`${styles.cardTitle} ${styles.cardTitlePurple}`}>Messages</h3>
-              <p className={`${styles.cardText} ${styles.cardTextPurple}`}>2 messages non lus</p>
+              <p className={`${styles.cardText} ${styles.cardTextGreen}`}>{texteDocuments()}</p>
             </div>
           </div>
 

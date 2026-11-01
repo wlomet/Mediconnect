@@ -46,4 +46,10 @@ class GeneratedDocument extends Model
     {
         return $this->belongsTo(Consultation::class, 'consultation_id');
     }
+
+    // Clients ayant consulté le document ; absent de la table = non vu.
+    public function vues()
+    {
+        return $this->belongsToMany(User::class, 'generated_document_vues')->withPivot('vu_at');
+    }
 }
