@@ -7,11 +7,13 @@ const base = "/medecin";
  * @param {string} root préfixe de rôle ("/medecin" ou "/directeur")
  */
 const templateApi = (root) => ({
-  listImages: () => api.get(`${root}/pdf-images`).then((res) => res.data.images),
+  listImages: (type) =>
+    api.get(`${root}/pdf-images`, { params: type ? { type } : {} }).then((res) => res.data.images),
 
-  uploadImage: (file) => {
+  uploadImage: (file, type) => {
     const formData = new FormData();
     formData.append("image", file);
+    formData.append("type", type);
     return api.post(`${root}/pdf-images`, formData).then((res) => res.data.image);
   },
 

@@ -129,7 +129,7 @@ export default function PdfTemplatesList({ role = "medecin" }) {
           </div>
           <div className={styles.headerActions}>
             <button className={styles.secondaryButton} onClick={() => navigate(`${basePath}/logos`)}>
-              Bibliothèque de logos
+              Bibliothèque d'images
             </button>
             <button className={styles.primaryButton} onClick={() => setShowCreate(true)}>
               Nouveau modèle

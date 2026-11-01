@@ -7,19 +7,36 @@ import styles from "./PdfImageLibrary.module.css";
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/png", "image/jpeg"];
 
-export default function PdfImageLibrary({ selectedId = null, onUse = null, onChange = null, api = defaultPdfApi }) {
+const TYPE_OPTIONS = [
+  { value: "logo", label: "Logos", empty: "Aucun logo enregistré." },
+  { value: "image", label: "Images", empty: "Aucune image enregistrée." },
+];
+
+/**
+ * @param {"logo"|"image"|null} type type fixe ; sans type, des onglets permettent de passer de l'un à l'autre
+ */
+export default function PdfImageLibrary({
+  type = null,
+  selectedId = null,
+  onUse = null,
+  onChange = null,
+  api = defaultPdfApi,
+}) {
+  const [tab, setTab] = useState("logo");
   const [images, setImages] = useState([]);
   const [thumbnails, setThumbnails] = useState({});
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const fileInput = useRef(null);
+  const activeType = type ?? tab;
+  const activeOption = TYPE_OPTIONS.find((option) => option.value === activeType);
 
   const loadImages = async () => {
     try {
       setLoading(true);
-      setImages(await api.listImages());
+      setImages(await api.listImages(activeType));
     } catch {
-      toast.error("Impossible de charger les logos");
+      toast.error("Impossible de charger la bibliothèque");
     } finally {
       setLoading(false);
     }
@@ -27,7 +44,7 @@ export default function PdfImageLibrary({ selectedId = null, onUse = null, onCha
 
   useEffect(() => {
     loadImages();
-  }, []);
+  }, [activeType]);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,8 +88,8 @@ export default function PdfImageLibrary({ selectedId = null, onUse = null, onCha
 
     try {
       setUploading(true);
-      await api.uploadImage(file);
-      toast.success("Logo ajouté");
+      await api.uploadImage(file, activeType);
+      toast.success("Image ajoutée");
       loadImages();
       onChange?.();
     } catch (error) {
@@ -84,8 +101,10 @@ export default function PdfImageLibrary({ selectedId = null, onUse = null, onCha
 
   const handleDelete = async (image) => {
     const result = await Swal.fire({
-      title: "Supprimer ce logo ?",
-      text: "Les modèles qui l'utilisent devront être mis à jour.",
+      title: "Supprimer cette image ?",
+      text: image.hopital_id
+        ? "Cette image est partagée avec l'établissement. Les modèles qui l'utilisent devront être mis à jour."
+        : "Les modèles qui l'utilisent devront être mis à jour.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Supprimer",
@@ -95,7 +114,7 @@ export default function PdfImageLibrary({ selectedId = null, onUse = null, onCha
 
     try {
       await api.deleteImage(image.id);
-      toast.success("Logo supprimé");
+      toast.success("Image supprimée");
       loadImages();
       onChange?.();
     } catch {
@@ -106,7 +125,24 @@ export default function PdfImageLibrary({ selectedId = null, onUse = null, onCha
   return (
     <div className={styles.library}>
       <div className={styles.header}>
-        <h3 className={styles.title}>Bibliothèque de logos</h3>
+        {type ? (
+          <h3 className={styles.title}>{activeOption.label}</h3>
+        ) : (
+          <div className={styles.tabs} role="tablist">
+            {TYPE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="tab"
+                aria-selected={tab === option.value}
+                className={`${styles.tab} ${tab === option.value ? styles.tabActive : ""}`}
+                onClick={() => setTab(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
         <button
           type="button"
           className={styles.uploadButton}
@@ -128,7 +164,7 @@ export default function PdfImageLibrary({ selectedId = null, onUse = null, onCha
       {loading ? (
         <p className={styles.hint}>Chargement...</p>
       ) : images.length === 0 ? (
-        <p className={styles.hint}>Aucun logo enregistré.</p>
+        <p className={styles.hint}>{activeOption.empty}</p>
       ) : (
         <ul className={styles.list}>
           {images.map((image) => (
@@ -139,7 +175,10 @@ export default function PdfImageLibrary({ selectedId = null, onUse = null, onCha
               <div className={styles.thumb}>
                 {thumbnails[image.id] ? <img src={thumbnails[image.id]} alt={image.nom} /> : null}
               </div>
-              <span className={styles.name} title={image.nom}>{image.nom}</span>
+              <div className={styles.info}>
+                <span className={styles.name} title={image.nom}>{image.nom}</span>
+                {image.hopital_id && <span className={styles.sharedBadge}>Établissement</span>}
+              </div>
               <div className={styles.itemActions}>
                 {onUse && (
                   <button type="button" className={styles.useButton} onClick={() => onUse(image)}>

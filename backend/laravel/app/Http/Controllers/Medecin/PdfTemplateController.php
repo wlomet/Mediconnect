@@ -58,10 +58,12 @@ class PdfTemplateController extends Controller
             'nom' => 'nullable|string|max:255',
         ]);
 
-        $logo = PdfScope::applyWritable(PdfImage::query(), $user)->find($validated['pdf_image_id']);
+        $logo = PdfScope::applyImageLibrary(PdfImage::query(), $user)
+            ->where('type', PdfImage::TYPE_LOGO)
+            ->find($validated['pdf_image_id']);
         if (!$logo) {
             throw ValidationException::withMessages([
-                'pdf_image_id' => "Le logo sélectionné n'appartient pas à votre bibliothèque.",
+                'pdf_image_id' => "Le logo sélectionné n'existe pas dans votre bibliothèque de logos.",
             ]);
         }
 
@@ -146,7 +148,7 @@ class PdfTemplateController extends Controller
             ->values();
 
         if ($imageIds->isNotEmpty()) {
-            $owned = PdfScope::applyWritable(PdfImage::query(), $request->user())
+            $owned = PdfScope::applyImageLibrary(PdfImage::query(), $request->user())
                 ->whereIn('id', $imageIds)
                 ->count();
 

@@ -12,26 +12,31 @@ class PdfImageController extends Controller
 {
     public function index(Request $request)
     {
-        $images = PdfScope::applyWritable(PdfImage::query(), $request->user())
+        $request->validate(['type' => 'nullable|in:logo,image']);
+
+        $images = PdfScope::applyImageLibrary(PdfImage::query(), $request->user())
+            ->when($request->filled('type'), fn ($query) => $query->where('type', $request->input('type')))
             ->latest()
-            ->get(['id', 'nom', 'mime', 'taille', 'created_at']);
+            ->get(['id', 'nom', 'type', 'mime', 'taille', 'hopital_id', 'created_at']);
 
         return response()->json(['images' => $images]);
     }
 
     public function store(Request $request)
     {
-        $owner = PdfScope::ownerAttributes($request->user());
+        $owner = PdfScope::imageOwnerAttributes($request->user());
         abort_unless($owner, 403);
 
-        $request->validate([
+        $validated = $request->validate([
             'image' => 'required|file|image|mimes:png,jpg,jpeg|max:2048',
+            'type' => 'required|in:logo,image',
         ]);
 
         $file = $request->file('image');
         $chemin = $file->store(PdfScope::imageFolder($owner), 'local');
 
         $image = PdfImage::create($owner + [
+            'type' => $validated['type'],
             'nom' => $file->getClientOriginalName(),
             'chemin' => $chemin,
             'mime' => $file->getMimeType(),
@@ -46,7 +51,7 @@ class PdfImageController extends Controller
 
     public function file(Request $request, int $id)
     {
-        $image = PdfScope::applyVisible(PdfImage::query(), $request->user())->findOrFail($id);
+        $image = PdfScope::applyImageLibrary(PdfImage::query(), $request->user())->findOrFail($id);
         abort_unless(Storage::disk('local')->exists($image->chemin), 404);
 
         return response()->file(storage_path('app/' . $image->chemin), [
@@ -57,7 +62,7 @@ class PdfImageController extends Controller
 
     public function destroy(Request $request, int $id)
     {
-        $image = PdfScope::applyWritable(PdfImage::query(), $request->user())->findOrFail($id);
+        $image = PdfScope::applyImageLibrary(PdfImage::query(), $request->user())->findOrFail($id);
         Storage::disk('local')->delete($image->chemin);
         $image->delete();
 

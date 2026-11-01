@@ -15,7 +15,7 @@ export default function PdfLogosPage({ role = "medecin" }) {
           <button type="button" className={styles.backButton} onClick={() => navigate(basePath)}>
             Retour aux modèles
           </button>
-          <h1 className={styles.title}>Bibliothèque de logos</h1>
+          <h1 className={styles.title}>Bibliothèque d'images</h1>
         </div>
         <div className={styles.panel}>
           <PdfImageLibrary api={api} />

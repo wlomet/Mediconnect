@@ -279,7 +279,7 @@ function PropertiesPanel({ element, images, onChange, onDelete }) {
 
       {element.type === "image" && (
         <label className={styles.field}>
-          Logo
+          Logo / image
           <select
             className={styles.input}
             value={element.pdf_image_id ?? ""}

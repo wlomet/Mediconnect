@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  * Règles d'accès aux modèles PDF et logos.
  * - Médecin : modifie ses propres éléments ; voit aussi ceux de son établissement (lecture seule).
  * - Directeur : modifie les éléments de son établissement.
+ * - Logos : la bibliothèque de l'établissement est partagée par ses médecins et son directeur.
  */
 class PdfScope
 {
@@ -24,6 +25,44 @@ class PdfScope
         }
 
         return $query->whereRaw('1 = 0');
+    }
+
+    /**
+     * Logos visibles et modifiables : ceux de l'établissement, plus les logos personnels.
+     */
+    public static function applyImageLibrary(Builder $query, User $user): Builder
+    {
+        $profile = $user->medecinProfile;
+        $hopitalId = self::etablissementId($user);
+
+        if (!$profile && !$hopitalId) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(function (Builder $q) use ($profile, $hopitalId) {
+            if ($hopitalId) {
+                $q->orWhere('hopital_id', $hopitalId);
+            }
+            if ($profile) {
+                $q->orWhere('medecin_profile_id', $profile->id);
+            }
+        });
+    }
+
+    /**
+     * Propriété d'un nouveau logo : l'établissement si rattaché, sinon le médecin.
+     */
+    public static function imageOwnerAttributes(User $user): ?array
+    {
+        if ($hopitalId = self::etablissementId($user)) {
+            return ['medecin_profile_id' => null, 'hopital_id' => $hopitalId];
+        }
+
+        if ($profile = $user->medecinProfile) {
+            return ['medecin_profile_id' => $profile->id, 'hopital_id' => null];
+        }
+
+        return null;
     }
 
     public static function applyVisible(Builder $query, User $user): Builder

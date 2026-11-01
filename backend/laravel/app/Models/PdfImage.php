@@ -9,10 +9,14 @@ class PdfImage extends Model
 {
     use HasFactory;
 
+    public const TYPE_LOGO = 'logo';
+    public const TYPE_IMAGE = 'image';
+
     protected $fillable = [
         'medecin_profile_id',
         'hopital_id',
         'nom',
+        'type',
         'chemin',
         'mime',
         'taille',

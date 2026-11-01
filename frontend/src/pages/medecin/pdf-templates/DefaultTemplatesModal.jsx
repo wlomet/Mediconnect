@@ -42,7 +42,7 @@ export default function DefaultTemplatesModal({ api, basePath, missingTypes, onC
           seront créés automatiquement et vous pourrez les personnaliser.
         </p>
 
-        <PdfImageLibrary api={api} selectedId={logo?.id ?? null} onUse={setLogo} />
+        <PdfImageLibrary api={api} type="logo" selectedId={logo?.id ?? null} onUse={setLogo} />
 
         <div className={styles.actions}>
           <button type="button" className={styles.secondaryButton} onClick={onClose} disabled={saving}>
