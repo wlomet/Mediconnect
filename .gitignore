@@ -18,3 +18,4 @@ backend/laravel/vendor.zip
 frontend/src/api/axios.js
 /backend/laravel/storage
 /deploy
+backend/laravel/.phpunit.result.cache

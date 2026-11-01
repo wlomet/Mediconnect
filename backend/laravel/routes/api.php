@@ -27,6 +27,7 @@ use App\Http\Controllers\Medecin\PdfTemplateController;
 use App\Http\Controllers\Medecin\PdfDataController;
 use App\Http\Controllers\Medecin\GeneratedDocumentController;
 use App\Http\Controllers\Medecin\ConsultationController;
+use App\Http\Controllers\Medecin\DashboardController as MedecinDashboardController;
 use App\Http\Controllers\Secretaire\RendezVousController as SecretaireRendezVousController;
 use App\Http\Controllers\Secretaire\LiaisonController as SecretaireLiaisonController;
 use App\Http\Controllers\Secretaire\DashboardController as SecretaireDashboardController;
@@ -143,6 +144,9 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('/profile', [MedecinProfileControllerNamespace::class, 'show']);
         Route::put('/profile', [MedecinProfileControllerNamespace::class, 'update']);
         Route::post('/profile/photo', [MedecinProfileControllerNamespace::class, 'uploadPhoto']);
+
+        // Dashboard
+        Route::get('/dashboard/stats', [MedecinDashboardController::class, 'stats']);
 
         // Rendez-vous Management
         Route::get('/rendez-vous', [MedecinRendezVousController::class, 'getAll']);

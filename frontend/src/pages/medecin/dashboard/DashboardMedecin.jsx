@@ -12,9 +12,8 @@ const DashboardMedecin = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [todayAppointments, setTodayAppointments] = useState([]);
-  const [todayCount, setTodayCount] = useState(0);
-  const [monthCount, setMonthCount] = useState(0);
-  const [pendingCount, setPendingCount] = useState(0);
+  const [stats, setStats] = useState(null);
+  const [statsError, setStatsError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showNewRdvModal, setShowNewRdvModal] = useState(false);
@@ -33,27 +32,13 @@ const DashboardMedecin = () => {
 
         // Récupérer les rendez-vous d'aujourd'hui
         const todayResponse = await api.get("/medecin/rendez-vous/today");
-        const todayData = todayResponse.data;
+        setTodayAppointments(todayResponse.data.rendez_vous || []);
 
-        setTodayAppointments(todayData.rendez_vous || []);
-        setTodayCount(todayData.count || 0);
-
-        // Récupérer les rendez-vous du mois
-        const monthResponse = await api.get("/medecin/rendez-vous/month");
-        const monthData = monthResponse.data;
-
-        setMonthCount(monthData.count || 0);
-
-        // Récupérer tous les rendez-vous pour compter ceux à valider
+        // Récupérer tous les rendez-vous pour l'agenda de la semaine
         const allResponse = await api.get("/medecin/rendez-vous");
         const allRdv = allResponse.data.rendez_vous || [];
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
-        setPendingCount(
-          allRdv.filter(
-            (rdv) => rdv.statut === "en_attente" && new Date(rdv.date_debut) >= startOfToday
-          ).length
-        );
 
         // Semaine courante (lundi 00:00 à lundi suivant 00:00)
         const startOfWeek = new Date(startOfToday);
@@ -83,7 +68,23 @@ const DashboardMedecin = () => {
     loadAppointmentsData();
   }, []);
 
+  useEffect(() => {
+    api
+      .get("/medecin/dashboard/stats")
+      .then((response) => setStats(response.data))
+      .catch((err) => {
+        console.error("Erreur lors du chargement des compteurs:", err);
+        setStatsError(true);
+      });
+  }, []);
+
   const displayedAppointments = agendaPeriod === "today" ? todayAppointments : weekAppointments;
+
+  const renderStatValue = (key) => {
+    if (statsError) return "ERROR";
+    if (!stats) return <span className={styles.statSpinner} role="status" aria-label="Chargement" />;
+    return stats[key];
+  };
 
   const formatAppointmentDate = (value) =>
     new Date(value).toLocaleString("fr-FR",
@@ -128,27 +129,27 @@ const DashboardMedecin = () => {
                   <h3 className={`${styles.statCardTitle} ${styles.titleGreen}`}>
                     Rendez-vous Aujourd'hui
                   </h3>
-                  <p className={`${styles.statValue} ${styles.valueGreen}`}>{todayCount}</p>
+                  <p className={`${styles.statValue} ${styles.valueGreen}`}>{renderStatValue("rendez_vous_aujourdhui")}</p>
                 </div>
                 <div className={`${styles.statCard} ${styles.cardBlue}`}>
                   <h3 className={`${styles.statCardTitle} ${styles.titleBlue}`}>
                     Patients en Attente
                   </h3>
                   <p className={`${styles.statValue} ${styles.valueBlue}`}>
-                    {todayAppointments.filter((apt) => apt.statut === "en_attente").length}
+                    {renderStatValue("patients_en_attente")}
                   </p>
                 </div>
                 <div className={`${styles.statCard} ${styles.cardPurple}`}>
                   <h3 className={`${styles.statCardTitle} ${styles.titlePurple}`}>
                     Consultations du Mois
                   </h3>
-                  <p className={`${styles.statValue} ${styles.valuePurple}`}>{monthCount}</p>
+                  <p className={`${styles.statValue} ${styles.valuePurple}`}>{renderStatValue("consultations_mois")}</p>
                 </div>
                 <div className={`${styles.statCard} ${styles.cardOrange}`}>
                   <h3 className={`${styles.statCardTitle} ${styles.titleOrange}`}>
                     Rendez-vous à Valider
                   </h3>
-                  <p className={`${styles.statValue} ${styles.valueOrange}`}>{pendingCount}</p>
+                  <p className={`${styles.statValue} ${styles.valueOrange}`}>{renderStatValue("rendez_vous_a_valider")}</p>
                 </div>
               </div>
 
