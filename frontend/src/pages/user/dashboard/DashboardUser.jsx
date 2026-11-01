@@ -91,7 +91,24 @@ const DashboardUser = () => {
               >
                 Mes Rendez-vous
               </a>
-              <a href="#documents" className={styles.navLink} onClick={handleDevelopment}>
+              <a
+                href="#consultations"
+                className={styles.navLink}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/user/consultations");
+                }}
+              >
+                Mes Consultations
+              </a>
+              <a
+                href="#documents"
+                className={styles.navLink}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/user/documents");
+                }}
+              >
                 Mes Documents
               </a>
               <a
@@ -176,9 +193,15 @@ const DashboardUser = () => {
               </button>
               <button
                 className={`${styles.actionButton} ${styles.actionButtonGreen}`}
-                onClick={handleDevelopment}
+                onClick={() => navigate("/user/documents")}
               >
                 Consulter mes Documents
+              </button>
+              <button
+                className={`${styles.actionButton} ${styles.actionButtonOrange}`}
+                onClick={() => navigate("/user/consultations")}
+              >
+                Mes Consultations
               </button>
               <button
                 className={`${styles.actionButton} ${styles.actionButtonPurple}`}

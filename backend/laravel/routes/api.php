@@ -19,6 +19,7 @@ use App\Http\Controllers\Client\RendezVousController as ClientRendezVousControll
 use App\Http\Controllers\Client\SearchController as ClientSearchController;
 use App\Http\Controllers\Client\ProfileController as ClientProfileController;
 use App\Http\Controllers\Client\AntecedentController as ClientAntecedentController;
+use App\Http\Controllers\Client\DossierController as ClientDossierController;
 use App\Http\Controllers\Medecin\RendezVousController as MedecinRendezVousController;
 use App\Http\Controllers\Medecin\LiaisonController as MedecinLiaisonController;
 use App\Http\Controllers\Medecin\ProfileController as MedecinProfileControllerNamespace;
@@ -140,6 +141,11 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('/rendez-vous/{id}', [ClientRendezVousController::class, 'show']);
         Route::get('/rendez-vous', [ClientRendezVousController::class, 'getMyRendezVous']);
         Route::patch('/rendez-vous/{id}/cancel', [ClientRendezVousController::class, 'cancel']);
+
+        // Consultations, documents archivés (ordonnances, factures) et leur téléchargement
+        Route::get('/consultations', [ClientDossierController::class, 'consultations']);
+        Route::get('/documents', [ClientDossierController::class, 'documents']);
+        Route::get('/documents/{id}/download', [ClientDossierController::class, 'downloadDocument']);
     });
 
     // ============================================
@@ -226,13 +232,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
         Route::get('/pdf-data/{rendezVousId}', [PdfDataController::class, 'show']);
 
-        // Pas de suppression : les documents archivés ne peuvent qu'être édités
-        Route::prefix('generated-documents')->name('generated-documents.')->group(function () {
-            Route::get('/', [GeneratedDocumentController::class, 'index']);
-            Route::post('/', [GeneratedDocumentController::class, 'store']);
-            Route::put('/{id}', [GeneratedDocumentController::class, 'update']);
-            Route::get('/{id}/download', [GeneratedDocumentController::class, 'download']);
-        });
+        // Archivage des ordonnances et factures, toujours lié à une consultation en cours
+        Route::post('/generated-documents', [GeneratedDocumentController::class, 'store']);
     });
 
     // ============================================
@@ -254,6 +255,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
             Route::delete('/{id}', [SecretaireRendezVousController::class, 'destroy']);
             Route::get('/medecin/{medecinId}', [SecretaireRendezVousController::class, 'getMedecinRendezVous']);
             Route::patch('/{id}/cancel', [SecretaireRendezVousController::class, 'cancel']);
+            Route::post('/{id}/renvoyer-email', [SecretaireRendezVousController::class, 'renvoyerEmail']);
         });
 
         // Médecins Management

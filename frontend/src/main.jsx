@@ -47,6 +47,8 @@ import UserVerification from "./pages/admin/user-verification/UserVerification";
 import DashboardUser from "./pages/user/dashboard/DashboardUser";
 import MesRendezVous from "./pages/user/mes_RDV/MesRendezVous";
 import ClientProfile from "./pages/user/profile/ClientProfile";
+import MesDocuments from "./pages/user/mes_documents/MesDocuments";
+import MesConsultations from "./pages/user/mes_consultations/MesConsultations";
 import PendingApproval from "./pages/public/PendingApproval";
 import PdfTemplatesList from "./pages/medecin/pdf-templates/PdfTemplatesList";
 import PdfLogosPage from "./pages/medecin/pdf-templates/PdfLogosPage";
@@ -125,6 +127,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/user/dashboard" element={<DashboardUser />} />
         <Route path="/user/mes-rdv" element={<MesRendezVous />} />
         <Route path="/user/profile" element={<ClientProfile />} />
+        <Route path="/user/documents" element={<MesDocuments />} />
+        <Route path="/user/consultations" element={<MesConsultations />} />
       </Routes>
     </BrowserRouter>
   </AuthProvider>

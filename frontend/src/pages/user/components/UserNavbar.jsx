@@ -1,20 +1,11 @@
 import { useContext } from "react";
 import { AuthContext } from "../../../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import styles from "./UserNavbar.module.css";
 
 const UserNavbar = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
-
-  const handleDevelopment = (e) => {
-    e.preventDefault();
-    toast.warning("En développement", {
-      position: "top-right",
-      autoClose: 3000,
-    });
-  };
 
   const handleLogout = async () => {
     try {
@@ -56,7 +47,24 @@ const UserNavbar = () => {
             >
               Mes Rendez-vous
             </a>
-            <a href="#documents" className={styles.navLink} onClick={handleDevelopment}>
+            <a
+              href="#consultations"
+              className={styles.navLink}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/user/consultations");
+              }}
+            >
+              Mes Consultations
+            </a>
+            <a
+              href="#documents"
+              className={styles.navLink}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/user/documents");
+              }}
+            >
               Mes Documents
             </a>
             <a

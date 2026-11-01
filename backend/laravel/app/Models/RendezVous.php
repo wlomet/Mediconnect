@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Exceptions\BusinessException;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
@@ -60,6 +61,17 @@ class RendezVous extends Model
         return $this->hasOne(Consultation::class, 'rendez_vous_id');
     }
 
+    public function documents()
+    {
+        return $this->hasMany(GeneratedDocument::class, 'rendez_vous_id');
+    }
+
+    // Rendez-vous du patient : créés pour lui ou par lui (critère de « Mes rendez-vous »).
+    public function scopeDuClient(Builder $query, int $clientId): Builder
+    {
+        return $query->where(fn (Builder $q) => $q->where('client_id', $clientId)->orWhere('author_id', $clientId));
+    }
+
     public function hasConsultation(): bool
     {
         return $this->consultation()->exists();
@@ -80,6 +92,20 @@ class RendezVous extends Model
             }
 
             throw $e;
+        }
+    }
+
+    // Le patient a pris le rendez-vous lui-même depuis son compte (auteur = patient).
+    public function clientAPrisLeRendezVous(): bool
+    {
+        return $this->author_id !== null && (int) $this->author_id === (int) $this->client_id;
+    }
+
+    // Un rendez-vous lié à une consultation ne peut plus être modifié ni annulé.
+    public function verifierModifiable(): void
+    {
+        if ($this->hasConsultation()) {
+            throw new BusinessException('Rendez-vous non modifiable : une consultation y est liée.', 409);
         }
     }
 

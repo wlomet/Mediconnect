@@ -248,14 +248,6 @@
   background-color: #9333ea;
 }
 
-.actionButtonOrange {
-  background-color: #f97316;
-}
-
-.actionButtonOrange:hover {
-  background-color: #ea580c;
-}
-
 /* Tabs */
 .tabsContainer {
   margin-bottom: 2rem;

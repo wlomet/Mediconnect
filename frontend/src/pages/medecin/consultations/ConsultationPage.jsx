@@ -7,6 +7,7 @@ import { consultationApi, extraireErreur } from "../../../api/consultationApi";
 import FactureEditor from "./FactureEditor";
 import ModalAbandonConsultation from "./ModalAbandonConsultation";
 import ModalApercu from "./ModalApercu";
+import { archiverDocumentsConsultation } from "./archivageConsultation";
 import {
   JOURNAL_LABELS,
   STATUT_LABELS,
@@ -112,7 +113,12 @@ const ConsultationPage = () => {
 
   const terminer = async () => {
     setConfirmTerminer(false);
+    setOccupe(true);
+    const echecs = await archiverDocumentsConsultation(c);
     const ok = await executer(() => consultationApi.terminer(c.id), "Consultation terminée");
+    if (echecs.length > 0) {
+      toast.warning(`Archivage impossible : ${echecs.join(", ")}. Vous pouvez les générer depuis Modèles de documents.`);
+    }
     if (ok) navigate("/dashboard");
   };
 
@@ -368,7 +374,7 @@ const ConsultationPage = () => {
       <ConfirmDialog
         open={confirmTerminer}
         title="Terminer la consultation ?"
-        message="La consultation sera marquée comme terminée et le rendez-vous passera au statut terminé."
+        message="La consultation sera marquée comme terminée, le rendez-vous passera au statut terminé et l'ordonnance et la facture seront archivées."
         confirmLabel="Terminer"
         cancelLabel="Annuler"
         onConfirm={terminer}

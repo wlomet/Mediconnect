@@ -221,6 +221,14 @@
   background-color: #9333ea;
 }
 
+.actionButtonOrange {
+  background-color: #f97316;
+}
+
+.actionButtonOrange:hover {
+  background-color: #ea580c;
+}
+
 /* Appointment details */
 .appointmentDate {
   font-weight: 600;

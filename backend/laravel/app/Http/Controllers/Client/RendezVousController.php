@@ -70,8 +70,7 @@ class RendezVousController extends Controller
     {
         $client = $request->user();
 
-        $rendezVous = RendezVous::where('client_id', $client->id)
-            ->orWhere('author_id', $client->id)
+        $rendezVous = RendezVous::duClient($client->id)
             ->with(['medecin', 'medecin.hopital'])
             ->orderBy('date_debut', 'desc')
             ->get()

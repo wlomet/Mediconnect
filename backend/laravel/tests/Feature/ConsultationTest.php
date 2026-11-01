@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AntecedentOption;
 use App\Models\Consultation;
+use App\Models\GeneratedDocument;
 use App\Models\User;
 use App\Services\MailService;
 use Database\Seeders\RoleSeeder;
@@ -225,7 +226,6 @@ class ConsultationTest extends TestCase
         $this->post('/api/medecin/generated-documents', [
             'pdf' => UploadedFile::fake()->create('ordonnance.pdf', 20, 'application/pdf'),
             'type' => 'ordonnance',
-            'titre' => 'Ordonnance test',
             'consultation_id' => $consultation->id,
         ], ['Accept' => 'application/json'])->assertCreated();
 
@@ -246,8 +246,40 @@ class ConsultationTest extends TestCase
         $this->post('/api/medecin/generated-documents', [
             'pdf' => UploadedFile::fake()->create('facture.pdf', 20, 'application/pdf'),
             'type' => 'facture',
-            'titre' => 'Facture test',
             'consultation_id' => $consultation->id,
         ], ['Accept' => 'application/json'])->assertUnprocessable();
+    }
+
+    public function test_document_cannot_be_archived_without_consultation(): void
+    {
+        Storage::fake('local');
+        [$user, $profil] = $this->makeMedecin();
+        $rdv = $this->makeRendezVous($profil);
+        Sanctum::actingAs($user);
+
+        $this->post('/api/medecin/generated-documents', [
+            'pdf' => UploadedFile::fake()->create('ordonnance.pdf', 20, 'application/pdf'),
+            'type' => 'ordonnance',
+            'rendez_vous_id' => $rdv->id,
+        ], ['Accept' => 'application/json'])->assertUnprocessable();
+
+        $this->assertDatabaseCount('generated_documents', 0);
+    }
+
+    public function test_archived_document_title_is_defined_by_the_backend(): void
+    {
+        Storage::fake('local');
+        [$user, $profil] = $this->makeMedecin();
+        $consultation = $this->makeConsultation($profil, $this->makeRendezVous($profil));
+        Sanctum::actingAs($user);
+
+        $this->post('/api/medecin/generated-documents', [
+            'pdf' => UploadedFile::fake()->create('facture.pdf', 20, 'application/pdf'),
+            'type' => 'facture',
+            'consultation_id' => $consultation->id,
+        ], ['Accept' => 'application/json'])->assertCreated();
+
+        $document = GeneratedDocument::where('consultation_id', $consultation->id)->firstOrFail();
+        $this->assertMatchesRegularExpression('/^facture_\d{10}$/', $document->titre);
     }
 }

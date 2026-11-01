@@ -4,7 +4,6 @@ import NavbarMedecin from "../components/NavbarMedecin";
 import styles from "./DashboardMedecin.module.css";
 import MedecinLiaisons from "../liaisons/MedecinLiaisons";
 import ModalNouveauRendezVous from "./modals/ModalNouveauRendezVous";
-import GenerateDocumentModal from "../pdf-templates/GenerateDocumentModal";
 import ModalDemarrerConsultation from "../consultations/ModalDemarrerConsultation";
 import api from "../../../api/axios";
 
@@ -17,7 +16,6 @@ const DashboardMedecin = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showNewRdvModal, setShowNewRdvModal] = useState(false);
-  const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [showConsultationModal, setShowConsultationModal] = useState(false);
   const [medecinInfo, setMedecinInfo] = useState(null);
   const [agendaPeriod, setAgendaPeriod] = useState("today");
@@ -245,12 +243,6 @@ const DashboardMedecin = () => {
                       Voir le Planning
                     </button>
                     <button
-                      className={`${styles.actionButton} ${styles.actionButtonOrange}`}
-                      onClick={() => setShowDocumentModal(true)}
-                    >
-                      Rédiger Ordonnance
-                    </button>
-                    <button
                       className={`${styles.actionButton} ${styles.actionButtonBlue}`}
                       onClick={() => navigate("/medecin/pdf-templates")}
                     >
@@ -266,10 +258,6 @@ const DashboardMedecin = () => {
       </main>
 
       {showNewRdvModal && <ModalNouveauRendezVous onClose={() => setShowNewRdvModal(false)} />}
-
-      {showDocumentModal && (
-        <GenerateDocumentModal onClose={() => setShowDocumentModal(false)} />
-      )}
 
       {showConsultationModal && (
         <ModalDemarrerConsultation onClose={() => setShowConsultationModal(false)} />

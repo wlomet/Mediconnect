@@ -59,26 +59,8 @@ export const fetchImagesForLayout = async (elements = [], source = null) => {
 export const pdfApi = {
   ...templateApi("/medecin"),
 
-  listRendezVous: () => api.get(`${base}/rendez-vous`).then((res) => res.data.rendez_vous),
-
   getPdfData: (rendezVousId) => api.get(`${base}/pdf-data/${rendezVousId}`).then((res) => res.data),
-
-  listDocuments: (rendezVousId) =>
-    api
-      .get(`${base}/generated-documents`, { params: { rendez_vous_id: rendezVousId } })
-      .then((res) => res.data.documents),
 
   createDocument: (formData) =>
     api.post(`${base}/generated-documents`, formData).then((res) => res.data.document),
-
-  // Laravel n'accepte pas PUT en multipart : envoi en POST avec _method=PUT
-  updateDocument: (id, formData) => {
-    formData.append("_method", "PUT");
-    return api.post(`${base}/generated-documents/${id}`, formData).then((res) => res.data.document);
-  },
-
-  downloadDocument: (id) =>
-    api
-      .get(`${base}/generated-documents/${id}/download`, { responseType: "blob" })
-      .then((res) => res.data),
 };
