@@ -90,7 +90,7 @@ class ConsultationController extends Controller
             'rendez_vous_id' => ['nullable', 'integer', Rule::exists('rendez_vous', 'id')->where('medecin_id', $profil->id)],
             'name' => ['required_without:rendez_vous_id', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:20', new PhoneNumber],
+            'phone' => ['nullable', 'string', 'max:20', new PhoneNumber()],
             'motif' => ['required_without:rendez_vous_id', 'string', 'max:500'],
         ]);
 

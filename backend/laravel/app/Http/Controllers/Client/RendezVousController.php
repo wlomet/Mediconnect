@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Client;
 
 use App\Rules\PhoneNumber;
-
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\RendezVous;
@@ -27,7 +26,7 @@ class RendezVousController extends Controller
             'statut' => 'required',
             'client_id' => 'nullable|integer|exists:users,id',
             'email' => 'nullable|email|max:255',
-            'phone' => ['nullable', 'string', 'max:20', new PhoneNumber],
+            'phone' => ['nullable', 'string', 'max:20', new PhoneNumber()],
             'name' => 'nullable|string|max:255',
         ]);
 

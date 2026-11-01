@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Medecin;
 
 use App\Rules\PhoneNumber;
-
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\RendezVous;
@@ -151,7 +150,7 @@ class RendezVousController extends Controller
             'notes' => 'sometimes|nullable|string|max:1000',
             'email' => 'sometimes|email|max:255',
             'name' => 'sometimes|string|max:255',
-            'phone' => ['sometimes', 'nullable', 'string', 'max:20', new PhoneNumber]
+            'phone' => ['sometimes', 'nullable', 'string', 'max:20', new PhoneNumber()]
         ]);
 
         // Vérifier qu'au moins l'email ou le téléphone est fourni
@@ -228,7 +227,7 @@ class RendezVousController extends Controller
             'medecin_id' => ['required', 'integer', Rule::in([$profil->id])],
             'email' => 'nullable|email|max:255',
             'name' => 'required|string|max:255',
-            'phone' => ['nullable', 'string', 'max:20', new PhoneNumber],
+            'phone' => ['nullable', 'string', 'max:20', new PhoneNumber()],
             'motif' => 'nullable|string|max:500',
             'notes' => 'nullable|string|max:1000',
             'date_debut' => 'required|date',
