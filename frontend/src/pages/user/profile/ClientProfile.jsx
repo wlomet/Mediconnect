@@ -6,6 +6,7 @@ import api from "../../../api/axios";
 import UserNavbar from "../components/UserNavbar";
 import styles from "../../public/rdv/SearchMedecin.module.css";
 import { validatePhone } from "../../../utils/phoneValidation";
+import ClientAntecedents from "./ClientAntecedents";
 
 export default function ClientProfile() {
   const { user, loading } = useContext(AuthContext);
@@ -322,6 +323,9 @@ export default function ClientProfile() {
                   </div>
                 )}
               </div>
+
+              {/* Antecedents Section */}
+              <ClientAntecedents />
 
               {/* Change Password Section */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
