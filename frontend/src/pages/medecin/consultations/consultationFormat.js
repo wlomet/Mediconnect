@@ -64,7 +64,7 @@ export const formatDateHeure = (value) => {
 };
 
 export const formatMontant = (value) =>
-  Number(value ?? 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+  Number(value ?? 0).toLocaleString("fr-FR", { style: "currency", currency: "XOF" });
 
 // Valeur attendue par un input datetime-local, exprimée en heure locale.
 export const versValeurDateLocale = (value) => {

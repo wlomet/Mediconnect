@@ -99,7 +99,7 @@ class ConsultationController extends Controller
             ];
         });
 
-        $entetes = ['Nom', 'Email', 'Date du rendez-vous', 'Motif', 'Statut du rendez-vous', 'Début de consultation', 'Fin de consultation', 'Statut de consultation', 'Ordonnance', 'Montant facture (EUR)', "Motif d'abandon"];
+        $entetes = ['Nom', 'Email', 'Date du rendez-vous', 'Motif', 'Statut du rendez-vous', 'Début de consultation', 'Fin de consultation', 'Statut de consultation', 'Ordonnance', 'Montant facture (XOF)', "Motif d'abandon"];
 
         if ($request->query('format') === 'json') {
             return response()->json(['nom_base' => $nomBase, 'entetes' => $entetes, 'lignes' => $lignes]);

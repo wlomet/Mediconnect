@@ -26,7 +26,7 @@ export const formatDateHeure = (value) => {
 };
 
 export const formatMontant = (value) =>
-  Number(value ?? 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+  Number(value ?? 0).toLocaleString("fr-FR", { style: "currency", currency: "XOF" });
 
 export const telechargerDocument = async (doc) => {
   try {

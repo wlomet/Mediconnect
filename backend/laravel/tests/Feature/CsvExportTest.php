@@ -40,7 +40,7 @@ class CsvExportTest extends TestCase
         $lignes = $this->lignesCsv($this->get('/api/medecin/consultations/export')->assertOk());
 
         $this->assertSame(
-            ['Nom', 'Email', 'Date du rendez-vous', 'Motif', 'Statut du rendez-vous', 'Début de consultation', 'Fin de consultation', 'Statut de consultation', 'Ordonnance', 'Montant facture (EUR)', "Motif d'abandon"],
+            ['Nom', 'Email', 'Date du rendez-vous', 'Motif', 'Statut du rendez-vous', 'Début de consultation', 'Fin de consultation', 'Statut de consultation', 'Ordonnance', 'Montant facture (XOF)', "Motif d'abandon"],
             $lignes[0]
         );
         $this->assertCount(2, $lignes);
