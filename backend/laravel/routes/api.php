@@ -30,6 +30,7 @@ use App\Http\Controllers\Medecin\PdfDataController;
 use App\Http\Controllers\Medecin\GeneratedDocumentController;
 use App\Http\Controllers\Medecin\ConsultationController;
 use App\Http\Controllers\Medecin\DashboardController as MedecinDashboardController;
+use App\Http\Controllers\Medecin\StatistiqueController as MedecinStatistiqueController;
 use App\Http\Controllers\Secretaire\RendezVousController as SecretaireRendezVousController;
 use App\Http\Controllers\Secretaire\LiaisonController as SecretaireLiaisonController;
 use App\Http\Controllers\Secretaire\DashboardController as SecretaireDashboardController;
@@ -169,6 +170,14 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         // Dashboard
         Route::get('/dashboard/stats', [MedecinDashboardController::class, 'stats']);
 
+        // Statistiques (un endpoint par graphique, chacun avec sa propre période from/to)
+        Route::prefix('statistiques')->group(function () {
+            Route::get('/rendez-vous', [MedecinStatistiqueController::class, 'rendezVous']);
+            Route::get('/consultations', [MedecinStatistiqueController::class, 'consultations']);
+            Route::get('/documents', [MedecinStatistiqueController::class, 'documents']);
+            Route::get('/factures', [MedecinStatistiqueController::class, 'factures']);
+        });
+
         // Planning
         Route::get('/planning/export', [MedecinPlanningController::class, 'exportRendezVous']);
 
@@ -248,6 +257,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
         // Archivage des ordonnances et factures, toujours lié à une consultation en cours
         Route::post('/generated-documents', [GeneratedDocumentController::class, 'store']);
+        Route::get('/generated-documents/{id}/download', [GeneratedDocumentController::class, 'download']);
     });
 
     // ============================================

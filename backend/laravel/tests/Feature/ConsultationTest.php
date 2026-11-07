@@ -473,4 +473,30 @@ class ConsultationTest extends TestCase
         $document = GeneratedDocument::where('consultation_id', $consultation->id)->firstOrFail();
         $this->assertMatchesRegularExpression('/^facture_\d{10}$/', $document->titre);
     }
+
+    public function test_medecin_downloads_only_his_own_archived_document(): void
+    {
+        Storage::fake('local');
+        [$user, $profil] = $this->makeMedecin();
+        [$autreUser] = $this->makeMedecin();
+        $consultation = $this->makeConsultation($profil, $this->makeRendezVous($profil));
+        Sanctum::actingAs($user);
+
+        $this->post('/api/medecin/generated-documents', [
+            'pdf' => UploadedFile::fake()->create('ordonnance.pdf', 20, 'application/pdf'),
+            'type' => 'ordonnance',
+            'consultation_id' => $consultation->id,
+        ], ['Accept' => 'application/json'])->assertCreated();
+
+        $document = GeneratedDocument::where('consultation_id', $consultation->id)->firstOrFail();
+
+        $this->get("/api/medecin/generated-documents/{$document->id}/download")
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf');
+
+        Sanctum::actingAs($autreUser);
+
+        $this->get("/api/medecin/generated-documents/{$document->id}/download")
+            ->assertNotFound();
+    }
 }

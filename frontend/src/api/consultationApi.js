@@ -63,6 +63,9 @@ export const consultationApi = {
   reprendre: (id) => api.post(`${base}/${id}/reprendre`).then((res) => res.data.consultation),
 
   terminer: (id) => api.post(`${base}/${id}/terminer`).then((res) => res.data.consultation),
+
+  telechargerDocument: (id) =>
+    api.get(`/medecin/generated-documents/${id}/download`, { responseType: "blob" }).then((res) => res.data),
 };
 
 // Une consultation en conflit (409) est renvoyée dans consultationId, avec son code (ex. consultation_en_cours).

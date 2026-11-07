@@ -94,6 +94,7 @@ class MailService
             ->post(self::ENDPOINT, $payload);
 
         if ($response->failed()) {
+            Log::error('Echec envoi Brevo : ' . $response->body());
             throw new RuntimeException('Echec envoi Brevo (' . $response->status() . ') : ' . $response->body());
         }
 
@@ -238,6 +239,13 @@ class MailService
         if (! empty($dev['from'])) {
             $payload['sender'] = $this->sender(['email' => $dev['from'], 'name' => $payload['sender']['name'] ?? null]);
         }
+        Log::channel('mail_simulated')->info('Redirection email en local', [
+            'to' => $payload['to'],
+            'cc' => $payload['cc'] ?? null,
+            'bcc' => $payload['bcc'] ?? null,
+            'sender' => $payload['sender'],
+            'subject' => $payload['subject'],
+        ]);
 
         return $payload;
     }

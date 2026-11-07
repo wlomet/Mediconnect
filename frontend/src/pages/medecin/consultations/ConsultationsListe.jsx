@@ -5,6 +5,7 @@ import NavbarMedecin from "../components/NavbarMedecin";
 import ModalDemarrerConsultation from "./ModalDemarrerConsultation";
 import { consultationApi, extraireErreur } from "../../../api/consultationApi";
 import PanneauExport from "../../../components/PanneauExport";
+import { downloadBlob } from "../../../utils/pdf/downloadBlob";
 import { STATUT_LABELS, formatDateHeure, formatMontant } from "./consultationFormat";
 import styles from "./Consultations.module.css";
 
@@ -21,6 +22,29 @@ const BADGE_STATUT = {
   en_attente: styles.badgeEnAttente,
   abandonnee: styles.badgeAbandonnee,
   terminee: styles.badgeTerminee,
+};
+
+const BoutonTelechargerDocument = ({ consultation, type }) => {
+  const doc = consultation.documents
+    .filter((d) => d.type === type)
+    .sort((a, b) => b.id - a.id)[0];
+
+  if (!doc) return null;
+
+  const telecharger = async () => {
+    try {
+      const blob = await consultationApi.telechargerDocument(doc.id);
+      downloadBlob(blob, `${doc.titre}.pdf`);
+    } catch {
+      toast.error("Téléchargement impossible");
+    }
+  };
+
+  return (
+    <button type="button" className={styles.linkButton} onClick={telecharger}>
+      Télécharger le PDF
+    </button>
+  );
 };
 
 const ConsultationsListe = () => {
@@ -156,8 +180,14 @@ const ConsultationsListe = () => {
                       {c.patient.nom}
                       <div className={styles.small}>{c.patient.email || c.patient.telephone || "—"}</div>
                     </td>
-                    <td>{libelleOrdonnance(c)}</td>
-                    <td>{libelleFacture(c)}</td>
+                    <td>
+                      {libelleOrdonnance(c)}
+                      <BoutonTelechargerDocument consultation={c} type="ordonnance" />
+                    </td>
+                    <td>
+                      {libelleFacture(c)}
+                      <BoutonTelechargerDocument consultation={c} type="facture" />
+                    </td>
                     <td>{formatDateHeure(c.heure_debut_reelle)}</td>
                     <td>{formatDateHeure(c.ended_at)}</td>
                     <td>

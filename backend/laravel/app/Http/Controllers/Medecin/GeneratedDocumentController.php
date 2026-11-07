@@ -8,6 +8,7 @@ use App\Models\GeneratedDocument;
 use App\Models\PdfTemplate;
 use App\Services\PdfScope;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -57,5 +58,19 @@ class GeneratedDocumentController extends Controller
             'message' => 'Document archivé',
             'document' => $document,
         ], 201);
+    }
+
+    public function download(Request $request, int $id)
+    {
+        $profile = $request->user()->medecinProfile;
+        abort_unless($profile, 403);
+
+        $document = GeneratedDocument::where('medecin_profile_id', $profile->id)->findOrFail($id);
+
+        abort_unless(Storage::disk('local')->exists($document->chemin), 404);
+
+        return response(Storage::disk('local')->get($document->chemin), 200, [
+            'Content-Type' => 'application/pdf',
+        ]);
     }
 }

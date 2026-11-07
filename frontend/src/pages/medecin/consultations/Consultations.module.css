@@ -226,6 +226,22 @@
   text-decoration: underline;
 }
 
+.linkButton {
+  display: block;
+  margin-top: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #2563eb;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.linkButton:hover {
+  text-decoration: underline;
+}
+
 .badge {
   display: inline-block;
   padding: 2px 10px;
