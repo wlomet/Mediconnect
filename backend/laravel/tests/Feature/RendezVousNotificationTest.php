@@ -12,6 +12,8 @@ use App\Models\User;
 use App\Services\MailService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Tests\Feature\Concerns\RendezVousFixtures;
 use Tests\Feature\Concerns\SessionAuth as Sanctum;
@@ -107,7 +109,36 @@ class RendezVousNotificationTest extends TestCase
         $this->terminerConsultation($consultation);
 
         $this->assertCount(1, $envois);
-        $this->assertStringContainsString('retrouver toutes vos informations', $envois[0]['html']);
+        $this->assertStringContainsString('Vous pouvez retrouver vos informations', $envois[0]['html']);
+    }
+
+    public function test_end_of_consultation_email_names_the_documents_archived(): void
+    {
+        Storage::fake('local');
+        User::factory()->create(['email' => 'patient@example.test', 'email_verified_at' => now()]);
+        [$user, $profil] = $this->makeMedecin();
+        $consultation = $this->makeConsultation($profil, $this->makeRendezVous($profil));
+        $envois = $this->espionnerEnvois();
+        Sanctum::actingAs($user);
+
+        $this->putJson("/api/medecin/consultations/{$consultation->id}/ordonnance", [
+            'lignes' => [['libelle' => 'Médicament A', 'quantite' => 1, 'prise' => 'matin']],
+        ])->assertOk();
+        $this->putJson("/api/medecin/consultations/{$consultation->id}/facture", [
+            'lignes' => [['libelle' => 'Consultation', 'quantite' => 1, 'prix_unitaire' => 20]],
+        ])->assertOk();
+
+        foreach (['ordonnance', 'facture'] as $type) {
+            $this->post('/api/medecin/generated-documents', [
+                'pdf' => UploadedFile::fake()->create("{$type}.pdf", 20, 'application/pdf'),
+                'type' => $type,
+                'consultation_id' => $consultation->id,
+            ], ['Accept' => 'application/json'])->assertCreated();
+        }
+
+        $this->postJson("/api/medecin/consultations/{$consultation->id}/terminer")->assertOk();
+
+        $this->assertStringContainsString('retrouver votre ordonnance et votre facture', $envois[0]['html']);
     }
 
     public function test_end_of_consultation_email_has_no_access_when_patient_has_no_account(): void
@@ -121,7 +152,7 @@ class RendezVousNotificationTest extends TestCase
 
         $this->assertCount(1, $envois);
         $this->assertStringContainsString('est terminée', $envois[0]['html']);
-        $this->assertStringNotContainsString('retrouver toutes vos informations', $envois[0]['html']);
+        $this->assertStringNotContainsString('espace MediConnect', $envois[0]['html']);
     }
 
     public function test_confirmation_email_is_sent_when_medecin_creates_confirmed_rendez_vous(): void
@@ -299,6 +330,8 @@ class RendezVousNotificationTest extends TestCase
         $this->putJson("/api/medecin/consultations/{$consultation->id}/facture", [
             'lignes' => [['libelle' => 'Consultation', 'quantite' => 1, 'prix_unitaire' => 20]],
         ])->assertOk();
+
+        $this->putJson("/api/medecin/consultations/{$consultation->id}/ordonnance/non-generee")->assertOk();
 
         $this->postJson("/api/medecin/consultations/{$consultation->id}/terminer")->assertOk();
     }

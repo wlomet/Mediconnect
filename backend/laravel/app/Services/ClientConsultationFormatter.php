@@ -22,6 +22,8 @@ class ClientConsultationFormatter
             'heure_debut_reelle' => $c->heure_debut_reelle,
             'ended_at' => $c->ended_at,
             'ordonnance_texte' => $c->ordonnance_texte,
+            'ordonnance_decision' => $c->decisionOrdonnance(),
+            'facture_decision' => $c->decisionFacture(),
             'rendez_vous' => [
                 'id' => $rdv->id,
                 'date_debut' => $rdv->date_debut,

@@ -8,8 +8,10 @@ import FactureEditor from "./FactureEditor";
 import OrdonnanceEditor from "./OrdonnanceEditor";
 import ModalAbandonConsultation from "./ModalAbandonConsultation";
 import ModalApercu from "./ModalApercu";
+import DecisionDocument from "./DecisionDocument";
 import { archiverDocumentsConsultation } from "./archivageConsultation";
 import {
+  DOCUMENT_DECISION,
   JOURNAL_LABELS,
   STATUT_LABELS,
   formatDateHeure,
@@ -93,7 +95,7 @@ const ConsultationPage = () => {
   const { consultation: c, historique, journal, antecedents } = data;
   const enCours = c.statut === "en_cours";
   const reprenable = c.statut === "en_attente" || c.statut === "abandonnee";
-  const peutTerminer = enCours && Boolean(c.facture?.lignes?.length);
+  const peutTerminer = enCours && Boolean(c.ordonnance_decision) && Boolean(c.facture_decision);
   const heureModifiee = heure !== versValeurDateLocale(c.heure_debut_reelle);
 
   const enregistrerHeure = () =>
@@ -104,6 +106,12 @@ const ConsultationPage = () => {
 
   const enregistrerFacture = (lignes) =>
     executer(() => consultationApi.saveFacture(c.id, lignes), "Facture enregistrée");
+
+  const declarerSansDocument = (type) =>
+    executer(() => consultationApi.declarerSansDocument(c.id, type), DOCUMENT_DECISION[type].messageDeclaree);
+
+  const annulerSansDocument = (type) =>
+    executer(() => consultationApi.annulerSansDocument(c.id, type), DOCUMENT_DECISION[type].messageAnnulee);
 
   const abandonner = async (motif) => {
     const ok = await executer(() => consultationApi.abandonner(c.id, motif), "Consultation abandonnée");
@@ -166,7 +174,7 @@ const ConsultationPage = () => {
                   className={`${styles.button} ${styles.success}`}
                   onClick={() => setConfirmTerminer(true)}
                   disabled={occupe || !peutTerminer}
-                  title={peutTerminer ? "" : "Une facture avec au moins une ligne est requise"}
+                  title={peutTerminer ? "" : "Indiquez pour l'ordonnance et la facture si elles seront établies ou non"}
                 >
                   Terminer la consultation
                 </button>
@@ -193,6 +201,11 @@ const ConsultationPage = () => {
         {c.statut === "terminee" && (
           <div className={`${styles.banner} ${styles.bannerInfo}`}>
             Consultation terminée. Les informations sont en lecture seule.
+          </div>
+        )}
+        {enCours && !peutTerminer && (
+          <div className={`${styles.banner} ${styles.bannerInfo}`}>
+            Avant de terminer, rédigez l'ordonnance et la facture ou déclarez qu'il n'y en aura pas.
           </div>
         )}
         {conflitId && (
@@ -328,29 +341,49 @@ const ConsultationPage = () => {
 
             <section className={styles.card}>
               <h2 className={styles.cardTitle}>Ordonnance</h2>
-              <OrdonnanceEditor
-                key={c.id}
-                lignesInitiales={c.ordonnance?.lignes ?? []}
-                commentaireInitial={c.ordonnance?.commentaire ?? ""}
-                readOnly={!enCours}
-                saving={occupe}
-                onSave={enregistrerOrdonnance}
-                onApercu={() => setApercu("ordonnance")}
-                apercuDisabled={!c.ordonnance_texte}
+              <DecisionDocument
+                type="ordonnance"
+                decision={c.ordonnance_decision}
+                enCours={enCours}
+                occupe={occupe}
+                onDeclarer={() => declarerSansDocument("ordonnance")}
+                onReprendre={() => annulerSansDocument("ordonnance")}
               />
+              {c.ordonnance_decision !== "non_generee" && (
+                <OrdonnanceEditor
+                  key={c.id}
+                  lignesInitiales={c.ordonnance?.lignes ?? []}
+                  commentaireInitial={c.ordonnance?.commentaire ?? ""}
+                  readOnly={!enCours}
+                  saving={occupe}
+                  onSave={enregistrerOrdonnance}
+                  onApercu={() => setApercu("ordonnance")}
+                  apercuDisabled={!c.ordonnance_texte}
+                />
+              )}
             </section>
 
             <section className={styles.card}>
               <h2 className={styles.cardTitle}>Facture</h2>
-              <FactureEditor
-                key={c.id}
-                lignesInitiales={c.facture?.lignes ?? []}
-                readOnly={!enCours}
-                saving={occupe}
-                onSave={enregistrerFacture}
-                onApercu={() => setApercu("facture")}
-                apercuDisabled={!c.facture?.lignes?.length}
+              <DecisionDocument
+                type="facture"
+                decision={c.facture_decision}
+                enCours={enCours}
+                occupe={occupe}
+                onDeclarer={() => declarerSansDocument("facture")}
+                onReprendre={() => annulerSansDocument("facture")}
               />
+              {c.facture_decision !== "non_generee" && (
+                <FactureEditor
+                  key={c.id}
+                  lignesInitiales={c.facture?.lignes ?? []}
+                  readOnly={!enCours}
+                  saving={occupe}
+                  onSave={enregistrerFacture}
+                  onApercu={() => setApercu("facture")}
+                  apercuDisabled={!c.facture?.lignes?.length}
+                />
+              )}
             </section>
           </div>
         </div>
@@ -373,7 +406,7 @@ const ConsultationPage = () => {
       <ConfirmDialog
         open={confirmTerminer}
         title="Terminer la consultation ?"
-        message="La consultation sera marquée comme terminée, le rendez-vous passera au statut terminé et l'ordonnance et la facture seront archivées."
+        message="La consultation sera marquée comme terminée et le rendez-vous passera au statut terminé. Les documents établis (ordonnance, facture) seront archivés."
         confirmLabel="Terminer"
         cancelLabel="Annuler"
         onConfirm={terminer}

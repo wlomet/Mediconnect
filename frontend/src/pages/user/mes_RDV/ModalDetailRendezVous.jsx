@@ -58,7 +58,11 @@ const SectionConsultation = ({ consultation }) => (
       {consultation.ordonnance_texte ? (
         <p className={styles.texte}>{consultation.ordonnance_texte}</p>
       ) : (
-        <p className={styles.muted}>Aucune ordonnance rédigée.</p>
+        <p className={styles.muted}>
+          {consultation.ordonnance_decision === "non_generee"
+            ? "Pas d'ordonnance pour cette consultation."
+            : "Aucune ordonnance rédigée."}
+        </p>
       )}
     </div>
 
@@ -89,7 +93,11 @@ const SectionConsultation = ({ consultation }) => (
           <p className={styles.total}>Total : {formatMontant(consultation.facture.total)}</p>
         </>
       ) : (
-        <p className={styles.muted}>Aucune facture.</p>
+        <p className={styles.muted}>
+          {consultation.facture_decision === "non_generee"
+            ? "Pas de facture pour cette consultation."
+            : "Aucune facture."}
+        </p>
       )}
     </div>
 

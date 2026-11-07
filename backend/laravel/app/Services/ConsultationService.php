@@ -17,6 +17,11 @@ use Illuminate\Support\Facades\DB;
 
 class ConsultationService
 {
+    private const COLONNES_SANS_DOCUMENT = [
+        'ordonnance' => 'ordonnance_non_generee',
+        'facture' => 'facture_non_generee',
+    ];
+
     public function __construct(
         private RendezVousBookingService $bookings,
         private RendezVousNotificationService $notifications,
@@ -25,12 +30,16 @@ class ConsultationService
 
     public function demarrerRendezVous(MedecinProfile $profil, User $user, RendezVous $rendezVous): Consultation
     {
+        $this->exigerCompteNonMasque($profil);
+
         return $this->verrouiller($profil, fn () => $this->creer($profil, $user, $rendezVous));
     }
 
     /** @param array{name: string, email?: ?string, phone?: ?string, motif?: ?string} $patient */
     public function demarrerRapide(MedecinProfile $profil, User $user, array $patient): Consultation
     {
+        $this->exigerCompteNonMasque($profil);
+
         return $this->verrouiller($profil, function () use ($profil, $user, $patient) {
             $debut = now();
 
@@ -87,6 +96,7 @@ class ConsultationService
             $consultation->update([
                 'ordonnance_commentaire' => $commentaire,
                 'ordonnance_texte' => $this->texteOrdonnance($lignesOrdonnance, $commentaire),
+                'ordonnance_non_generee' => false,
             ]);
             $this->journaliser($consultation, 'ordonnance_enregistree', $user, ['lignes' => count($lignes)]);
 
@@ -121,10 +131,49 @@ class ConsultationService
             }
 
             $facture->update(['total' => round($total, 2)]);
+            $consultation->update(['facture_non_generee' => false]);
             $this->journaliser($consultation, 'facture_enregistree', $user, [
                 'total' => round($total, 2),
                 'lignes' => count($lignes),
             ]);
+
+            return $this->charger($consultation);
+        });
+    }
+
+    // Déclare qu'aucun document de ce type ne sera établi ; le contenu déjà saisi est supprimé.
+    public function declarerSansDocument(MedecinProfile $profil, User $user, int $id, string $type): Consultation
+    {
+        return $this->verrouiller($profil, function () use ($profil, $user, $id, $type) {
+            $consultation = $this->enCours($profil, $id);
+
+            if ($type === 'ordonnance') {
+                ConsultationOrdonnanceLigne::where('consultation_id', $consultation->id)->delete();
+                $consultation->update(['ordonnance_texte' => null, 'ordonnance_commentaire' => null]);
+            } else {
+                $consultation->facture()->delete();
+            }
+
+            $consultation->update([self::COLONNES_SANS_DOCUMENT[$type] => true]);
+            $this->journaliser($consultation, "{$type}_non_generee", $user);
+
+            return $this->charger($consultation);
+        });
+    }
+
+    // Annule la déclaration : le médecin peut alors rédiger le document.
+    public function annulerSansDocument(MedecinProfile $profil, User $user, int $id, string $type): Consultation
+    {
+        return $this->verrouiller($profil, function () use ($profil, $user, $id, $type) {
+            $consultation = $this->enCours($profil, $id);
+            $colonne = self::COLONNES_SANS_DOCUMENT[$type];
+
+            if (! $consultation->{$colonne}) {
+                throw new BusinessException('Aucune déclaration à annuler.', 422);
+            }
+
+            $consultation->update([$colonne => false]);
+            $this->journaliser($consultation, "{$type}_declaration_annulee", $user);
 
             return $this->charger($consultation);
         });
@@ -199,8 +248,8 @@ class ConsultationService
         $terminee = $this->verrouiller($profil, function () use ($profil, $user, $id) {
             $consultation = $this->enCours($profil, $id);
 
-            if (!$consultation->facture?->lignes()->exists()) {
-                throw new BusinessException('Une facture comportant au moins une ligne est requise pour terminer la consultation.', 422);
+            if ($consultation->decisionOrdonnance() === null || $consultation->decisionFacture() === null) {
+                throw new BusinessException("Avant de terminer, rédigez l'ordonnance et la facture ou déclarez qu'il n'y en aura pas.", 422);
             }
 
             $consultation->update([
@@ -233,6 +282,8 @@ class ConsultationService
             'abandon_motif' => $c->abandon_motif,
             'paused_at' => $c->paused_at,
             'ordonnance_texte' => $c->ordonnance_texte,
+            'ordonnance_decision' => $c->decisionOrdonnance(),
+            'facture_decision' => $c->decisionFacture(),
             'ordonnance' => [
                 'commentaire' => $c->ordonnance_commentaire,
                 'lignes' => $c->ordonnanceLignes->map(fn (ConsultationOrdonnanceLigne $l) => [
@@ -333,6 +384,13 @@ class ConsultationService
         $texte = implode("\n\n", array_filter($blocs, fn (string $bloc) => $bloc !== ''));
 
         return $texte !== '' ? $texte : null;
+    }
+
+    private function exigerCompteNonMasque(MedecinProfile $profil): void
+    {
+        if ($profil->user?->hide) {
+            throw new BusinessException(MedecinProfile::MESSAGE_COMPTE_MASQUE, 403);
+        }
     }
 
     private function verrouiller(MedecinProfile $profil, callable $action): mixed

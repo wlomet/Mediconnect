@@ -86,8 +86,26 @@ class RendezVousNotificationService
             'medecin' => $this->nomMedecin($rendezVous),
             'date' => $rendezVous->date_debut->format('d/m/Y à H:i'),
             'acces' => $this->emailVerifie($rendezVous->email),
+            'documents' => $this->documentsArchives($consultation),
             'url' => rtrim(config('app.frontend_url'), '/') . '/login',
         ]);
+    }
+
+    // Documents archivés de la consultation, formulés pour l'email ; null si aucun.
+    private function documentsArchives(Consultation $consultation): ?string
+    {
+        $types = $consultation->documents->pluck('type');
+        $libelles = [];
+
+        if ($types->contains('ordonnance')) {
+            $libelles[] = 'votre ordonnance';
+        }
+
+        if ($types->contains('facture')) {
+            $libelles[] = 'votre facture';
+        }
+
+        return $libelles === [] ? null : implode(' et ', $libelles);
     }
 
     private function envoyer(RendezVous $rendezVous, string $vue, string $sujet, array $donnees): void

@@ -193,6 +193,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
             Route::put('/{id}/heure-debut', [ConsultationController::class, 'updateHeureDebut']);
             Route::put('/{id}/ordonnance', [ConsultationController::class, 'saveOrdonnance']);
             Route::put('/{id}/facture', [ConsultationController::class, 'saveFacture']);
+            Route::put('/{id}/{type}/non-generee', [ConsultationController::class, 'declarerSansDocument'])->whereIn('type', ['ordonnance', 'facture']);
+            Route::delete('/{id}/{type}/non-generee', [ConsultationController::class, 'annulerSansDocument'])->whereIn('type', ['ordonnance', 'facture']);
             Route::post('/{id}/abandon', [ConsultationController::class, 'abandon']);
             Route::post('/{id}/mettre-en-attente', [ConsultationController::class, 'mettreEnAttente']);
             Route::post('/{id}/reprendre', [ConsultationController::class, 'reprendre']);

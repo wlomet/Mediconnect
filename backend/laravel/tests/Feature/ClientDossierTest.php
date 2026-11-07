@@ -65,6 +65,23 @@ class ClientDossierTest extends TestCase
             ->assertJsonPath('consultations.0.documents.0.type', 'ordonnance');
     }
 
+    public function test_client_sees_when_no_prescription_or_invoice_was_declared(): void
+    {
+        [, $profil] = $this->makeMedecin();
+        $client = $this->makeUserWithRole('client');
+        $rdv = $this->makeRendezVous($profil, ['client_id' => $client->id]);
+        $consultation = $this->makeConsultation($profil, $rdv, Consultation::TERMINEE);
+        $consultation->update(['ordonnance_non_generee' => true, 'facture_non_generee' => true]);
+
+        SessionAuth::actingAs($client);
+
+        $this->getJson('/api/client/consultations')
+            ->assertOk()
+            ->assertJsonPath('consultations.0.ordonnance_decision', 'non_generee')
+            ->assertJsonPath('consultations.0.facture_decision', 'non_generee')
+            ->assertJsonPath('consultations.0.facture', null);
+    }
+
     public function test_consultation_documents_are_listed_newest_first(): void
     {
         [, $profil] = $this->makeMedecin();

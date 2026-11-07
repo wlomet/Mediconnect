@@ -174,7 +174,7 @@ class ConsultationTest extends TestCase
             ->assertUnprocessable();
     }
 
-    public function test_end_requires_an_invoice_and_marks_rendez_vous_as_terminated(): void
+    public function test_end_requires_a_decision_on_prescription_and_invoice(): void
     {
         [$user, $profil] = $this->makeMedecin();
         $rdv = $this->makeRendezVous($profil);
@@ -190,7 +190,16 @@ class ConsultationTest extends TestCase
             'lignes' => [
                 ['libelle' => 'Consultation', 'quantite' => 2, 'prix_unitaire' => 10.5],
             ],
-        ])->assertOk()->assertJsonPath('consultation.facture.total', '21.00');
+        ])->assertOk()
+            ->assertJsonPath('consultation.facture.total', '21.00')
+            ->assertJsonPath('consultation.facture_decision', 'generee');
+
+        $this->postJson("/api/medecin/consultations/{$consultation->id}/terminer")
+            ->assertUnprocessable();
+
+        $this->putJson("/api/medecin/consultations/{$consultation->id}/ordonnance/non-generee")
+            ->assertOk()
+            ->assertJsonPath('consultation.ordonnance_decision', 'non_generee');
 
         $this->postJson("/api/medecin/consultations/{$consultation->id}/terminer")
             ->assertOk()
@@ -199,6 +208,78 @@ class ConsultationTest extends TestCase
         $this->assertDatabaseHas('rendez_vous', ['id' => $rdv->id, 'statut' => 'terminé']);
         $this->assertNotNull(Consultation::find($consultation->id)->ended_at);
         $this->assertSame($dateDebut, $rdv->fresh()->date_debut->toDateTimeString());
+    }
+
+    public function test_declared_absence_removes_drafted_prescription_and_invoice(): void
+    {
+        [$user, $profil] = $this->makeMedecin();
+        $consultation = $this->makeConsultation($profil, $this->makeRendezVous($profil));
+        Sanctum::actingAs($user);
+
+        $this->putJson("/api/medecin/consultations/{$consultation->id}/ordonnance", [
+            'lignes' => [['libelle' => 'Médicament A', 'quantite' => 1, 'prise' => 'matin']],
+        ])->assertOk();
+
+        $this->putJson("/api/medecin/consultations/{$consultation->id}/facture", [
+            'lignes' => [['libelle' => 'Consultation', 'quantite' => 1, 'prix_unitaire' => 20]],
+        ])->assertOk();
+
+        $this->putJson("/api/medecin/consultations/{$consultation->id}/ordonnance/non-generee")
+            ->assertOk()
+            ->assertJsonPath('consultation.ordonnance_decision', 'non_generee')
+            ->assertJsonPath('consultation.ordonnance_texte', null)
+            ->assertJsonCount(0, 'consultation.ordonnance.lignes');
+
+        $this->putJson("/api/medecin/consultations/{$consultation->id}/facture/non-generee")
+            ->assertOk()
+            ->assertJsonPath('consultation.facture_decision', 'non_generee')
+            ->assertJsonPath('consultation.facture', null);
+
+        $this->assertDatabaseCount('consultation_ordonnance_lignes', 0);
+        $this->assertDatabaseCount('consultation_factures', 0);
+        $this->assertDatabaseHas('consultation_events', ['type' => 'ordonnance_non_generee']);
+        $this->assertDatabaseHas('consultation_events', ['type' => 'facture_non_generee']);
+    }
+
+    public function test_declared_absence_can_be_cancelled_before_writing_the_prescription(): void
+    {
+        [$user, $profil] = $this->makeMedecin();
+        $consultation = $this->makeConsultation($profil, $this->makeRendezVous($profil));
+        Sanctum::actingAs($user);
+
+        $this->deleteJson("/api/medecin/consultations/{$consultation->id}/ordonnance/non-generee")
+            ->assertUnprocessable();
+
+        $this->putJson("/api/medecin/consultations/{$consultation->id}/ordonnance/non-generee")->assertOk();
+
+        $this->deleteJson("/api/medecin/consultations/{$consultation->id}/ordonnance/non-generee")
+            ->assertOk()
+            ->assertJsonPath('consultation.ordonnance_decision', null);
+
+        $this->putJson("/api/medecin/consultations/{$consultation->id}/ordonnance", [
+            'lignes' => [['libelle' => 'Médicament A', 'quantite' => 1, 'prise' => 'matin']],
+        ])
+            ->assertOk()
+            ->assertJsonPath('consultation.ordonnance_decision', 'generee');
+
+        $this->assertDatabaseHas('consultations', ['id' => $consultation->id, 'ordonnance_non_generee' => false]);
+    }
+
+    public function test_absence_declaration_is_refused_outside_consultation_in_progress_and_for_unknown_document(): void
+    {
+        [$user, $profil] = $this->makeMedecin();
+        $enAttente = $this->makeConsultation($profil, $this->makeRendezVous($profil), Consultation::EN_ATTENTE);
+        Sanctum::actingAs($user);
+
+        $this->putJson("/api/medecin/consultations/{$enAttente->id}/ordonnance/non-generee")
+            ->assertUnprocessable();
+
+        $this->assertDatabaseHas('consultations', ['id' => $enAttente->id, 'ordonnance_non_generee' => false]);
+
+        $enCours = $this->makeConsultation($profil, $this->makeRendezVous($profil, ['email' => 'autre@example.test']));
+
+        $this->putJson("/api/medecin/consultations/{$enCours->id}/autre/non-generee")
+            ->assertNotFound();
     }
 
     public function test_prescription_lines_are_rendered_one_per_line_with_comment_and_replaced_on_save(): void

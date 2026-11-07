@@ -9,7 +9,11 @@
 </p>
 @if ($acces)
 <p style="margin:0 0 16px; font-size:15px; line-height:1.5;">
-  Vous pouvez retrouver toutes vos informations et tous vos documents dans votre espace MediConnect.
+  @if ($documents)
+    Vous pouvez retrouver {{ $documents }} dans votre espace MediConnect.
+  @else
+    Vous pouvez retrouver vos informations dans votre espace MediConnect.
+  @endif
 </p>
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
   <tr>

@@ -23,11 +23,37 @@ export const JOURNAL_LABELS = {
   demarree: "Consultation démarrée",
   heure_debut_modifiee: "Heure de début modifiée",
   ordonnance_enregistree: "Ordonnance enregistrée",
+  ordonnance_non_generee: "Pas d'ordonnance",
+  ordonnance_declaration_annulee: "Déclaration d'absence d'ordonnance annulée",
   facture_enregistree: "Facture enregistrée",
+  facture_non_generee: "Pas de facture",
+  facture_declaration_annulee: "Déclaration d'absence de facture annulée",
   abandonnee: "Consultation abandonnée",
   mise_en_attente: "Consultation mise en attente",
   reprise: "Consultation reprise",
   terminee: "Consultation terminée",
+};
+
+// Textes du choix du médecin : rédiger le document ou déclarer qu'il ne sera pas établi.
+export const DOCUMENT_DECISION = {
+  ordonnance: {
+    declarer: "Pas d'ordonnance",
+    reprendre: "Rédiger l'ordonnance",
+    bandeau: "Aucune ordonnance ne sera établie pour cette consultation.",
+    titreConfirmation: "Supprimer l'ordonnance rédigée ?",
+    messageConfirmation: "Les médicaments et le commentaire saisis seront supprimés.",
+    messageDeclaree: "Absence d'ordonnance enregistrée",
+    messageAnnulee: "Déclaration annulée",
+  },
+  facture: {
+    declarer: "Pas de facture",
+    reprendre: "Établir la facture",
+    bandeau: "Aucune facture ne sera établie pour cette consultation.",
+    titreConfirmation: "Supprimer la facture établie ?",
+    messageConfirmation: "Les lignes de facturation saisies seront supprimées.",
+    messageDeclaree: "Absence de facture enregistrée",
+    messageAnnulee: "Déclaration annulée",
+  },
 };
 
 const parseDate = (value) => (value ? new Date(String(value).replace(" ", "T")) : null);

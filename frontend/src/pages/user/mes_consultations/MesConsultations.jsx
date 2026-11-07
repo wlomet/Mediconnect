@@ -142,7 +142,11 @@ const MesConsultations = () => {
                     {c.ordonnance_texte ? (
                       <pre className={styles.texte}>{c.ordonnance_texte}</pre>
                     ) : (
-                      <p className={styles.muted}>Aucune ordonnance rédigée.</p>
+                      <p className={styles.muted}>
+                        {c.ordonnance_decision === "non_generee"
+                          ? "Pas d'ordonnance pour cette consultation."
+                          : "Aucune ordonnance rédigée."}
+                      </p>
                     )}
                   </section>
 
@@ -176,7 +180,11 @@ const MesConsultations = () => {
                         <p className={styles.total}>Total : {formatMontant(c.facture.total)}</p>
                       </>
                     ) : (
-                      <p className={styles.muted}>Aucune facture.</p>
+                      <p className={styles.muted}>
+                        {c.facture_decision === "non_generee"
+                          ? "Pas de facture pour cette consultation."
+                          : "Aucune facture."}
+                      </p>
                     )}
                   </section>
                 </div>
