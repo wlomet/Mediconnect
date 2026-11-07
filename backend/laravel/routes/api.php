@@ -10,6 +10,7 @@ use App\Http\Controllers\MedecinProfileController;
 use App\Http\Controllers\SpecialiteController;
 use App\Http\Controllers\MedecinPlanningController;
 use App\Http\Controllers\SearchMedecinController;
+use App\Http\Controllers\StatistiquesController;
 // Directeur Controllers
 use App\Http\Controllers\Directeur\DirecteurRequestController;
 use App\Http\Controllers\Directeur\DirecteurController;
@@ -86,6 +87,10 @@ Route::get('/hopital/{id}/medecins', [SearchMedecinController::class, 'getHopita
 Route::get('/hopitaux', [SearchMedecinController::class, 'listAll']);
 Route::get('/specialites', [ClientSearchController::class, 'getSpecialites']);
 Route::get('/medecin/planningbyid/{id}', [MedecinPlanningController::class, 'getPlanningById']);
+
+// Statistiques de la page vitrine
+Route::get('/statistiques', [StatistiquesController::class, 'index']);
+Route::post('/visites', [StatistiquesController::class, 'enregistrerVisite'])->middleware('throttle:120,1');
 
 // Servir les photos de profil (stockées dans storage/photo-profile/)
 Route::get('/photo-profile/{filename}', function (string $filename) {

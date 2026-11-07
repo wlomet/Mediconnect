@@ -11,6 +11,7 @@ const PUBLIC_NAV_LINKS = [
   { to: "/etablissements", label: "Établissements" },
   { to: "/professionnels-de-sante", label: "Professionnels de santé" },
   { to: "/faq", label: "FAQ" },
+  { to: "/statistiques", label: "Statistiques" },
   { to: "/contact", label: "Contact" },
 ];
 

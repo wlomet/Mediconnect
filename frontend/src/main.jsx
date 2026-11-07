@@ -25,6 +25,7 @@ import Professionnels from "./pages/public/Professionnels";
 import About from "./pages/public/About";
 import Faq from "./pages/public/Faq";
 import Contact from "./pages/public/Contact";
+import Statistiques from "./pages/public/Statistiques";
 import DashboardGestionnaire from "./pages/gestionnaire/dashboard/DashboardGestionnaire";
 import DashboardDirecteur from "./pages/directeur/dashboard/DashboardDirecteur";
 import CreateUsers from "./pages/directeur/create-users";
@@ -90,6 +91,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/a-propos" element={<About />} />
         <Route path="/faq" element={<Faq />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/statistiques" element={<Statistiques />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/medecin/profile" element={<MedecinProfile />} />
         <Route path="/medecin/planning" element={<PlanningMedecin />} />

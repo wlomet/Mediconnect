@@ -5,6 +5,7 @@ import Navbar from "./Navbar";
 import SearchMedecin from "./rdv/SearchMedecin";
 import Footer from "./Footer";
 import styles from "./rdv/SearchMedecin.module.css";
+import { enregistrerVisite } from "../../utils/suiviVisites";
 
 const Home = () => {
   const { checkAuth } = useContext(AuthContext);
@@ -12,6 +13,10 @@ const Home = () => {
   useEffect(() => {
     // Mettre à jour l'état d'authentification une seule fois au montage
     checkAuth();
+  }, []);
+
+  useEffect(() => {
+    enregistrerVisite();
   }, []);
 
   return (
