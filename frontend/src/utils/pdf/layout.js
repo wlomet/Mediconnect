@@ -5,6 +5,7 @@ export const PAGE_SIZES = {
 export const ELEMENT_TYPES = {
   texte: "Texte libre",
   variable: "Donnée automatique",
+  signature: "Signature du médecin",
   saisie: "Champ à saisir",
   tableau: "Tableau (lignes saisies)",
   image: "Logo / image",
@@ -55,6 +56,8 @@ export const createElement = (type, id) => {
       return { ...base, text: "Texte" };
     case "variable":
       return { ...base, source: "patient.nom" };
+    case "signature":
+      return { ...base, width: 260, height: 50, fontSize: 20, align: "right", source: "medecin.nom" };
     case "saisie":
       return { ...base, key: "saisie", label: "Champ" };
     case "tableau":

@@ -13,6 +13,7 @@ const resolveText = (element, data, values) => {
     case "texte":
       return element.text ?? "";
     case "variable":
+    case "signature":
       return String(getValue(element.source ?? "", data) ?? "");
     case "saisie":
       return String(values[element.key] ?? "");
@@ -148,6 +149,10 @@ export async function generatePdf({ layout, data = {}, values = {}, images = {} 
     regular: await pdf.embedFont(StandardFonts.Helvetica),
     bold: await pdf.embedFont(StandardFonts.HelveticaBold),
   };
+  const signatureFonts = {
+    regular: await pdf.embedFont(StandardFonts.TimesRomanItalic),
+    bold: await pdf.embedFont(StandardFonts.TimesRomanBoldItalic),
+  };
   const embeddedCache = new Map();
 
   for (const element of normalizeLayout(layout).elements) {
@@ -157,7 +162,7 @@ export async function generatePdf({ layout, data = {}, values = {}, images = {} 
       drawTable(page, element, values[element.key] ?? [], fonts, size.height);
     } else {
       const text = resolveText(element, data, values);
-      drawTextBlock(page, element, text, fonts, size.height);
+      drawTextBlock(page, element, text, element.type === "signature" ? signatureFonts : fonts, size.height);
     }
   }
 

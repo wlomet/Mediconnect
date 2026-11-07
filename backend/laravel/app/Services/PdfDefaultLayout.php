@@ -34,7 +34,8 @@ class PdfDefaultLayout
             self::texte('patient-label', 40, 200, 60, 20, 'Patient :', ['fontSize' => 12, 'bold' => true]),
             self::variable('patient-nom', 100, 200, 300, 20, 'patient.nom', ['fontSize' => 12]),
             self::variable('date', 380, 200, 175, 20, 'date_jour', ['fontSize' => 12, 'align' => 'right']),
-            self::saisie('prescription', 40, 250, 515, 500, 'Prescription'),
+            self::saisie('prescription', 40, 250, 515, 460, 'Prescription'),
+            self::signature(),
             self::texte('signature', 40, 780, 515, 20, 'Signature et cachet', ['fontSize' => 9, 'align' => 'right']),
         ];
     }
@@ -62,6 +63,7 @@ class PdfDefaultLayout
                 ],
             ],
             self::saisie('total', 300, 590, 255, 24, 'Total', ['fontSize' => 13, 'bold' => true, 'align' => 'right']),
+            self::signature(),
             self::texte('signature', 40, 780, 515, 20, 'Signature et cachet', ['fontSize' => 9, 'align' => 'right']),
         ];
     }
@@ -86,6 +88,12 @@ class PdfDefaultLayout
             'fontSize' => 12, 'bold' => false, 'color' => '#000000', 'align' => 'left',
             'pdf_image_id' => $pdfImageId,
         ];
+    }
+
+    private static function signature(): array
+    {
+        return self::base('signature-medecin', 'signature', 295, 720, 260, 50, ['fontSize' => 20, 'align' => 'right'])
+            + ['source' => 'medecin.nom'];
     }
 
     private static function texte(string $id, float $x, float $y, float $w, float $h, string $text, array $style = []): array

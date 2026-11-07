@@ -14,11 +14,14 @@ const SCALE = 0.85;
 const MIN_SIZE = 10;
 const PAGE = PAGE_SIZES.A4;
 
+const SAMPLE_MEDECIN_NOM = "Dr Jean Exemple";
+const SIGNATURE_FONT_FAMILY = "'Times New Roman', Times, serif";
+
 const newId = () => `el-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 
 const buildSampleData = () => ({
   medecin: {
-    nom: "Dr Jean Exemple",
+    nom: SAMPLE_MEDECIN_NOM,
     specialite: "Médecine générale",
     hopital: "Clinique Exemple",
     adresse: "1 rue de la Santé",
@@ -115,6 +118,15 @@ function ElementContent({ element, width, height, logoUrl }) {
       return <Text {...common} text={element.text || " "} />;
     case "variable":
       return <Text {...common} fill="#2563eb" text={`{${element.source}}`} />;
+    case "signature":
+      return (
+        <Text
+          {...common}
+          fontFamily={SIGNATURE_FONT_FAMILY}
+          fontStyle={element.bold ? "bold italic" : "italic"}
+          text={SAMPLE_MEDECIN_NOM}
+        />
+      );
     case "saisie":
       return <Text {...common} fill="#64748b" fontStyle="italic" text={`[${element.label}]`} />;
     case "tableau":
@@ -184,7 +196,7 @@ function ColumnsField({ columns, onCommit }) {
 }
 
 function PropertiesPanel({ element, images, onChange, onDelete }) {
-  const hasText = ["texte", "variable", "saisie", "tableau"].includes(element.type);
+  const hasText = ["texte", "variable", "signature", "saisie", "tableau"].includes(element.type);
 
   return (
     <div className={styles.panelBody}>

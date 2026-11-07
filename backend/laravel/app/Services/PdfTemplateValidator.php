@@ -25,7 +25,7 @@ class PdfTemplateValidator
             'layout.format' => 'nullable|in:A4',
             'layout.elements' => 'present|array',
             'layout.elements.*.id' => 'nullable',
-            'layout.elements.*.type' => 'required|in:texte,image,variable,saisie,tableau',
+            'layout.elements.*.type' => 'required|in:texte,image,variable,signature,saisie,tableau',
             'layout.elements.*.x' => 'nullable|numeric',
             'layout.elements.*.y' => 'nullable|numeric',
             'layout.elements.*.width' => 'nullable|numeric|min:1',
