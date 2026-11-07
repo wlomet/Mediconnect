@@ -179,6 +179,7 @@ class RendezVousController extends Controller
         $statutAvant = $rendezVous->statut;
         $modifications->modifier($rendezVous, $validated, $chevauchementAutorise);
         $notifications->rendezVousConfirme($rendezVous, $statutAvant);
+        $notifications->rendezVousAnnule($rendezVous, $statutAvant);
 
         return response()->json([
             'message' => 'Rendez-vous mis à jour avec succès',
@@ -227,7 +228,7 @@ class RendezVousController extends Controller
         ]);
     }
 
-    public function store(Request $request, RendezVousBookingService $bookings)
+    public function store(Request $request, RendezVousBookingService $bookings, RendezVousNotificationService $notifications)
     {
         $profil = $request->user()->medecinProfile;
         abort_unless($profil, 403);
@@ -252,6 +253,7 @@ class RendezVousController extends Controller
         }
 
         $rendezVous = $bookings->createByMedecin($profil, $request->user(), $validated);
+        $notifications->rendezVousCree($rendezVous);
 
         return response()->json([
             'message' => 'Rendez-vous créé avec succès',

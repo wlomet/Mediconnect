@@ -119,7 +119,7 @@ class RendezVousController extends Controller
     /**
      * Vérifie que le médecin est accessible (hopital ou liaison)
      */
-    public function store(Request $request)
+    public function store(Request $request, RendezVousNotificationService $notifications)
     {
         $secretaire = $request->user();
         $secretaireProfile = Secretaire::where('user_id', $secretaire->id)->first();
@@ -165,6 +165,7 @@ class RendezVousController extends Controller
         $validated['statut'] = 'confirmé';
 
         $rendezVous = RendezVous::create($validated);
+        $notifications->rendezVousCree($rendezVous);
         return response()->json([
             'message' => 'Rendez-vous créé avec succès',
             'rendez_vous' => $rendezVous
@@ -221,6 +222,7 @@ class RendezVousController extends Controller
         $statutAvant = $rendezVous->statut;
         $modifications->modifier($rendezVous, $validated, $chevauchementAutorise);
         $notifications->rendezVousConfirme($rendezVous, $statutAvant);
+        $notifications->rendezVousAnnule($rendezVous, $statutAvant);
 
         return response()->json([
             'message' => 'Rendez-vous mis à jour avec succès',
@@ -363,7 +365,7 @@ class RendezVousController extends Controller
      * Secrétaire annule un rendez-vous
      * Vérifie que la secrétaire a accès au rendez-vous
      */
-    public function cancel(Request $request, $id)
+    public function cancel(Request $request, $id, RendezVousNotificationService $notifications)
     {
         $secretaire = $request->user();
         $secretaireProfile = Secretaire::where('user_id', $secretaire->id)->first();
@@ -380,7 +382,9 @@ class RendezVousController extends Controller
         }
 
         RendezVousStatutGuard::verifier($rendezVous, 'annulé');
+        $statutAvant = $rendezVous->statut;
         $rendezVous->update(['statut' => 'annulé']);
+        $notifications->rendezVousAnnule($rendezVous, $statutAvant);
 
         return response()->json([
             'message' => 'Rendez-vous annulé avec succès',

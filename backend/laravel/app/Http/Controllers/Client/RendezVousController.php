@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\RendezVous;
 use App\Models\User;
 use App\Services\ClientConsultationFormatter;
+use App\Services\RendezVousNotificationService;
 use App\Services\RendezVousStatutGuard;
 use Illuminate\Support\Facades\Log;
 
@@ -20,7 +21,7 @@ class RendezVousController extends Controller
     /**
      * Client crée un rendez-vous
      */
-    public function store(Request $request)
+    public function store(Request $request, RendezVousNotificationService $notifications)
     {
         $validated = $request->validate([
             'medecin_id' => 'required|integer|exists:medecin_profiles,id',
@@ -62,6 +63,7 @@ class RendezVousController extends Controller
         }
 
         $rendezVous = RendezVous::create($validated);
+        $notifications->rendezVousCree($rendezVous);
         return response()->json([
             'message' => 'Rendez-vous créé avec succès',
             'rendez_vous' => $rendezVous
@@ -151,7 +153,7 @@ class RendezVousController extends Controller
     /**
      * Client annule son rendez-vous
      */
-    public function cancel(Request $request, $id)
+    public function cancel(Request $request, $id, RendezVousNotificationService $notifications)
     {
         $rendezVous = RendezVous::findOrFail($id);
         $client = $request->user();
@@ -162,7 +164,9 @@ class RendezVousController extends Controller
         }
 
         RendezVousStatutGuard::verifier($rendezVous, 'annulé');
+        $statutAvant = $rendezVous->statut;
         $rendezVous->update(['statut' => 'annulé']);
+        $notifications->rendezVousAnnule($rendezVous, $statutAvant);
 
         return response()->json([
             'message' => 'Rendez-vous annulé avec succès',
