@@ -1,6 +1,7 @@
 import api from "./axios";
 import { telechargerCsv } from "../utils/csvExport";
 import { telechargerTableau } from "../utils/exportTableau";
+import { libellePeriode, paramsPeriode } from "../utils/dateHelpers";
 
 const base = "/medecin/consultations";
 
@@ -8,8 +9,8 @@ export const consultationApi = {
   list: (statut) =>
     api.get(base, { params: statut ? { statut } : {} }).then((res) => res.data.consultations),
 
-  exporter: (format, statut) => {
-    const params = statut ? { statut } : {};
+  exporter: ({ format, statut, from, to }) => {
+    const params = { ...paramsPeriode({ from, to }), ...(statut ? { statut } : {}) };
 
     if (format === "csv") {
       return api.get(`${base}/export`, { params, responseType: "blob" }).then(telechargerCsv);
@@ -21,7 +22,7 @@ export const consultationApi = {
         telechargerTableau({
           format,
           nomBase: res.data.nom_base,
-          titre: "Consultations",
+          titre: `Consultations ${libellePeriode(from, to)}`,
           entetes: res.data.entetes,
           lignes: res.data.lignes,
         })
@@ -47,6 +48,12 @@ export const consultationApi = {
 
   saveFacture: (id, lignes) =>
     api.put(`${base}/${id}/facture`, { lignes }).then((res) => res.data.consultation),
+
+  declarerSansDocument: (id, type) =>
+    api.put(`${base}/${id}/${type}/non-generee`).then((res) => res.data.consultation),
+
+  annulerSansDocument: (id, type) =>
+    api.delete(`${base}/${id}/${type}/non-generee`).then((res) => res.data.consultation),
 
   abandonner: (id, motif) =>
     api.post(`${base}/${id}/abandon`, { motif }).then((res) => res.data.consultation),

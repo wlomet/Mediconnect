@@ -63,23 +63,38 @@ class ConsultationController extends Controller
 
     public function export(Request $request, CsvExportService $csv)
     {
-        $consultations = $this->consultationsFiltrees($request)->get();
-        $nomBase = 'consultations_'.($request->query('statut') ?: 'toutes').'_'.now()->format('Y-m-d');
+        $periode = $request->validate([
+            'from' => ['nullable', 'date_format:Y-m-d', 'required_with:to'],
+            'to' => ['nullable', 'date_format:Y-m-d', 'required_with:from', 'after_or_equal:from'],
+            'timezone' => ['nullable', 'timezone:all'],
+        ]);
+        $fuseau = $periode['timezone'] ?? config('app.timezone');
 
-        $lignes = $consultations->map(function (Consultation $c) {
+        $consultations = $this->consultationsFiltrees($request)
+            ->when(isset($periode['from']), fn ($q) => $q->whereBetween('started_at', [
+                Carbon::parse($periode['from'], $fuseau)->startOfDay()->setTimezone(config('app.timezone')),
+                Carbon::parse($periode['to'], $fuseau)->endOfDay()->setTimezone(config('app.timezone')),
+            ]))
+            ->get();
+
+        $datePeriode = isset($periode['from']) ? "{$periode['from']}_{$periode['to']}" : now()->format('Y-m-d');
+        $nomBase = 'consultations_'.($request->query('statut') ?: 'toutes').'_'.$datePeriode;
+        $heure = fn (?Carbon $date) => $date?->copy()->setTimezone($fuseau)->format('d/m/Y H:i');
+
+        $lignes = $consultations->map(function (Consultation $c) use ($heure) {
             $rdv = $c->rendezVous;
 
             return [
                 $rdv->name,
                 $rdv->email,
-                $rdv->date_debut->format('d/m/Y H:i'),
+                $heure($rdv->date_debut),
                 $rdv->motif,
                 $rdv->statut,
-                $c->heure_debut_reelle?->format('d/m/Y H:i'),
-                $c->ended_at?->format('d/m/Y H:i'),
+                $heure($c->heure_debut_reelle),
+                $heure($c->ended_at),
                 self::STATUT_LIBELLES[$c->statut],
-                $c->ordonnance_texte,
-                $c->facture ? number_format((float) $c->facture->total, 2, ',', '') : null,
+                $c->ordonnance_texte ?? ($c->decisionOrdonnance() === Consultation::NON_GENEREE ? 'Sans ordonnance' : null),
+                $c->facture ? number_format((float) $c->facture->total, 2, ',', '') : ($c->decisionFacture() === Consultation::NON_GENEREE ? 'Sans facture' : null),
                 $c->abandon_motif,
             ];
         });
@@ -234,6 +249,26 @@ class ConsultationController extends Controller
 
         return response()->json([
             'message' => 'Facture enregistrée',
+            'consultation' => $this->consultations->formater($consultation),
+        ]);
+    }
+
+    public function declarerSansDocument(Request $request, int $id, string $type)
+    {
+        $consultation = $this->consultations->declarerSansDocument($this->profil($request), $request->user(), $id, $type);
+
+        return response()->json([
+            'message' => 'Décision enregistrée',
+            'consultation' => $this->consultations->formater($consultation),
+        ]);
+    }
+
+    public function annulerSansDocument(Request $request, int $id, string $type)
+    {
+        $consultation = $this->consultations->annulerSansDocument($this->profil($request), $request->user(), $id, $type);
+
+        return response()->json([
+            'message' => 'Décision annulée',
             'consultation' => $this->consultations->formater($consultation),
         ]);
     }

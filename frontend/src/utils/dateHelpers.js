@@ -31,3 +31,35 @@ export const convertJourToNumber = (jour) => {
 };
 
 export const getDayName = (dayNumber) => JOURS_SEMAINE[dayNumber];
+
+export const getMonday = (date) => {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  copy.setDate(copy.getDate() - ((copy.getDay() + 6) % 7));
+  return copy;
+};
+
+// Bornes incluses des raccourcis de période : jour, semaine ou mois en cours
+export const bornesPresetPeriode = (preset, maintenant = new Date()) => {
+  if (preset === "semaine") {
+    const debut = getMonday(maintenant);
+    return { debut, fin: addDays(debut, 6) };
+  }
+  if (preset === "mois") {
+    return {
+      debut: new Date(maintenant.getFullYear(), maintenant.getMonth(), 1),
+      fin: new Date(maintenant.getFullYear(), maintenant.getMonth() + 1, 0),
+    };
+  }
+  return { debut: maintenant, fin: maintenant };
+};
+
+export const libellePeriode = (from, to) =>
+  `du ${parseDateKey(from).toLocaleDateString("fr-FR")} au ${parseDateKey(to).toLocaleDateString("fr-FR")}`;
+
+// Les jours et heures sont interprétés dans le fuseau du navigateur (le backend stocke en UTC)
+export const paramsPeriode = ({ from, to }) => ({
+  from,
+  to,
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+});

@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import NavbarMedecin from "../components/NavbarMedecin";
 import ModalDemarrerConsultation from "./ModalDemarrerConsultation";
 import { consultationApi, extraireErreur } from "../../../api/consultationApi";
-import { FORMATS_EXPORT } from "../../../utils/exportTableau";
+import PanneauExport from "../../../components/PanneauExport";
 import { STATUT_LABELS, formatDateHeure, formatMontant } from "./consultationFormat";
 import styles from "./Consultations.module.css";
 
@@ -31,7 +31,7 @@ const ConsultationsListe = () => {
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState("");
   const [nouvelleOuverte, setNouvelleOuverte] = useState(false);
-  const [formatExport, setFormatExport] = useState("csv");
+  const [showExport, setShowExport] = useState(false);
 
   useEffect(() => {
     let actif = true;
@@ -65,15 +65,17 @@ const ConsultationsListe = () => {
     }
   };
 
-  const aOrdonnance = (c) => Boolean(c.ordonnance_texte);
-
-  const exporter = async () => {
-    try {
-      await consultationApi.exporter(formatExport, filtre);
-    } catch {
-      toast.error("Export impossible");
-    }
+  const libelleOrdonnance = (c) => {
+    if (c.ordonnance_texte) return "Oui";
+    return c.ordonnance_decision === "non_generee" ? "Sans ordonnance" : "Non";
   };
+
+  const libelleFacture = (c) => {
+    if (c.facture) return formatMontant(c.facture.total);
+    return c.facture_decision === "non_generee" ? "Sans facture" : "—";
+  };
+
+  const exporter = (options) => consultationApi.exporter({ ...options, statut: filtre });
 
   return (
     <div className={styles.page}>
@@ -86,23 +88,10 @@ const ConsultationsListe = () => {
             <p className={styles.subtitle}>Consultations terminées, abandonnées, en attente et en cours</p>
           </div>
           <div className={styles.headerActions}>
-            <select
-              value={formatExport}
-              onChange={(e) => setFormatExport(e.target.value)}
-              className={`${styles.select} ${styles.selectFormat}`}
-              aria-label="Format d'export"
-            >
-              {FORMATS_EXPORT.map((format) => (
-                <option key={format.valeur} value={format.valeur}>
-                  {format.libelle}
-                </option>
-              ))}
-            </select>
             <button
               type="button"
               className={`${styles.button} ${styles.secondary}`}
-              onClick={exporter}
-              disabled={chargement || consultations.length === 0}
+              onClick={() => setShowExport((v) => !v)}
             >
               Exporter
             </button>
@@ -111,6 +100,12 @@ const ConsultationsListe = () => {
             </button>
           </div>
         </header>
+
+        {showExport && (
+          <div className="mb-4">
+            <PanneauExport onExporter={exporter} />
+          </div>
+        )}
 
         <div className={styles.tabs}>
           {FILTRES.map((f) => (
@@ -161,8 +156,8 @@ const ConsultationsListe = () => {
                       {c.patient.nom}
                       <div className={styles.small}>{c.patient.email || c.patient.telephone || "—"}</div>
                     </td>
-                    <td>{aOrdonnance(c) ? "Oui" : "Non"}</td>
-                    <td>{c.facture ? formatMontant(c.facture.total) : "—"}</td>
+                    <td>{libelleOrdonnance(c)}</td>
+                    <td>{libelleFacture(c)}</td>
                     <td>{formatDateHeure(c.heure_debut_reelle)}</td>
                     <td>{formatDateHeure(c.ended_at)}</td>
                     <td>

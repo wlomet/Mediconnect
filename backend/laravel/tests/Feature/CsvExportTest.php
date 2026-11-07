@@ -78,6 +78,31 @@ class CsvExportTest extends TestCase
         $this->assertSame('21,00', $lignes[1][9]);
     }
 
+    public function test_consultations_export_filters_by_started_at_period_inclusive(): void
+    {
+        [$user, $profil] = $this->makeMedecin();
+        $dedans = $this->makeConsultation($profil, $this->makeRendezVous($profil, ['email' => 'dedans@example.test']), Consultation::TERMINEE);
+        $dedans->update(['started_at' => '2030-03-04 23:30:00']);
+        $dehors = $this->makeConsultation($profil, $this->makeRendezVous($profil, ['email' => 'dehors@example.test']), Consultation::TERMINEE);
+        $dehors->update(['started_at' => '2030-03-05 00:30:00']);
+        Sanctum::actingAs($user);
+
+        $response = $this->get('/api/medecin/consultations/export?from=2030-03-04&to=2030-03-04')->assertOk();
+        $lignes = $this->lignesCsv($response);
+
+        $this->assertCount(2, $lignes);
+        $this->assertSame('dedans@example.test', $lignes[1][1]);
+        $this->assertStringContainsString('consultations_toutes_2030-03-04_2030-03-04.csv', $response->headers->get('Content-Disposition'));
+    }
+
+    public function test_consultations_export_refuses_inverted_period(): void
+    {
+        [$user] = $this->makeMedecin();
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/medecin/consultations/export?from=2030-03-05&to=2030-03-04')->assertUnprocessable();
+    }
+
     public function test_planning_export_keeps_only_own_rendez_vous_within_inclusive_dates(): void
     {
         [$user, $profil] = $this->makeMedecin();
@@ -149,6 +174,32 @@ class CsvExportTest extends TestCase
         $this->assertCount(1, $donnees['lignes']);
         $this->assertSame(['Marie Martin', 'marie@example.test', '04/03/2030 09:00', 'Contrôle', 'confirmé'], array_slice($donnees['lignes'][0], 0, 5));
         $this->assertSame('Terminée', $donnees['lignes'][0][7]);
+    }
+
+    public function test_consultations_export_period_follows_the_browser_timezone(): void
+    {
+        [$user, $profil] = $this->makeMedecin();
+        $consultation = $this->makeConsultation($profil, $this->makeRendezVous($profil), Consultation::TERMINEE);
+        $consultation->update(['started_at' => '2030-03-03 23:30:00']);
+        Sanctum::actingAs($user);
+
+        $sansFuseau = $this->getJson('/api/medecin/consultations/export?format=json&from=2030-03-04&to=2030-03-04')->assertOk()->json();
+        $avecFuseau = $this->getJson('/api/medecin/consultations/export?format=json&from=2030-03-04&to=2030-03-04&timezone=Europe/Paris')->assertOk()->json();
+
+        $this->assertSame([], $sansFuseau['lignes']);
+        $this->assertCount(1, $avecFuseau['lignes']);
+    }
+
+    public function test_planning_export_uses_the_browser_timezone_for_days_and_hours(): void
+    {
+        [$user, $profil] = $this->makeMedecin();
+        $this->makeRendezVous($profil, ['name' => 'Tardif', 'email' => 'tardif@example.test', 'date_debut' => '2030-03-03 23:30:00', 'date_fin' => '2030-03-03 23:59:00']);
+        Sanctum::actingAs($user);
+
+        $lignes = $this->lignesCsv($this->get('/api/medecin/planning/export?from=2030-03-04&to=2030-03-04&timezone=Europe/Paris')->assertOk());
+
+        $this->assertCount(2, $lignes);
+        $this->assertSame(['04/03/2030', '00:30', '00:59', 'Tardif', 'tardif@example.test', 'confirmé'], $lignes[1]);
     }
 
     /** @return array<int, array<int, string>> */

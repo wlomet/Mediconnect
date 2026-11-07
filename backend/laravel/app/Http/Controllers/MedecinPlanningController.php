@@ -21,23 +21,26 @@ class MedecinPlanningController extends Controller
         $filtres = $request->validate([
             'from' => ['required', 'date_format:Y-m-d'],
             'to' => ['required', 'date_format:Y-m-d', 'after_or_equal:from'],
+            'timezone' => ['nullable', 'timezone:all'],
         ]);
+        $fuseau = $filtres['timezone'] ?? config('app.timezone');
 
         $profil = $request->user()->medecinProfile;
         abort_unless($profil, 403);
 
         $rdvs = RendezVous::where('medecin_id', $profil->id)
             ->whereBetween('date_debut', [
-                Carbon::parse($filtres['from'])->startOfDay(),
-                Carbon::parse($filtres['to'])->endOfDay(),
+                Carbon::parse($filtres['from'], $fuseau)->startOfDay()->setTimezone(config('app.timezone')),
+                Carbon::parse($filtres['to'], $fuseau)->endOfDay()->setTimezone(config('app.timezone')),
             ])
             ->orderBy('date_debut')
             ->get();
 
+        $heure = fn (Carbon $date, string $format) => $date->copy()->setTimezone($fuseau)->format($format);
         $lignes = $rdvs->map(fn (RendezVous $rdv) => [
-            $rdv->date_debut->format('d/m/Y'),
-            $rdv->date_debut->format('H:i'),
-            $rdv->date_fin->format('H:i'),
+            $heure($rdv->date_debut, 'd/m/Y'),
+            $heure($rdv->date_debut, 'H:i'),
+            $heure($rdv->date_fin, 'H:i'),
             $rdv->name,
             $rdv->email,
             $rdv->statut,

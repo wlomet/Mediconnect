@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useContext, useMemo } from "react";
 import FullCalendar from "@fullcalendar/react";
-import { toast } from "react-toastify";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import ModalHorairesHebdo from "./modals/ModalHorairesHebdo";
 import ModalIndisponibilite from "./modals/ModalIndisponibilite";
@@ -18,9 +17,13 @@ import {
   addDays,
   addMinutes,
   convertJourToNumber,
+  getMonday,
+  libellePeriode,
+  paramsPeriode,
 } from "../../../utils/dateHelpers";
 import { telechargerCsv } from "../../../utils/csvExport";
-import { FORMATS_EXPORT, telechargerTableau } from "../../../utils/exportTableau";
+import { telechargerTableau } from "../../../utils/exportTableau";
+import PanneauExport from "../../../components/PanneauExport";
 
 const couleurRendezVous = (statut) => {
   if (statut === "confirmé") return { backgroundColor: "#10b981", borderColor: "#059669" };
@@ -212,33 +215,6 @@ const formatDayLabel = (date) =>
     year: "numeric",
   });
 
-const getMonday = (date) => {
-  const copy = new Date(date);
-  copy.setHours(0, 0, 0, 0);
-  copy.setDate(copy.getDate() - ((copy.getDay() + 6) % 7));
-  return copy;
-};
-
-const PRESETS_EXPORT = [
-  { valeur: "jour", libelle: "Aujourd'hui" },
-  { valeur: "semaine", libelle: "Semaine en cours" },
-  { valeur: "mois", libelle: "Mois en cours" },
-];
-
-const bornesPresetExport = (preset, maintenant = new Date()) => {
-  if (preset === "semaine") {
-    const debut = getMonday(maintenant);
-    return { debut, fin: addDays(debut, 6) };
-  }
-  if (preset === "mois") {
-    return {
-      debut: new Date(maintenant.getFullYear(), maintenant.getMonth(), 1),
-      fin: new Date(maintenant.getFullYear(), maintenant.getMonth() + 1, 0),
-    };
-  }
-  return { debut: maintenant, fin: maintenant };
-};
-
 // Liste à plat des créneaux, RDV et indisponibilités sur la plage donnée (utilisée par le tableau et la liste)
 const buildListItems = (planning, range) => {
   if (!range) {
@@ -314,44 +290,25 @@ export default function PlanningMedecin() {
   const [selectedCreneau, setSelectedCreneau] = useState(null);
   const [selectedRendezVous, setSelectedRendezVous] = useState(null);
   const [showExport, setShowExport] = useState(false);
-  const [formatExport, setFormatExport] = useState("csv");
-  const [exportFrom, setExportFrom] = useState(() => formatDateKey(new Date()));
-  const [exportTo, setExportTo] = useState(() => formatDateKey(new Date()));
-  const [presetExport, setPresetExport] = useState(null);
+  const exporterPlanning = async ({ format, from, to }) => {
+    const params = paramsPeriode({ from, to });
 
-  const choisirPresetExport = (preset) => {
-    const { debut, fin } = bornesPresetExport(preset);
-    setPresetExport(preset);
-    setExportFrom(formatDateKey(debut));
-    setExportTo(formatDateKey(fin));
-  };
-
-  const handleExport = async () => {
-    const params = { from: exportFrom, to: exportTo };
-
-    try {
-      if (formatExport === "csv") {
-        const reponse = await api.get("/medecin/planning/export", { params, responseType: "blob" });
-        telechargerCsv(reponse);
-      } else {
-        const { data } = await api.get("/medecin/planning/export", {
-          params: { ...params, format: "json" },
-        });
-        await telechargerTableau({
-          format: formatExport,
-          nomBase: data.nom_base,
-          titre: `Planning du ${parseDateKey(exportFrom).toLocaleDateString("fr-FR")} au ${parseDateKey(exportTo).toLocaleDateString("fr-FR")}`,
-          entetes: data.entetes,
-          lignes: data.lignes,
-        });
-      }
-    } catch {
-      toast.error("Export impossible");
+    if (format === "csv") {
+      const reponse = await api.get("/medecin/planning/export", { params, responseType: "blob" });
+      telechargerCsv(reponse);
+      return;
     }
+
+    const { data } = await api.get("/medecin/planning/export", { params: { ...params, format: "json" } });
+    await telechargerTableau({
+      format,
+      nomBase: data.nom_base,
+      titre: `Planning ${libellePeriode(from, to)}`,
+      entetes: data.entetes,
+      lignes: data.lignes,
+    });
   };
 
-  const exportInverse = Boolean(exportFrom && exportTo && exportFrom > exportTo);
-  const exportInvalid = !exportFrom || !exportTo || exportInverse;
   const currentMedecinId = horairesRef.current[0]?.medecin_id ?? user?.id;
 
   const fetchEvents = useCallback(async () => {
@@ -570,77 +527,7 @@ export default function PlanningMedecin() {
                 Exporter
               </button>
             </div>
-            {showExport && (
-              <div className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
-                <div className="flex flex-wrap items-end gap-2">
-                  <label className="flex flex-col gap-1 text-xs text-[#0A1E3D]">
-                    Du
-                    <input
-                      type="date"
-                      value={exportFrom}
-                      onChange={(e) => {
-                        setPresetExport(null);
-                        setExportFrom(e.target.value);
-                      }}
-                      className="rounded border border-gray-300 px-2 py-1.5 text-sm"
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs text-[#0A1E3D]">
-                    Au
-                    <input
-                      type="date"
-                      value={exportTo}
-                      onChange={(e) => {
-                        setPresetExport(null);
-                        setExportTo(e.target.value);
-                      }}
-                      className="rounded border border-gray-300 px-2 py-1.5 text-sm"
-                    />
-                  </label>
-                  {PRESETS_EXPORT.map((preset) => (
-                    <button
-                      key={preset.valeur}
-                      type="button"
-                      onClick={() => choisirPresetExport(preset.valeur)}
-                      className={`px-3 py-1.5 rounded-lg border text-sm ${
-                        presetExport === preset.valeur
-                          ? "border-[#0596DE] bg-[#0596DE] text-white"
-                          : "border-gray-200 bg-white text-[#0A1E3D] hover:bg-gray-50"
-                      }`}
-                    >
-                      {preset.libelle}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex flex-wrap items-end gap-2">
-                  <label className="flex flex-col gap-1 text-xs text-[#0A1E3D]">
-                    Format
-                    <select
-                      value={formatExport}
-                      onChange={(e) => setFormatExport(e.target.value)}
-                      className="rounded border border-gray-300 px-2 py-1.5 text-sm"
-                    >
-                      {FORMATS_EXPORT.map((format) => (
-                        <option key={format.valeur} value={format.valeur}>
-                          {format.libelle}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleExport}
-                    disabled={exportInvalid}
-                    className="px-3 py-1.5 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-600 disabled:opacity-50"
-                  >
-                    Télécharger
-                  </button>
-                  {exportInverse && (
-                    <p className="text-xs text-red-600">La date de début doit précéder la date de fin.</p>
-                  )}
-                </div>
-              </div>
-            )}
+            {showExport && <PanneauExport onExporter={exporterPlanning} />}
             {viewMode !== "calendar" && (
               <div className="flex flex-wrap gap-2">
                 <button
