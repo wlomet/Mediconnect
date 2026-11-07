@@ -9,6 +9,8 @@ class MedecinProfile extends Model
 {
     use HasFactory;
 
+    public const MESSAGE_COMPTE_MASQUE = 'Votre compte ne permet pas de créer de rendez-vous ni de démarrer une consultation. Veuillez contacter un administrateur.';
+
     protected $fillable = [
         'user_id',
         'hopital_id',
