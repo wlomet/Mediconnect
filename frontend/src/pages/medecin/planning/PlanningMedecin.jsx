@@ -290,6 +290,7 @@ export default function PlanningMedecin() {
   const [selectedCreneau, setSelectedCreneau] = useState(null);
   const [selectedRendezVous, setSelectedRendezVous] = useState(null);
   const [showExport, setShowExport] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const exporterPlanning = async ({ format, from, to }) => {
     const params = paramsPeriode({ from, to });
 
@@ -344,6 +345,15 @@ export default function PlanningMedecin() {
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchEvents();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Gérer le changement de vue en fonction de la taille de l'écran
   useEffect(() => {
@@ -492,9 +502,13 @@ export default function PlanningMedecin() {
               Ajouter indisponibilité
             </button>
             <button
-              onClick={fetchEvents}
-              className="bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600 w-full md:w-auto"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600 w-full md:w-auto flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
+              {refreshing && (
+                <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+              )}
               Rafraîchir
             </button>
           </div>
