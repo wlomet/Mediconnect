@@ -6,7 +6,7 @@ Les emails passent par `MailService` (API Brevo). En local (`APP_ENV=local`), vo
 
 | Variable | Rôle |
 |----------|------|
-| `MAIL_SEND_ENABLED` | `false` : aucun envoi, le contenu est écrit dans `storage/logs/laravel.log`. `true` : envoi réel, redirigé vers les adresses de test. Défaut `true`. |
+| `MAIL_SEND_ENABLED` | `false` : aucun envoi. Le HTML est écrit dans `storage/mail_simulated/` et le résumé dans `storage/logs/mail_simulated.log`. `true` : envoi réel, redirigé vers les adresses de test. Défaut `true`. |
 | `MAIL_DEV_TO` | Destinataire de test. **Obligatoire** si `MAIL_SEND_ENABLED=true` en local. |
 | `MAIL_DEV_CC` | Copie de test. Vide = pas de copie. |
 | `MAIL_DEV_BCC` | Copie cachée de test. Vide = pas de copie cachée. |
@@ -36,7 +36,7 @@ php artisan config:clear
 
 ## Comportement
 
-- **Simulation (`MAIL_SEND_ENABLED=false`)** : aucun appel à Brevo. L'envoi est considéré comme réussi (`messageId` fictif `simulated-...`). Le destinataire, le sujet et les pièces jointes sont visibles dans les logs.
+- **Simulation (`MAIL_SEND_ENABLED=false`)** : aucun appel à Brevo. L'envoi est considéré comme réussi (`messageId` fictif `simulated-...`). Le destinataire, le sujet et les pièces jointes sont visibles dans `storage/logs/mail_simulated.log`, le rendu HTML dans `storage/mail_simulated/`.
 - **Redirection (`MAIL_SEND_ENABLED=true`)** : le destinataire, le cc, le bcc et l'expéditeur sont remplacés par les valeurs `MAIL_DEV_*`. Le sujet est préfixé `[LOCAL]`.
 - **Validation** : les adresses, le contenu et les pièces jointes sont toujours contrôlés, même en simulation.
 - **Production** : ces variables sont ignorées. L'envoi est toujours réel.
@@ -45,7 +45,8 @@ php artisan config:clear
 
 ```bash
 # Windows PowerShell
-Select-String -Path storage\logs\laravel.log -Pattern "Envoi email simule"
+Get-ChildItem storage\mail_simulated
+Select-String -Path storage\logs\mail_simulated.log -Pattern "Envoi email simule"
 ```
 
 ## Tests

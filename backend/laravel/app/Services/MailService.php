@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Carbon\Carbon;
 use DateTimeInterface;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -69,9 +70,11 @@ class MailService
         }
 
         if ($this->isSimulated()) {
-            $this->logSimulation($payload);
+            $messageId = 'simulated-' . Str::uuid();
+            $fichier = $this->saveSimulatedHtml($payload, $messageId);
+            $this->logSimulation($payload, $fichier);
 
-            return ['messageId' => 'simulated-' . Str::uuid()];
+            return ['messageId' => $messageId];
         }
 
         if ($this->isLocal()) {
@@ -175,16 +178,34 @@ class MailService
     /**
      * @param  array<string, mixed>  $payload
      */
-    private function logSimulation(array $payload): void
+    private function logSimulation(array $payload, string $fichier): void
     {
-        Log::info('Envoi email simule (MAIL_SEND_ENABLED=false)', [
+        Log::channel('mail_simulated')->info('Envoi email simule (MAIL_SEND_ENABLED=false)', [
             'to' => $payload['to'],
             'cc' => $payload['cc'] ?? null,
             'bcc' => $payload['bcc'] ?? null,
             'sender' => $payload['sender'],
             'subject' => $payload['subject'],
             'attachments' => array_column($payload['attachment'] ?? [], 'name'),
+            'fichier' => $fichier,
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function saveSimulatedHtml(array $payload, string $messageId): string
+    {
+        $dossier = storage_path('mail_simulated');
+        File::ensureDirectoryExists($dossier);
+
+        $contenu = $payload['htmlContent']
+            ?? '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head><body><pre>' . e($payload['textContent'] ?? '') . '</pre></body></html>';
+
+        $fichier = $dossier . DIRECTORY_SEPARATOR . now()->format('Ymd_His') . '_' . $messageId . '.html';
+        File::put($fichier, $contenu);
+
+        return $fichier;
     }
 
     /**

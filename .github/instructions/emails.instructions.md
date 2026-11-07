@@ -27,7 +27,7 @@ Projet : `backend/laravel`. Langue des messages et des commentaires : francais.
 
 - Actif uniquement si `APP_ENV=local`. En production, aucun effet.
 - `MAIL_SEND_ENABLED` (lu par `config('services.brevo.enabled')`, defaut `true`) :
-  - `false` : aucun appel Brevo, retourne `['messageId' => 'simulated-...']`, log du contenu dans `laravel.log`. La cle `BREVO_API_KEY` n'est pas requise.
+  - `false` : aucun appel Brevo, retourne `['messageId' => 'simulated-...']`, HTML ecrit dans `storage/mail_simulated/`, resume dans `storage/logs/mail_simulated.log` (canal `mail_simulated`). La cle `BREVO_API_KEY` n'est pas requise.
   - `true` : envoi reel, mais redirige vers les adresses de test.
 - Variables de redirection (`config('services.brevo.dev')`) : `MAIL_DEV_TO` (obligatoire si envoi actif en local, sinon exception), `MAIL_DEV_CC`, `MAIL_DEV_BCC`, `MAIL_DEV_FROM`. Vide = cc/bcc supprimes, expediteur inchange.
 - Le sujet est prefixe par `[LOCAL]` lors de la redirection.
