@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Directeur;
 
 use App\Rules\PhoneNumber;
-
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use App\Models\Directeur;
 use App\Models\Hopital;
@@ -119,6 +119,13 @@ class DirecteurController extends Controller
         $totalDirecteurs = $directeurUserIds->count();
         $totalRdv = RendezVous::whereIn('medecin_id', $medecinProfileIds)->count();
 
+        // Mois calendaire en heure de Paris, bornes converties en UTC (stockage DB)
+        $debutMois = now('Europe/Paris')->startOfMonth()->setTimezone(config('app.timezone'));
+        $finMois = now('Europe/Paris')->endOfMonth()->setTimezone(config('app.timezone'));
+        $totalRdvMois = RendezVous::whereIn('medecin_id', $medecinProfileIds)
+            ->whereBetween('date_debut', [$debutMois, $finMois])
+            ->count();
+
         return response()->json([
             'stats' => [
                 'total_users' => $totalUsers,
@@ -127,6 +134,7 @@ class DirecteurController extends Controller
                 'total_secretaires' => $totalSecretaires,
                 'total_directeurs' => $totalDirecteurs,
                 'total_rdv' => $totalRdv,
+                'total_rdv_mois' => $totalRdvMois,
             ]
         ]);
     }
@@ -376,7 +384,7 @@ class DirecteurController extends Controller
             ])->header('Content-Type', 'application/json; charset=utf-8');
 
         } catch (\Exception $e) {
-            \Log::error('DataTables Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' line ' . $e->getLine());
+            Log::error('DataTables Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' line ' . $e->getLine());
 
             return response()->json([
                 'draw' => intval($request->input('draw', 0)),
@@ -406,7 +414,7 @@ class DirecteurController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
             'specialite_id' => 'required|integer|exists:specialites,id',
-            'telephone' => ['required', 'string', new PhoneNumber],
+            'telephone' => ['required', 'string', new PhoneNumber()],
             'adresse' => 'nullable|string',
             'ville' => 'nullable|string',
             'description' => 'nullable|string',
@@ -574,7 +582,7 @@ class DirecteurController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'adresse' => 'sometimes|nullable|string',
-            'telephone' => ['sometimes', 'nullable', 'string', new PhoneNumber],
+            'telephone' => ['sometimes', 'nullable', 'string', new PhoneNumber()],
             'ville' => 'sometimes|nullable|string',
             'email' => 'sometimes|nullable|email',
             'description' => 'sometimes|nullable|string',
@@ -699,7 +707,7 @@ class DirecteurController extends Controller
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
             'specialite_id' => 'sometimes|exists:specialites,id',
-            'telephone' => ['sometimes', 'nullable', 'string', new PhoneNumber],
+            'telephone' => ['sometimes', 'nullable', 'string', new PhoneNumber()],
             'adresse' => 'sometimes|nullable|string',
             'ville' => 'sometimes|nullable|string',
             'description' => 'sometimes|nullable|string',
