@@ -287,8 +287,9 @@
   }
 }
 
+/* Au-dessus des modales (99999) */
 :global(.swal2-container) {
-  z-index: 1300 !important;
+  z-index: 100000 !important;
 }
 
 .bannerLock {

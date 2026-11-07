@@ -22,6 +22,9 @@ class DashboardController extends Controller
             ->where('date_debut', '>=', now()->startOfDay())
             ->where('date_debut', '<', now()->addDay()->startOfDay());
 
+        $aValider = RendezVous::where('medecin_id', $profil->id)
+            ->where('statut', 'en_attente');
+
         return response()->json([
             'rendez_vous_aujourdhui' => (clone $rdvDuJour)->count(),
             'patients_en_attente' => (clone $rdvDuJour)->whereDoesntHave('consultation')->count(),
@@ -30,8 +33,9 @@ class DashboardController extends Controller
                 ->where('started_at', '>=', now()->startOfMonth())
                 ->where('started_at', '<', now()->addMonth()->startOfMonth())
                 ->count(),
-            'rendez_vous_a_valider' => RendezVous::where('medecin_id', $profil->id)
-                ->where('statut', 'en_attente')
+            'rendez_vous_a_valider' => (clone $aValider)->count(),
+            'rendez_vous_a_valider_plus_2_semaines' => (clone $aValider)
+                ->where('date_debut', '>', now()->addWeeks(2))
                 ->count(),
         ]);
     }

@@ -49,6 +49,37 @@ class RendezVousController extends Controller
     }
 
     /**
+     * Médecin récupère ses rendez-vous en attente de validation (du plus proche au plus lointain)
+     */
+    public function getAValider(Request $request)
+    {
+        $profil = $request->user()->medecinProfile;
+        abort_unless($profil, 403);
+
+        $rendezVous = RendezVous::where('medecin_id', $profil->id)
+            ->where('statut', 'en_attente')
+            ->orderBy('date_debut', 'asc')
+            ->get()
+            ->map(function ($rdv) {
+                return [
+                    'id' => $rdv->id,
+                    'name' => $rdv->name,
+                    'email' => $rdv->email,
+                    'phone' => $rdv->phone,
+                    'date_debut' => $rdv->date_debut,
+                    'date_fin' => $rdv->date_fin,
+                    'motif' => $rdv->motif,
+                    'statut' => $rdv->statut,
+                    'notes' => $rdv->notes
+                ];
+            });
+
+        return response()->json([
+            'rendez_vous' => $rendezVous
+        ]);
+    }
+
+    /**
      * Médecin récupère ses rendez-vous d'aujourd'hui
      */
     public function getToday(Request $request)

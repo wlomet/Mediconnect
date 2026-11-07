@@ -4,6 +4,7 @@ import NavbarMedecin from "../components/NavbarMedecin";
 import styles from "./DashboardMedecin.module.css";
 import MedecinLiaisons from "../liaisons/MedecinLiaisons";
 import ModalNouveauRendezVous from "./modals/ModalNouveauRendezVous";
+import ModalRendezVousAValider from "./modals/ModalRendezVousAValider";
 import ModalDemarrerConsultation from "../consultations/ModalDemarrerConsultation";
 import api from "../../../api/axios";
 
@@ -20,6 +21,8 @@ const DashboardMedecin = () => {
   const [medecinInfo, setMedecinInfo] = useState(null);
   const [agendaPeriod, setAgendaPeriod] = useState("today");
   const [weekAppointments, setWeekAppointments] = useState([]);
+  const [showListeAValider, setShowListeAValider] = useState(false);
+  const [rechargement, setRechargement] = useState(0);
 
   // Charger les données des rendez-vous au montage du composant
   useEffect(() => {
@@ -64,7 +67,7 @@ const DashboardMedecin = () => {
     };
 
     loadAppointmentsData();
-  }, []);
+  }, [rechargement]);
 
   useEffect(() => {
     api
@@ -74,7 +77,9 @@ const DashboardMedecin = () => {
         console.error("Erreur lors du chargement des compteurs:", err);
         setStatsError(true);
       });
-  }, []);
+  }, [rechargement]);
+
+  const rafraichirDonnees = () => setRechargement((compteur) => compteur + 1);
 
   const displayedAppointments = agendaPeriod === "today" ? todayAppointments : weekAppointments;
 
@@ -148,6 +153,14 @@ const DashboardMedecin = () => {
                     Rendez-vous à Valider
                   </h3>
                   <p className={`${styles.statValue} ${styles.valueOrange}`}>{renderStatValue("rendez_vous_a_valider")}</p>
+                  {stats?.rendez_vous_a_valider > 0 && (
+                    <div className={styles.statDetail}>
+                      <span>dont {stats.rendez_vous_a_valider_plus_2_semaines} dans plus de 2 semaines</span>
+                      <button type="button" className={styles.statLink} onClick={() => setShowListeAValider(true)}>
+                        Voir liste
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -261,6 +274,13 @@ const DashboardMedecin = () => {
 
       {showConsultationModal && (
         <ModalDemarrerConsultation onClose={() => setShowConsultationModal(false)} />
+      )}
+
+      {showListeAValider && (
+        <ModalRendezVousAValider
+          onClose={() => setShowListeAValider(false)}
+          onUpdate={rafraichirDonnees}
+        />
       )}
     </div>
   );

@@ -101,6 +101,28 @@
   color: #ea580c;
 }
 
+.statDetail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #92400e;
+}
+
+.statLink {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #ea580c;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .statSpinner {
   display: inline-block;
   width: 1.5rem;

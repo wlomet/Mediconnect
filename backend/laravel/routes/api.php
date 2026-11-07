@@ -174,6 +174,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
         // Rendez-vous Management
         Route::get('/rendez-vous', [MedecinRendezVousController::class, 'getAll']);
+        Route::get('/rendez-vous/a-valider', [MedecinRendezVousController::class, 'getAValider']);
         Route::get('/rendez-vous/today', [MedecinRendezVousController::class, 'getToday']);
         Route::get('/rendez-vous/month', [MedecinRendezVousController::class, 'getThisMonth']);
         Route::get('/rendez-vous/{id}', [MedecinRendezVousController::class, 'show']);

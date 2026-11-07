@@ -46,6 +46,12 @@ class MedecinDashboardStatsTest extends TestCase
         // En attente passé : compte dans "à valider" uniquement
         $this->makeRendezVous($profil, $this->creneau('en_attente', now()->subDays(3)->setTime(10, 0), 'h@example.test'));
 
+        // En attente dans 10 jours : "à valider" mais pas "plus de 2 semaines"
+        $this->makeRendezVous($profil, $this->creneau('en_attente', now()->addDays(10)->setTime(10, 0), 'l@example.test'));
+
+        // En attente dans 3 semaines : compte dans les deux compteurs
+        $this->makeRendezVous($profil, $this->creneau('en_attente', now()->addWeeks(3)->setTime(10, 0), 'm@example.test'));
+
         // Consultation du mois dernier : exclue
         $moisDernier = $this->makeRendezVous($profil, $this->creneau('terminé', now()->startOfMonth()->subDay()->setTime(10, 0), 'i@example.test'));
         Consultation::create([
@@ -73,7 +79,8 @@ class MedecinDashboardStatsTest extends TestCase
                 'rendez_vous_aujourdhui' => 3,
                 'patients_en_attente' => 2,
                 'consultations_mois' => 2,
-                'rendez_vous_a_valider' => 3,
+                'rendez_vous_a_valider' => 5,
+                'rendez_vous_a_valider_plus_2_semaines' => 1,
             ]);
     }
 
