@@ -2,7 +2,7 @@ import { useState, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../../../context/AuthContext";
 import styles from "./navbar.module.css";
-import { Menu, X, LogOut, Home, Users, BarChart3, Building2, FileText } from "lucide-react";
+import { Menu, X, LogOut, Home, Users, BarChart3, Building2, FileText, Calendar } from "lucide-react";
 
 const DirectorNavbar = () => {
   const navigate = useNavigate();
@@ -24,6 +24,8 @@ const DirectorNavbar = () => {
   const navLinks = [
     { path: "/directeur/dashboard", label: "Dashboard", icon: Home },
     { path: "/directeur/create-users", label: "Personnel", icon: Users },
+    { path: "/directeur/planning", label: "Planning", icon: Calendar },
+    { path: "/directeur/statistiques", label: "Statistiques", icon: BarChart3 },
     { path: "/directeur/hopital", label: "Hopital", icon: Building2 },
     { path: "/directeur/pdf-templates", label: "Modèles PDF", icon: FileText },
   ];

@@ -10,7 +10,7 @@ const PRESETS_PERIODE = [
 ];
 
 // onExporter reçoit { format, from, to } (dates incluses, AAAA-MM-JJ) et rejette en cas d'échec
-export default function PanneauExport({ onExporter }) {
+export default function PanneauExport({ onExporter, couleur = "#0596DE" }) {
   const [format, setFormat] = useState("csv");
   const [from, setFrom] = useState(() => formatDateKey(new Date()));
   const [to, setTo] = useState(() => formatDateKey(new Date()));
@@ -68,9 +68,10 @@ export default function PanneauExport({ onExporter }) {
             onClick={() => choisirPreset(p.valeur)}
             className={`px-3 py-1.5 rounded-lg border text-sm ${
               preset === p.valeur
-                ? "border-[#0596DE] bg-[#0596DE] text-white"
+                ? "text-white"
                 : "border-gray-200 bg-white text-[#0A1E3D] hover:bg-gray-50"
             }`}
+            style={preset === p.valeur ? { borderColor: couleur, backgroundColor: couleur } : undefined}
           >
             {p.libelle}
           </button>

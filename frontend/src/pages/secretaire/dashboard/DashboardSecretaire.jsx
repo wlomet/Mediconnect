@@ -1,16 +1,15 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../../../context/AuthContext";
 import axiosInstance from "../../../api/axios";
+import NavbarSecretaire from "../components/NavbarSecretaire";
 import styles from "./DashboardSecretaire.module.css";
 import SecretaireLiaisons from "../liaisons/SecretaireLiaisons";
-import ModalPlanningMedecin from "./modals/ModalPlanningMedecin";
 import ModalUpdateRendezVous from "./modals/ModalUpdateRendezVous";
+import ModalRendezVousAValider from "./modals/ModalRendezVousAValider";
 import ModalMedecinManage from "./modals/ModalMedecinManage";
 
 const DashboardSecretaire = () => {
   const navigate = useNavigate();
-  const { logout } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [medecins, setMedecins] = useState([]);
@@ -18,13 +17,12 @@ const DashboardSecretaire = () => {
   const [rendezVous, setRendezVous] = useState([]);
   const [rdvAujourdhui, setRdvAujourdhui] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
-  const [showPlanningModal, setShowPlanningModal] = useState(false);
-  const [selectedMedecinForPlanning, setSelectedMedecinForPlanning] = useState(null);
   const [secretaireInfo, setSecretaireInfo] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedRendezVousForEdit, setSelectedRendezVousForEdit] = useState(null);
   const [showMedecinManageModal, setShowMedecinManageModal] = useState(false);
   const [selectedMedecinForManagement, setSelectedMedecinForManagement] = useState(null);
+  const [showListeAValider, setShowListeAValider] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -90,32 +88,14 @@ const DashboardSecretaire = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate("/login");
-    } catch (error) {
-      console.error("Erreur déconnexion:", error);
-    }
-  };
-
   if (loading) {
     return <div className={styles.loading}>Chargement...</div>;
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1>Secrétariat Médical</h1>
-        <div className={styles.headerActions}>
-          <button onClick={() => navigate("/")} className={styles.btnBack}>
-            Retour
-          </button>
-          <button onClick={handleLogout} className={styles.btnLogout}>
-            Déconnexion
-          </button>
-        </div>
-      </div>
+    <>
+      <NavbarSecretaire />
+      <div className={styles.container}>
 
       {/* Statistiques */}
       <div className={styles.statsGrid}>
@@ -130,6 +110,18 @@ const DashboardSecretaire = () => {
         <div className={`${styles.statCard} ${styles.cardPurple}`}>
           <h3 className={styles.statCardTitle}>RDV Cette Semaine</h3>
           <p className={styles.statValue}>{stats?.total_rdv_semaine || 0}</p>
+        </div>
+        <div className={`${styles.statCard} ${styles.cardOrange}`}>
+          <h3 className={styles.statCardTitle}>Rendez-vous à Valider</h3>
+          <p className={styles.statValue}>{stats?.rendez_vous_a_valider || 0}</p>
+          {stats?.rendez_vous_a_valider > 0 && (
+            <div className={styles.statDetail}>
+              <span>dont {stats.rendez_vous_a_valider_plus_2_semaines} dans plus de 2 semaines</span>
+              <button type="button" className={styles.statLink} onClick={() => setShowListeAValider(true)}>
+                Voir liste
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -261,10 +253,7 @@ const DashboardSecretaire = () => {
                       </button>
                       <button
                         className={styles.btnSecondary}
-                        onClick={() => {
-                          setSelectedMedecinForPlanning(medecin);
-                          setShowPlanningModal(true);
-                        }}
+                        onClick={() => navigate(`/secretaire/planning?medecin=${medecin.id}`)}
                         style={{ flex: 1 }}
                       >
                         Voir Planning Complet
@@ -380,15 +369,10 @@ const DashboardSecretaire = () => {
         {activeTab === "liaisons" && <SecretaireLiaisons />}
       </div>
 
-      {/* Modal Planning Medecin */}
-      {showPlanningModal && selectedMedecinForPlanning && (
-        <ModalPlanningMedecin
-          medecin={selectedMedecinForPlanning}
-          onClose={() => {
-            setShowPlanningModal(false);
-            setSelectedMedecinForPlanning(null);
-          }}
-          onSuccess={() => {
+      {showListeAValider && (
+        <ModalRendezVousAValider
+          onClose={() => setShowListeAValider(false)}
+          onUpdate={() => {
             fetchDashboardData();
             fetchRdvAujourdhui();
           }}
@@ -430,6 +414,7 @@ const DashboardSecretaire = () => {
         />
       )}
     </div>
+    </>
   );
 };
 

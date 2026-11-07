@@ -37,6 +37,13 @@ use App\Http\Controllers\Secretaire\DashboardController as SecretaireDashboardCo
 use App\Http\Controllers\Gestionnaire\RendezVousController as GestionnaireRendezVousController;
 use App\Http\Controllers\Gestionnaire\LiaisonController as GestionnaireLiaisonController;
 use App\Http\Controllers\Gestionnaire\DashboardController as GestionnaireDashboardController;
+use App\Http\Controllers\Secretaire\PlanningController as SecretairePlanningController;
+use App\Http\Controllers\Secretaire\StatistiqueController as SecretaireStatistiqueController;
+use App\Http\Controllers\Gestionnaire\PlanningController as GestionnairePlanningController;
+use App\Http\Controllers\Gestionnaire\StatistiqueController as GestionnaireStatistiqueController;
+use App\Http\Controllers\Directeur\PlanningController as DirecteurPlanningController;
+use App\Http\Controllers\Directeur\RendezVousController as DirecteurRendezVousController;
+use App\Http\Controllers\Directeur\StatistiqueController as DirecteurStatistiqueController;
 use App\Http\Controllers\SuperAdmin\UserController as SuperAdminUserController;
 use App\Http\Controllers\SuperAdmin\RoleController as SuperAdminRoleController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
@@ -273,6 +280,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         // Rendez-vous Management
         Route::prefix('rendez-vous')->name('rendez-vous.')->group(function () {
             Route::get('/today', [SecretaireRendezVousController::class, 'getTodayRendezVous']);
+            Route::get('/a-valider', [SecretaireRendezVousController::class, 'getAValider']);
             Route::get('/{id}', [SecretaireRendezVousController::class, 'show']);
             Route::post('/', [SecretaireRendezVousController::class, 'store'])->middleware('medecin.bookable');
             Route::put('/{id}', [SecretaireRendezVousController::class, 'update']);
@@ -285,10 +293,22 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         // Médecins Management
         Route::prefix('medecins')->name('medecins.')->group(function () {
             Route::get('/{medecinId}/planning', [SecretaireDashboardController::class, 'getMedecinPlanning']);
+            Route::get('/{medecinId}/planning/export', [SecretairePlanningController::class, 'exporterRendezVous']);
             Route::get('/{medecinId}/profile', [SecretaireDashboardController::class, 'getMedecinProfile']);
             Route::post('/{medecinId}/horaires', [SecretaireDashboardController::class, 'addHoraire']);
             Route::put('/{medecinId}/horaires', [SecretaireDashboardController::class, 'updateHoraires']);
+            Route::patch('/{medecinId}/horaires/toggle', [SecretairePlanningController::class, 'toggleHoraire']);
+            Route::delete('/{medecinId}/horaires', [SecretairePlanningController::class, 'deleteHoraire']);
             Route::post('/{medecinId}/indisponibilites', [SecretaireDashboardController::class, 'addIndisponibilite']);
+            Route::delete('/{medecinId}/indisponibilites/{id}', [SecretairePlanningController::class, 'deleteIndisponibilite']);
+        });
+
+        // Statistiques des médecins accessibles (filtre optionnel medecin_id)
+        Route::prefix('statistiques')->group(function () {
+            Route::get('/rendez-vous', [SecretaireStatistiqueController::class, 'rendezVous']);
+            Route::get('/consultations', [SecretaireStatistiqueController::class, 'consultations']);
+            Route::get('/documents', [SecretaireStatistiqueController::class, 'documents']);
+            Route::get('/factures', [SecretaireStatistiqueController::class, 'factures']);
         });
 
         // Liaisons with Médecins
@@ -325,10 +345,22 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         // Médecins Management
         Route::prefix('medecins')->name('medecins.')->group(function () {
             Route::get('/{medecinId}/planning', [GestionnaireDashboardController::class, 'getMedecinPlanning']);
+            Route::get('/{medecinId}/planning/export', [GestionnairePlanningController::class, 'exporterRendezVous']);
             Route::get('/{medecinId}/profile', [GestionnaireDashboardController::class, 'getMedecinProfile']);
             Route::post('/{medecinId}/horaires', [GestionnaireDashboardController::class, 'addHoraire']);
             Route::put('/{medecinId}/horaires', [GestionnaireDashboardController::class, 'updateHoraires']);
+            Route::patch('/{medecinId}/horaires/toggle', [GestionnairePlanningController::class, 'toggleHoraire']);
+            Route::delete('/{medecinId}/horaires', [GestionnairePlanningController::class, 'deleteHoraire']);
             Route::post('/{medecinId}/indisponibilites', [GestionnaireDashboardController::class, 'addIndisponibilite']);
+            Route::delete('/{medecinId}/indisponibilites/{id}', [GestionnairePlanningController::class, 'deleteIndisponibilite']);
+        });
+
+        // Statistiques des médecins accessibles (filtre optionnel medecin_id)
+        Route::prefix('statistiques')->group(function () {
+            Route::get('/rendez-vous', [GestionnaireStatistiqueController::class, 'rendezVous']);
+            Route::get('/consultations', [GestionnaireStatistiqueController::class, 'consultations']);
+            Route::get('/documents', [GestionnaireStatistiqueController::class, 'documents']);
+            Route::get('/factures', [GestionnaireStatistiqueController::class, 'factures']);
         });
 
         // Liaisons with Médecins
@@ -352,6 +384,34 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('/personnel-datatable', [DirecteurController::class, 'getPersonnelDatatable']);
         Route::get('/hopital', [DirecteurController::class, 'getHopital']);
         Route::put('/hopital', [DirecteurController::class, 'updateHopital']);
+
+        // Planning, rendez-vous et statistiques des médecins de l'hôpital
+        Route::get('/medecins-hopital', [DirecteurPlanningController::class, 'medecinsHopital']);
+        Route::get('/medecins/{medecinId}/planning', [DirecteurPlanningController::class, 'getMedecinPlanning']);
+        Route::get('/medecins/{medecinId}/planning/export', [DirecteurPlanningController::class, 'exporterRendezVous']);
+        Route::post('/medecins/{medecinId}/horaires', [DirecteurPlanningController::class, 'addHoraire']);
+        Route::put('/medecins/{medecinId}/horaires', [DirecteurPlanningController::class, 'updateHoraires']);
+        Route::patch('/medecins/{medecinId}/horaires/toggle', [DirecteurPlanningController::class, 'toggleHoraire']);
+        Route::delete('/medecins/{medecinId}/horaires', [DirecteurPlanningController::class, 'deleteHoraire']);
+        Route::post('/medecins/{medecinId}/indisponibilites', [DirecteurPlanningController::class, 'addIndisponibilite']);
+        Route::delete('/medecins/{medecinId}/indisponibilites/{id}', [DirecteurPlanningController::class, 'deleteIndisponibilite']);
+
+        Route::prefix('rendez-vous')->name('rendez-vous.')->group(function () {
+            Route::get('/medecin/{medecinId}', [DirecteurRendezVousController::class, 'getMedecinRendezVous']);
+            Route::get('/{id}', [DirecteurRendezVousController::class, 'show']);
+            Route::post('/', [DirecteurRendezVousController::class, 'store'])->middleware('medecin.bookable');
+            Route::put('/{id}', [DirecteurRendezVousController::class, 'update']);
+            Route::delete('/{id}', [DirecteurRendezVousController::class, 'destroy']);
+            Route::patch('/{id}/cancel', [DirecteurRendezVousController::class, 'cancel']);
+            Route::post('/{id}/renvoyer-email', [DirecteurRendezVousController::class, 'renvoyerEmail']);
+        });
+
+        Route::prefix('statistiques')->group(function () {
+            Route::get('/rendez-vous', [DirecteurStatistiqueController::class, 'rendezVous']);
+            Route::get('/consultations', [DirecteurStatistiqueController::class, 'consultations']);
+            Route::get('/documents', [DirecteurStatistiqueController::class, 'documents']);
+            Route::get('/factures', [DirecteurStatistiqueController::class, 'factures']);
+        });
 
         // Modèles PDF de l'établissement (ordonnances et factures)
         Route::prefix('pdf-images')->name('pdf-images.')->group(function () {

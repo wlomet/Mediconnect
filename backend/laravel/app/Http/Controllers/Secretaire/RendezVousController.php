@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Secretaire;
 
 use App\Rules\PhoneNumber;
+use App\Http\Controllers\Secretaire\Concerns\MedecinsAccessibles;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\RendezVous;
@@ -17,6 +18,7 @@ use Illuminate\Validation\Rule;
 
 class RendezVousController extends Controller
 {
+    use MedecinsAccessibles;
     /**
      * Vérifie si la secrétaire peut accéder à un médecin (via MedecinProfile ID)
      * Si hopital_id: tous les médecins de l'hôpital sont accessibles
@@ -357,6 +359,35 @@ class RendezVousController extends Controller
                     ],
                 ];
             });
+
+        return response()->json(['rendez_vous' => $rendezVous]);
+    }
+
+    /**
+     * Secrétaire récupère les rendez-vous en attente de validation de ses médecins accessibles
+     */
+    public function getAValider(Request $request)
+    {
+        $rendezVous = RendezVous::whereIn('medecin_id', $this->medecinProfileIdsAccessibles($request->user()))
+            ->where('statut', 'en_attente')
+            ->with('medecin.user')
+            ->orderBy('date_debut', 'asc')
+            ->get()
+            ->map(fn (RendezVous $rdv) => [
+                'id' => $rdv->id,
+                'name' => $rdv->name,
+                'email' => $rdv->email,
+                'phone' => $rdv->phone,
+                'date_debut' => $rdv->date_debut,
+                'date_fin' => $rdv->date_fin,
+                'motif' => $rdv->motif,
+                'statut' => $rdv->statut,
+                'notes' => $rdv->notes,
+                'medecin' => [
+                    'id' => $rdv->medecin?->user_id,
+                    'name' => $rdv->medecin?->user?->name,
+                ],
+            ]);
 
         return response()->json(['rendez_vous' => $rendezVous]);
     }

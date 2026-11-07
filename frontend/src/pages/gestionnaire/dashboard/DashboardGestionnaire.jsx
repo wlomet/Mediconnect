@@ -1,16 +1,14 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../../../context/AuthContext";
 import axiosInstance from "../../../api/axios";
+import NavbarGestionnaire from "../components/NavbarGestionnaire";
 import styles from "./DashboardGestionnaire.module.css";
 import GestionnaireLiaisons from "../liaisons/GestionnaireLiaisons";
-import ModalPlanningMedecin from "./modals/ModalPlanningMedecin";
 import ModalUpdateRendezVous from "./modals/ModalUpdateRendezVous";
 import ModalMedecinManage from "./modals/ModalMedecinManage";
 
 const DashboardGestionnaire = () => {
   const navigate = useNavigate();
-  const { logout } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [medecins, setMedecins] = useState([]);
@@ -18,8 +16,6 @@ const DashboardGestionnaire = () => {
   const [rendezVous, setRendezVous] = useState([]);
   const [rdvAujourdhui, setRdvAujourdhui] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
-  const [showPlanningModal, setShowPlanningModal] = useState(false);
-  const [selectedMedecinForPlanning, setSelectedMedecinForPlanning] = useState(null);
   const [gestionnaireInfo, setGestionnaireInfo] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedRendezVousForEdit, setSelectedRendezVousForEdit] = useState(null);
@@ -90,32 +86,14 @@ const DashboardGestionnaire = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate("/login");
-    } catch (error) {
-      console.error("Erreur déconnexion:", error);
-    }
-  };
-
   if (loading) {
     return <div className={styles.loading}>Chargement...</div>;
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1>Gestion</h1>
-        <div className={styles.headerActions}>
-          <button onClick={() => navigate("/")} className={styles.btnBack}>
-            Retour
-          </button>
-          <button onClick={handleLogout} className={styles.btnLogout}>
-            Déconnexion
-          </button>
-        </div>
-      </div>
+    <>
+      <NavbarGestionnaire />
+      <div className={styles.container}>
 
       {/* Statistiques */}
       <div className={styles.statsGrid}>
@@ -261,10 +239,7 @@ const DashboardGestionnaire = () => {
                       </button>
                       <button
                         className={styles.btnSecondary}
-                        onClick={() => {
-                          setSelectedMedecinForPlanning(medecin);
-                          setShowPlanningModal(true);
-                        }}
+                        onClick={() => navigate(`/gestionnaire/planning?medecin=${medecin.id}`)}
                         style={{ flex: 1 }}
                       >
                         Voir Planning Complet
@@ -380,21 +355,6 @@ const DashboardGestionnaire = () => {
         {activeTab === "liaisons" && <GestionnaireLiaisons />}
       </div>
 
-      {/* Modal Planning Medecin */}
-      {showPlanningModal && selectedMedecinForPlanning && (
-        <ModalPlanningMedecin
-          medecin={selectedMedecinForPlanning}
-          onClose={() => {
-            setShowPlanningModal(false);
-            setSelectedMedecinForPlanning(null);
-          }}
-          onSuccess={() => {
-            fetchDashboardData();
-            fetchRdvAujourdhui();
-          }}
-        />
-      )}
-
       {/* Modal Edit Rendez-vous */}
       {showEditModal && selectedRendezVousForEdit && (
         <ModalUpdateRendezVous
@@ -430,6 +390,7 @@ const DashboardGestionnaire = () => {
         />
       )}
     </div>
+    </>
   );
 };
 

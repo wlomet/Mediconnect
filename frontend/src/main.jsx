@@ -58,6 +58,12 @@ import ConsultationPopup from "./pages/medecin/consultations/ConsultationPopup";
 import ConsultationsListe from "./pages/medecin/consultations/ConsultationsListe";
 import ConsultationPage from "./pages/medecin/consultations/ConsultationPage";
 import StatistiquesMedecin from "./pages/medecin/statistiques/StatistiquesMedecin";
+import PlanningSecretaire from "./pages/secretaire/planning/PlanningSecretaire";
+import StatistiquesSecretaire from "./pages/secretaire/statistiques/StatistiquesSecretaire";
+import PlanningGestionnaire from "./pages/gestionnaire/planning/PlanningGestionnaire";
+import StatistiquesGestionnaire from "./pages/gestionnaire/statistiques/StatistiquesGestionnaire";
+import PlanningDirecteur from "./pages/directeur/planning/PlanningDirecteur";
+import StatistiquesDirecteur from "./pages/directeur/statistiques/StatistiquesDirecteur";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <AuthProvider>
@@ -104,13 +110,19 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/medecin/pdf-templates/logos" element={<PdfLogosPage />} />
         <Route path="/medecin/pdf-templates/:id" element={<PdfTemplateEditor />} />
         <Route path="/gestionnaire/dashboard" element={<DashboardGestionnaire />} />
+        <Route path="/gestionnaire/planning" element={<PlanningGestionnaire />} />
+        <Route path="/gestionnaire/statistiques" element={<StatistiquesGestionnaire />} />
         <Route path="/directeur/dashboard" element={<DashboardDirecteur />} />
+        <Route path="/directeur/planning" element={<PlanningDirecteur />} />
+        <Route path="/directeur/statistiques" element={<StatistiquesDirecteur />} />
         <Route path="/directeur/create-users" element={<CreateUsers />} />
         <Route path="/directeur/hopital" element={<HopitalInfo />} />
         <Route path="/directeur/pdf-templates" element={<PdfTemplatesList role="directeur" />} />
         <Route path="/directeur/pdf-templates/logos" element={<PdfLogosPage role="directeur" />} />
         <Route path="/directeur/pdf-templates/:id" element={<PdfTemplateEditor role="directeur" />} />
         <Route path="/secretaire/dashboard" element={<DashboardSecretaire />} />
+        <Route path="/secretaire/planning" element={<PlanningSecretaire />} />
+        <Route path="/secretaire/statistiques" element={<StatistiquesSecretaire />} />
         <Route element={<SuperAdminLayout />}>
           <Route path="/super-admin/dashboard" element={<DashboardSuperAdmin />} />
           <Route path="/super-admin/utilisateurs" element={<UtilisateursSuperAdmin />} />

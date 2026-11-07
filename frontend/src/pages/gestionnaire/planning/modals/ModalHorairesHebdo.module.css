@@ -1,0 +1,365 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  padding: 20px;
+}
+
+.modalContentLarge {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 1000px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px 12px 0 0;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: white;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.infoBox {
+  background: #faf5ff;
+  border: 1px solid #ddd6fe;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.infoIcon {
+  font-size: 1.2rem;
+}
+
+.form {
+  padding: 0 24px 24px;
+}
+
+.horairesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.jourSection {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s;
+}
+
+.jourSection:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.jourTitle {
+  margin: 0 0 16px 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1e293b;
+  text-align: center;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.creneauSection {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.creneauHeader {
+  margin-bottom: 12px;
+}
+
+.creneauLabel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #374151;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 2px solid #d1d5db;
+  cursor: pointer;
+}
+
+.creneauTitle {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.heuresInputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.timeInputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.timeInputGroup label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.timeInput {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+}
+
+.timeInput:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.buttonContainer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.cancelButton {
+  padding: 12px 24px;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #374151;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.submitButton {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #8b5cf6, #6f42c1);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  transform: translateY(-1px);
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 40px;
+  gap: 16px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #f3f4f6;
+  border-top: 3px solid #8b5cf6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modalOverlay {
+    padding: 8px;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .modalContentLarge {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100vh - 16px);
+    padding: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+    margin-top: auto;
+  }
+
+  .modalHeader {
+    padding: 16px;
+    font-size: 1.2rem;
+    flex-wrap: wrap;
+  }
+
+  .modalTitle {
+    font-size: 1.25rem;
+  }
+
+  .closeButton {
+    font-size: 1.25rem;
+    padding: 4px;
+  }
+
+  .infoBox {
+    margin: 12px;
+    padding: 12px;
+    font-size: 0.875rem;
+  }
+
+  .form {
+    padding: 0 12px 12px;
+  }
+
+  .horairesGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .jourSection {
+    padding: 16px;
+  }
+
+  .jourTitle {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+  }
+
+  .creneauSection {
+    margin-bottom: 16px;
+    padding: 12px;
+  }
+
+  .creneauLabel {
+    gap: 8px;
+    font-size: 0.95rem;
+  }
+
+  .checkbox {
+    width: 16px;
+    height: 16px;
+  }
+
+  .creneauTitle {
+    font-size: 0.95rem;
+  }
+
+  .heuresInputs {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .timeInputGroup {
+    gap: 4px;
+  }
+
+  .timeInputGroup label {
+    font-size: 0.8rem;
+  }
+
+  .timeInput {
+    padding: 6px 10px;
+    font-size: 0.875rem;
+  }
+
+  .buttonContainer {
+    flex-direction: column-reverse;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid #e5e7eb;
+    margin: 0;
+  }
+
+  .cancelButton,
+  .submitButton {
+    width: 100%;
+    padding: 10px 16px;
+    font-size: 0.95rem;
+    justify-content: center;
+  }
+
+  .loading {
+    padding: 40px 20px;
+    gap: 12px;
+  }
+
+  .spinner {
+    width: 24px;
+    height: 24px;
+  }
+}

@@ -108,6 +108,13 @@ class DashboardController extends Controller
                     Carbon::now()->startOfWeek(),
                     Carbon::now()->endOfWeek()
                 ])->count(),
+            'rendez_vous_a_valider' => RendezVous::whereIn('medecin_id', $medecinProfileIds)
+                ->where('statut', 'en_attente')
+                ->count(),
+            'rendez_vous_a_valider_plus_2_semaines' => RendezVous::whereIn('medecin_id', $medecinProfileIds)
+                ->where('statut', 'en_attente')
+                ->where('date_debut', '>', now()->addWeeks(2))
+                ->count(),
         ];
 
         return response()->json([
@@ -198,6 +205,7 @@ class DashboardController extends Controller
                 'name' => $medecin->name,
                 'specialite' => $profile->specialite?->nom ?? 'Non spécifié',
             ],
+            'medecin_profile_id' => $profile->id,
             'horaires' => $horaires,
             'indisponibilites' => $indisponibilites,
             'rendez_vous' => $rendezVous,
@@ -334,11 +342,22 @@ class DashboardController extends Controller
             'motif' => 'nullable|string|max:255',
         ]);
 
+        $chevauchement = \App\Models\IndisponibiliteMedecin::where('medecin_id', $profile->id)
+            ->where('date_debut', '<=', $validated['date_fin'])
+            ->where('date_fin', '>=', $validated['date_debut'])
+            ->exists();
+
+        if ($chevauchement) {
+            return response()->json([
+                'message' => 'Cette période chevauche avec une indisponibilité existante. Veuillez choisir une autre période.'
+            ], 422);
+        }
+
         $indisponibilite = \App\Models\IndisponibiliteMedecin::create([
             'medecin_id' => $profile->id,
             'date_debut' => $validated['date_debut'],
             'date_fin' => $validated['date_fin'],
-            'motif' => $validated['motif'] ?? null,
+            'motif' => $validated['motif'] ?? '',
         ]);
 
         return response()->json([
