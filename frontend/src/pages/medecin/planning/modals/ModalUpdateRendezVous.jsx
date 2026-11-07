@@ -553,8 +553,8 @@ const ModalUpdateRendezVous = ({ rendezVous, onClose, onSuccess }) => {
                       </button>
                     )}
 
-                    {infos.consultationStatut === "en_cours" && (
-                      <p className={styles.cardHint}>Consultation en cours : annulation impossible.</p>
+                    {["en_cours", "en_attente"].includes(infos.consultationStatut) && (
+                      <p className={styles.cardHint}>Consultation en cours ou en attente : annulation impossible.</p>
                     )}
                     {modifie && (
                       <p className={styles.cardHint}>Enregistrez vos modifications avant de changer le statut.</p>

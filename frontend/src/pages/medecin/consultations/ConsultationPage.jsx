@@ -18,6 +18,7 @@ import styles from "./Consultations.module.css";
 
 const BADGE_STATUT = {
   en_cours: styles.badgeEnCours,
+  en_attente: styles.badgeEnAttente,
   abandonnee: styles.badgeAbandonnee,
   terminee: styles.badgeTerminee,
 };
@@ -92,6 +93,7 @@ const ConsultationPage = () => {
 
   const { consultation: c, historique, journal, antecedents } = data;
   const enCours = c.statut === "en_cours";
+  const reprenable = c.statut === "en_attente" || c.statut === "abandonnee";
   const peutTerminer = enCours && Boolean(c.facture?.lignes?.length);
   const heureModifiee = heure !== versValeurDateLocale(c.heure_debut_reelle);
 
@@ -108,6 +110,8 @@ const ConsultationPage = () => {
     const ok = await executer(() => consultationApi.abandonner(c.id, motif), "Consultation abandonnée");
     if (ok) setAbandonOuvert(false);
   };
+
+  const mettreEnAttente = () => executer(() => consultationApi.mettreEnAttente(c.id), "Consultation mise en attente");
 
   const reprendre = () => executer(() => consultationApi.reprendre(c.id), "Consultation reprise");
 
@@ -145,6 +149,14 @@ const ConsultationPage = () => {
                 <button
                   type="button"
                   className={`${styles.button} ${styles.secondary}`}
+                  onClick={mettreEnAttente}
+                  disabled={occupe}
+                >
+                  Mettre en attente
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.button} ${styles.secondary}`}
                   onClick={() => setAbandonOuvert(true)}
                   disabled={occupe}
                 >
@@ -161,7 +173,7 @@ const ConsultationPage = () => {
                 </button>
               </>
             )}
-            {c.statut === "abandonnee" && (
+            {reprenable && (
               <button type="button" className={`${styles.button} ${styles.primary}`} onClick={reprendre} disabled={occupe}>
                 Reprendre la consultation
               </button>
@@ -172,6 +184,11 @@ const ConsultationPage = () => {
         {c.statut === "abandonnee" && (
           <div className={`${styles.banner} ${styles.bannerWarning}`}>
             Consultation abandonnée le {formatDateHeure(c.abandoned_at)}. Motif : {c.abandon_motif}
+          </div>
+        )}
+        {c.statut === "en_attente" && (
+          <div className={`${styles.banner} ${styles.bannerWarning}`}>
+            Consultation mise en attente le {formatDateHeure(c.paused_at)}. Reprenez-la pour la compléter.
           </div>
         )}
         {c.statut === "terminee" && (

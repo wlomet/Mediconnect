@@ -18,6 +18,7 @@ const CLASSES_STATUT_RDV = {
 
 const CLASSES_STATUT_CONSULTATION = {
   en_cours: styles.statusPending,
+  en_attente: styles.statusPending,
   terminee: styles.statusConfirmed,
   abandonnee: styles.statusCancelled,
 };

@@ -189,6 +189,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
             Route::put('/{id}/ordonnance', [ConsultationController::class, 'saveOrdonnance']);
             Route::put('/{id}/facture', [ConsultationController::class, 'saveFacture']);
             Route::post('/{id}/abandon', [ConsultationController::class, 'abandon']);
+            Route::post('/{id}/mettre-en-attente', [ConsultationController::class, 'mettreEnAttente']);
             Route::post('/{id}/reprendre', [ConsultationController::class, 'reprendre']);
             Route::post('/{id}/terminer', [ConsultationController::class, 'terminer']);
         });

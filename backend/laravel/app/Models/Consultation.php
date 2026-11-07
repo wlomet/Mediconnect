@@ -7,8 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class Consultation extends Model
 {
     public const EN_COURS = 'en_cours';
+    public const EN_ATTENTE = 'en_attente';
     public const ABANDONNEE = 'abandonnee';
     public const TERMINEE = 'terminee';
+
+    public const MAX_EN_ATTENTE = 2;
 
     protected $fillable = [
         'medecin_profile_id',
@@ -19,6 +22,7 @@ class Consultation extends Model
         'ended_at',
         'abandoned_at',
         'abandon_motif',
+        'paused_at',
         'ordonnance_texte',
     ];
 
@@ -27,6 +31,7 @@ class Consultation extends Model
         'heure_debut_reelle' => 'datetime',
         'ended_at' => 'datetime',
         'abandoned_at' => 'datetime',
+        'paused_at' => 'datetime',
     ];
 
     public function medecin()

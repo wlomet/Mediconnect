@@ -125,13 +125,39 @@ class ConsultationService
         });
     }
 
+    public function mettreEnAttente(MedecinProfile $profil, User $user, int $id): Consultation
+    {
+        return $this->verrouiller($profil, function () use ($profil, $user, $id) {
+            $consultation = $this->enCours($profil, $id);
+
+            $enAttente = Consultation::where('medecin_profile_id', $profil->id)
+                ->where('statut', Consultation::EN_ATTENTE)
+                ->count();
+
+            if ($enAttente >= Consultation::MAX_EN_ATTENTE) {
+                throw new BusinessException(
+                    "Vous avez déjà ".Consultation::MAX_EN_ATTENTE." consultations en attente. Reprenez-en une avant d'en mettre une autre en attente.",
+                    409
+                );
+            }
+
+            $consultation->update([
+                'statut' => Consultation::EN_ATTENTE,
+                'paused_at' => now(),
+            ]);
+            $this->journaliser($consultation, 'mise_en_attente', $user);
+
+            return $this->charger($consultation);
+        });
+    }
+
     public function reprendre(MedecinProfile $profil, User $user, int $id): Consultation
     {
         return $this->verrouiller($profil, function () use ($profil, $user, $id) {
             $consultation = $this->consultationDuProfil($profil, $id);
 
-            if ($consultation->statut !== Consultation::ABANDONNEE) {
-                throw new BusinessException('Seule une consultation abandonnée peut être reprise.', 422);
+            if (!in_array($consultation->statut, [Consultation::ABANDONNEE, Consultation::EN_ATTENTE], true)) {
+                throw new BusinessException('Seule une consultation abandonnée ou en attente peut être reprise.', 422);
             }
 
             $statutRdv = $consultation->rendezVous->statut;
@@ -141,7 +167,7 @@ class ConsultationService
 
             $this->exigerAucuneAutreEnCours($profil);
 
-            $consultation->update(['statut' => Consultation::EN_COURS]);
+            $consultation->update(['statut' => Consultation::EN_COURS, 'paused_at' => null]);
             $this->journaliser($consultation, 'reprise', $user);
 
             return $this->charger($consultation);
@@ -185,6 +211,7 @@ class ConsultationService
             'ended_at' => $c->ended_at,
             'abandoned_at' => $c->abandoned_at,
             'abandon_motif' => $c->abandon_motif,
+            'paused_at' => $c->paused_at,
             'ordonnance_texte' => $c->ordonnance_texte,
             'rendez_vous' => [
                 'id' => $rdv->id,
@@ -326,9 +353,9 @@ class ConsultationService
 
         if ($enCours) {
             throw new BusinessException(
-                "Une consultation est déjà en cours. Terminez-la ou abandonnez-la avant d'en démarrer une autre.",
+                "Une consultation est déjà en cours. Mettez-la en attente, terminez-la ou abandonnez-la avant d'en démarrer une autre.",
                 409,
-                ['consultation_id' => $enCours->id]
+                ['consultation_id' => $enCours->id, 'code' => 'consultation_en_cours']
             );
         }
     }

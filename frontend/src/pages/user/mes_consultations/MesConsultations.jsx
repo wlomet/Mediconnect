@@ -14,6 +14,7 @@ import styles from "./MesConsultations.module.css";
 
 const BADGE_STATUT = {
   en_cours: styles.badgeEnCours,
+  en_attente: styles.badgeEnCours,
   terminee: styles.badgeTerminee,
   abandonnee: styles.badgeAbandonnee,
 };

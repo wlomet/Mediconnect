@@ -17,6 +17,7 @@ class ConsultationController extends Controller
 {
     private const STATUT_LIBELLES = [
         Consultation::EN_COURS => 'En cours',
+        Consultation::EN_ATTENTE => 'En attente',
         Consultation::ABANDONNEE => 'Abandonnée',
         Consultation::TERMINEE => 'Terminée',
     ];
@@ -42,7 +43,7 @@ class ConsultationController extends Controller
     private function consultationsFiltrees(Request $request)
     {
         $filtres = $request->validate([
-            'statut' => ['nullable', Rule::in([Consultation::EN_COURS, Consultation::ABANDONNEE, Consultation::TERMINEE])],
+            'statut' => ['nullable', Rule::in([Consultation::EN_COURS, Consultation::EN_ATTENTE, Consultation::ABANDONNEE, Consultation::TERMINEE])],
         ]);
 
         return $this->consultationsDuProfil($this->profil($request))
@@ -254,6 +255,16 @@ class ConsultationController extends Controller
 
         return response()->json([
             'message' => 'Consultation reprise',
+            'consultation' => $this->consultations->formater($consultation),
+        ]);
+    }
+
+    public function mettreEnAttente(Request $request, int $id)
+    {
+        $consultation = $this->consultations->mettreEnAttente($this->profil($request), $request->user(), $id);
+
+        return response()->json([
+            'message' => 'Consultation mise en attente',
             'consultation' => $this->consultations->formater($consultation),
         ]);
     }

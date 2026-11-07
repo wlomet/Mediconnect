@@ -117,6 +117,63 @@ class ConsultationTest extends TestCase
             ->assertJsonPath('consultation.statut', 'en_cours');
     }
 
+    public function test_consultation_is_put_on_hold_to_start_another_then_resumed(): void
+    {
+        [$user, $profil] = $this->makeMedecin();
+        $premiere = $this->makeConsultation($profil, $this->makeRendezVous($profil));
+        $autre = $this->makeRendezVous($profil, ['email' => 'autre@example.test']);
+        Sanctum::actingAs($user);
+
+        $this->postJson("/api/medecin/consultations/{$premiere->id}/mettre-en-attente")
+            ->assertOk()
+            ->assertJsonPath('consultation.statut', 'en_attente');
+
+        $this->putJson("/api/medecin/consultations/{$premiere->id}/ordonnance", ['texte' => 'Ordonnance'])
+            ->assertUnprocessable();
+
+        $autreId = $this->postJson('/api/medecin/consultations', ['rendez_vous_id' => $autre->id])
+            ->assertCreated()
+            ->json('consultation.id');
+
+        $this->postJson("/api/medecin/consultations/{$premiere->id}/reprendre")
+            ->assertStatus(409)
+            ->assertJsonPath('code', 'consultation_en_cours');
+
+        $this->postJson("/api/medecin/consultations/{$autreId}/mettre-en-attente")
+            ->assertOk();
+
+        $this->postJson("/api/medecin/consultations/{$premiere->id}/reprendre")
+            ->assertOk()
+            ->assertJsonPath('consultation.statut', 'en_cours')
+            ->assertJsonPath('consultation.paused_at', null);
+
+        $this->assertDatabaseHas('consultation_events', ['type' => 'mise_en_attente']);
+    }
+
+    public function test_at_most_two_consultations_can_be_on_hold(): void
+    {
+        [$user, $profil] = $this->makeMedecin();
+        $this->makeConsultation($profil, $this->makeRendezVous($profil, ['email' => 'a@example.test']), Consultation::EN_ATTENTE);
+        $this->makeConsultation($profil, $this->makeRendezVous($profil, ['email' => 'b@example.test']), Consultation::EN_ATTENTE);
+        $courante = $this->makeConsultation($profil, $this->makeRendezVous($profil, ['email' => 'c@example.test']));
+        Sanctum::actingAs($user);
+
+        $this->postJson("/api/medecin/consultations/{$courante->id}/mettre-en-attente")
+            ->assertStatus(409);
+
+        $this->assertDatabaseHas('consultations', ['id' => $courante->id, 'statut' => 'en_cours']);
+    }
+
+    public function test_only_consultation_in_progress_can_be_put_on_hold(): void
+    {
+        [$user, $profil] = $this->makeMedecin();
+        $terminee = $this->makeConsultation($profil, $this->makeRendezVous($profil), Consultation::TERMINEE);
+        Sanctum::actingAs($user);
+
+        $this->postJson("/api/medecin/consultations/{$terminee->id}/mettre-en-attente")
+            ->assertUnprocessable();
+    }
+
     public function test_end_requires_an_invoice_and_marks_rendez_vous_as_terminated(): void
     {
         [$user, $profil] = $this->makeMedecin();

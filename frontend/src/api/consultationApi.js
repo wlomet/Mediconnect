@@ -35,17 +35,20 @@ export const consultationApi = {
   abandonner: (id, motif) =>
     api.post(`${base}/${id}/abandon`, { motif }).then((res) => res.data.consultation),
 
+  mettreEnAttente: (id) => api.post(`${base}/${id}/mettre-en-attente`).then((res) => res.data.consultation),
+
   reprendre: (id) => api.post(`${base}/${id}/reprendre`).then((res) => res.data.consultation),
 
   terminer: (id) => api.post(`${base}/${id}/terminer`).then((res) => res.data.consultation),
 };
 
-// Une consultation en conflit (409) est renvoyée dans consultationId.
+// Une consultation en conflit (409) est renvoyée dans consultationId, avec son code (ex. consultation_en_cours).
 export const extraireErreur = (error, fallback = "Une erreur est survenue") => {
   const premiereErreurValidation = Object.values(error.response?.data?.errors ?? {})[0]?.[0];
 
   return {
     message: premiereErreurValidation || error.response?.data?.message || fallback,
     consultationId: error.response?.data?.consultation_id ?? null,
+    code: error.response?.data?.code ?? null,
   };
 };

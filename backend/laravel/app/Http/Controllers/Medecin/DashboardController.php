@@ -26,7 +26,7 @@ class DashboardController extends Controller
             'rendez_vous_aujourdhui' => (clone $rdvDuJour)->count(),
             'patients_en_attente' => (clone $rdvDuJour)->whereDoesntHave('consultation')->count(),
             'consultations_mois' => Consultation::where('medecin_profile_id', $profil->id)
-                ->whereIn('statut', [Consultation::EN_COURS, Consultation::TERMINEE])
+                ->whereIn('statut', [Consultation::EN_COURS, Consultation::EN_ATTENTE, Consultation::TERMINEE])
                 ->where('started_at', '>=', now()->startOfMonth())
                 ->where('started_at', '<', now()->addMonth()->startOfMonth())
                 ->count(),

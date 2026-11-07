@@ -57,6 +57,17 @@ class RendezVousStatutTest extends TestCase
         $this->assertDatabaseHas('rendez_vous', ['id' => $rdv->id, 'statut' => 'confirmé']);
     }
 
+    public function test_cancel_is_refused_while_consultation_is_on_hold(): void
+    {
+        [$user, $profil] = $this->makeMedecin();
+        $rdv = $this->makeRendezVous($profil);
+        $this->makeConsultation($profil, $rdv, Consultation::EN_ATTENTE);
+        Sanctum::actingAs($user);
+
+        $this->putJson("/api/medecin/rendez-vous/{$rdv->id}", ['statut' => 'annulé'])
+            ->assertStatus(409);
+    }
+
     public function test_cancel_is_allowed_after_consultation_was_abandoned(): void
     {
         [$user, $profil] = $this->makeMedecin();

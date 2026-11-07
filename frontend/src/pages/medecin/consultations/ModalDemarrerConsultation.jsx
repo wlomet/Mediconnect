@@ -16,7 +16,7 @@ const ModalDemarrerConsultation = ({ onClose }) => {
   const [form, setForm] = useState(CHAMPS_VIDES);
   const [occupe, setOccupe] = useState(false);
   const [erreur, setErreur] = useState("");
-  const [consultationExistanteId, setConsultationExistanteId] = useState(null);
+  const [conflit, setConflit] = useState(null);
 
   useEffect(() => {
     if (onglet !== "rendez-vous") return undefined;
@@ -34,19 +34,33 @@ const ModalDemarrerConsultation = ({ onClose }) => {
   const demarrer = async (payload) => {
     setOccupe(true);
     setErreur("");
-    setConsultationExistanteId(null);
+    setConflit(null);
 
     try {
       const consultation = await consultationApi.demarrer(payload);
       toast.success("Consultation démarrée");
       navigate(`/medecin/consultations/${consultation.id}`);
     } catch (error) {
-      const { message, consultationId } = extraireErreur(error, "Impossible de démarrer la consultation");
+      const { message, consultationId, code } = extraireErreur(error, "Impossible de démarrer la consultation");
       setErreur(message);
-      setConsultationExistanteId(consultationId);
+      if (consultationId) setConflit({ consultationId, code, payload });
     } finally {
       setOccupe(false);
     }
+  };
+
+  const mettreEnAttenteEtDemarrer = async () => {
+    setOccupe(true);
+    try {
+      await consultationApi.mettreEnAttente(conflit.consultationId);
+    } catch (error) {
+      setErreur(extraireErreur(error).message);
+      setConflit(null);
+      setOccupe(false);
+      return;
+    }
+
+    demarrer(conflit.payload);
   };
 
   const soumettreRapide = (event) => {
@@ -82,16 +96,24 @@ const ModalDemarrerConsultation = ({ onClose }) => {
   const messageErreur = erreur && (
     <p className={styles.error}>
       {erreur}
-      {consultationExistanteId && (
+      {conflit && (
         <>
           {" "}
           <button
             type="button"
             className={styles.link}
-            onClick={() => navigate(`/medecin/consultations/${consultationExistanteId}`)}
+            onClick={() => navigate(`/medecin/consultations/${conflit.consultationId}`)}
           >
             Ouvrir la consultation
           </button>
+          {conflit.code === "consultation_en_cours" && (
+            <>
+              {" "}
+              <button type="button" className={styles.link} onClick={mettreEnAttenteEtDemarrer} disabled={occupe}>
+                Mettre en attente et démarrer
+              </button>
+            </>
+          )}
         </>
       )}
     </p>

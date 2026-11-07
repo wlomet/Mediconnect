@@ -1,5 +1,6 @@
 export const STATUT_LABELS = {
   en_cours: "En cours",
+  en_attente: "En attente",
   abandonnee: "Abandonnée",
   terminee: "Terminée",
 };
@@ -10,6 +11,7 @@ export const JOURNAL_LABELS = {
   ordonnance_enregistree: "Ordonnance enregistrée",
   facture_enregistree: "Facture enregistrée",
   abandonnee: "Consultation abandonnée",
+  mise_en_attente: "Consultation mise en attente",
   reprise: "Consultation reprise",
   terminee: "Consultation terminée",
 };

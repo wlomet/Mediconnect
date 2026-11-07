@@ -240,6 +240,11 @@
   color: #1d4ed8;
 }
 
+.badgeEnAttente {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 .badgeAbandonnee {
   background: #fee2e2;
   color: #b91c1c;

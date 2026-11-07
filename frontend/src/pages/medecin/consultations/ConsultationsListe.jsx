@@ -10,12 +10,14 @@ import styles from "./Consultations.module.css";
 const FILTRES = [
   { valeur: "", libelle: "Toutes" },
   { valeur: "en_cours", libelle: "En cours" },
+  { valeur: "en_attente", libelle: "En attente" },
   { valeur: "terminee", libelle: "Terminées" },
   { valeur: "abandonnee", libelle: "Abandonnées" },
 ];
 
 const BADGE_STATUT = {
   en_cours: styles.badgeEnCours,
+  en_attente: styles.badgeEnAttente,
   abandonnee: styles.badgeAbandonnee,
   terminee: styles.badgeTerminee,
 };
@@ -79,7 +81,7 @@ const ConsultationsListe = () => {
         <header className={styles.header}>
           <div>
             <h1 className={styles.title}>Consultations</h1>
-            <p className={styles.subtitle}>Consultations terminées, abandonnées et en cours</p>
+            <p className={styles.subtitle}>Consultations terminées, abandonnées, en attente et en cours</p>
           </div>
           <div className={styles.headerActions}>
             <button
@@ -157,7 +159,7 @@ const ConsultationsListe = () => {
                         <Link to={`/medecin/consultations/${c.id}`} className={styles.link}>
                           Voir
                         </Link>
-                        {c.statut === "abandonnee" && (
+                        {(c.statut === "abandonnee" || c.statut === "en_attente") && (
                           <button type="button" className={`${styles.button} ${styles.primary}`} onClick={() => reprendre(c)}>
                             Reprendre
                           </button>

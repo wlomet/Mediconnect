@@ -75,6 +75,19 @@ const ConsultationPopup = () => {
     localStorage.setItem(CLE_POSITION, JSON.stringify(position));
   };
 
+  const mettreEnAttente = async () => {
+    setOccupe(true);
+    try {
+      await consultationApi.mettreEnAttente(consultation.id);
+      toast.info("Consultation mise en attente");
+      setConsultation(null);
+    } catch (error) {
+      toast.error(extraireErreur(error).message);
+    } finally {
+      setOccupe(false);
+    }
+  };
+
   const abandonner = async (motif) => {
     setOccupe(true);
     try {
@@ -116,6 +129,14 @@ const ConsultationPopup = () => {
               onClick={() => navigate(`/medecin/consultations/${consultation.id}`)}
             >
               Reprendre
+            </button>
+            <button
+              type="button"
+              className={`${styles.button} ${styles.secondary}`}
+              onClick={mettreEnAttente}
+              disabled={occupe}
+            >
+              Mettre en attente
             </button>
             <button
               type="button"

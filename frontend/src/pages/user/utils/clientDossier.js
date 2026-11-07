@@ -6,6 +6,7 @@ export const TYPE_DOCUMENT_LABELS = { ordonnance: "Ordonnance", facture: "Factur
 
 export const STATUT_CONSULTATION_LABELS = {
   en_cours: "En cours",
+  en_attente: "En attente",
   terminee: "Terminée",
   abandonnee: "Abandonnée",
 };

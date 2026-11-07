@@ -22,8 +22,8 @@ class RendezVousStatutGuard
             throw new BusinessException('Un rendez-vous terminé ne peut plus changer de statut.', 422);
         }
 
-        if ($nouveauStatut === 'annulé' && $rendezVous->consultation?->statut === 'en_cours') {
-            throw new BusinessException("Impossible d'annuler ce rendez-vous : une consultation est en cours.", 409);
+        if ($nouveauStatut === 'annulé' && in_array($rendezVous->consultation?->statut, ['en_cours', 'en_attente'], true)) {
+            throw new BusinessException("Impossible d'annuler ce rendez-vous : une consultation est en cours ou en attente.", 409);
         }
     }
 }
