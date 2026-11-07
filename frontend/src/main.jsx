@@ -57,6 +57,7 @@ import PdfTemplateEditor from "./pages/medecin/pdf-templates/PdfTemplateEditor";
 import ConsultationPopup from "./pages/medecin/consultations/ConsultationPopup";
 import ConsultationsListe from "./pages/medecin/consultations/ConsultationsListe";
 import ConsultationPage from "./pages/medecin/consultations/ConsultationPage";
+import StatistiquesMedecin from "./pages/medecin/statistiques/StatistiquesMedecin";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <AuthProvider>
@@ -98,6 +99,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/medecin/dashboard" element={<DashboardMedecin />} />
         <Route path="/medecin/consultations" element={<ConsultationsListe />} />
         <Route path="/medecin/consultations/:id" element={<ConsultationPage />} />
+        <Route path="/medecin/statistiques" element={<StatistiquesMedecin />} />
         <Route path="/medecin/pdf-templates" element={<PdfTemplatesList />} />
         <Route path="/medecin/pdf-templates/logos" element={<PdfLogosPage />} />
         <Route path="/medecin/pdf-templates/:id" element={<PdfTemplateEditor />} />

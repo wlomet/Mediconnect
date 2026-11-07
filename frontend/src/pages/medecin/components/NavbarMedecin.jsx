@@ -9,6 +9,7 @@ const NavbarMedecin = () => {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const consultationsActive = location.pathname.startsWith("/medecin/consultations");
+  const statistiquesActive = location.pathname.startsWith("/medecin/statistiques");
 
   const handleLogout = async () => {
     try {
@@ -76,6 +77,13 @@ const NavbarMedecin = () => {
               onClick={() => setMenuOpen(false)}
             >
               Consultations
+            </a>
+            <a
+              href="/medecin/statistiques"
+              className={`${styles.navLink} ${statistiquesActive ? styles.navLinkActive : ""}`}
+              onClick={() => setMenuOpen(false)}
+            >
+              Statistiques
             </a>
             <a
               href="/medecin/profile"
