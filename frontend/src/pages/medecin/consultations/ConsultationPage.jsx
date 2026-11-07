@@ -5,6 +5,7 @@ import NavbarMedecin from "../components/NavbarMedecin";
 import ConfirmDialog from "../../../components/ConfirmDialog";
 import { consultationApi, extraireErreur } from "../../../api/consultationApi";
 import FactureEditor from "./FactureEditor";
+import OrdonnanceEditor from "./OrdonnanceEditor";
 import ModalAbandonConsultation from "./ModalAbandonConsultation";
 import ModalApercu from "./ModalApercu";
 import { archiverDocumentsConsultation } from "./archivageConsultation";
@@ -30,7 +31,6 @@ const ConsultationPage = () => {
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState("");
   const [heure, setHeure] = useState("");
-  const [texte, setTexte] = useState("");
   const [occupe, setOccupe] = useState(false);
   const [conflitId, setConflitId] = useState(null);
   const [abandonOuvert, setAbandonOuvert] = useState(false);
@@ -41,7 +41,6 @@ const ConsultationPage = () => {
     const result = await consultationApi.show(id);
     setData(result);
     setHeure(versValeurDateLocale(result.consultation.heure_debut_reelle));
-    setTexte(result.consultation.ordonnance_texte ?? "");
   }, [id]);
 
   useEffect(() => {
@@ -100,8 +99,8 @@ const ConsultationPage = () => {
   const enregistrerHeure = () =>
     executer(() => consultationApi.updateHeureDebut(c.id, new Date(heure).toISOString()), "Heure de début enregistrée");
 
-  const enregistrerOrdonnance = () =>
-    executer(() => consultationApi.saveOrdonnance(c.id, texte.trim() || null), "Ordonnance enregistrée");
+  const enregistrerOrdonnance = (ordonnance) =>
+    executer(() => consultationApi.saveOrdonnance(c.id, ordonnance), "Ordonnance enregistrée");
 
   const enregistrerFacture = (lignes) =>
     executer(() => consultationApi.saveFacture(c.id, lignes), "Facture enregistrée");
@@ -329,33 +328,16 @@ const ConsultationPage = () => {
 
             <section className={styles.card}>
               <h2 className={styles.cardTitle}>Ordonnance</h2>
-              <div className={styles.field}>
-                <textarea
-                  className={styles.textarea}
-                  value={texte}
-                  disabled={!enCours || occupe}
-                  placeholder="Rédigez l'ordonnance..."
-                  onChange={(event) => setTexte(event.target.value)}
-                />
-              </div>
-              <div className={styles.actions}>
-                <button
-                  type="button"
-                  className={`${styles.button} ${styles.secondary}`}
-                  onClick={() => setApercu("ordonnance")}
-                  disabled={!c.ordonnance_texte}
-                >
-                  Aperçu ordonnance
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.button} ${styles.primary}`}
-                  onClick={enregistrerOrdonnance}
-                  disabled={!enCours || occupe}
-                >
-                  Enregistrer l'ordonnance
-                </button>
-              </div>
+              <OrdonnanceEditor
+                key={c.id}
+                lignesInitiales={c.ordonnance?.lignes ?? []}
+                commentaireInitial={c.ordonnance?.commentaire ?? ""}
+                readOnly={!enCours}
+                saving={occupe}
+                onSave={enregistrerOrdonnance}
+                onApercu={() => setApercu("ordonnance")}
+                apercuDisabled={!c.ordonnance_texte}
+              />
             </section>
 
             <section className={styles.card}>

@@ -128,7 +128,7 @@ class ConsultationTest extends TestCase
             ->assertOk()
             ->assertJsonPath('consultation.statut', 'en_attente');
 
-        $this->putJson("/api/medecin/consultations/{$premiere->id}/ordonnance", ['texte' => 'Ordonnance'])
+        $this->putJson("/api/medecin/consultations/{$premiere->id}/ordonnance", ['lignes' => [], 'commentaire' => 'Ordonnance'])
             ->assertUnprocessable();
 
         $autreId = $this->postJson('/api/medecin/consultations', ['rendez_vous_id' => $autre->id])
@@ -199,6 +199,59 @@ class ConsultationTest extends TestCase
         $this->assertDatabaseHas('rendez_vous', ['id' => $rdv->id, 'statut' => 'terminé']);
         $this->assertNotNull(Consultation::find($consultation->id)->ended_at);
         $this->assertSame($dateDebut, $rdv->fresh()->date_debut->toDateTimeString());
+    }
+
+    public function test_prescription_lines_are_rendered_one_per_line_with_comment_and_replaced_on_save(): void
+    {
+        [$user, $profil] = $this->makeMedecin();
+        $consultation = $this->makeConsultation($profil, $this->makeRendezVous($profil));
+        Sanctum::actingAs($user);
+
+        $this->putJson("/api/medecin/consultations/{$consultation->id}/ordonnance", [
+            'lignes' => [
+                ['libelle' => 'Médicament A', 'quantite' => 2, 'prise' => '3_fois_par_jour'],
+                ['libelle' => 'Médicament B', 'quantite' => 1, 'prise' => 'soir'],
+            ],
+            'commentaire' => "Boire beaucoup d'eau",
+        ])
+            ->assertOk()
+            ->assertJsonPath('consultation.ordonnance_texte', "Médicament A (qté 2) - 3 fois par jour\nMédicament B (qté 1) - Le soir\n\nBoire beaucoup d'eau")
+            ->assertJsonPath('consultation.ordonnance.commentaire', "Boire beaucoup d'eau")
+            ->assertJsonPath('consultation.ordonnance.lignes.1.prise', 'soir');
+
+        $this->putJson("/api/medecin/consultations/{$consultation->id}/ordonnance", [
+            'lignes' => [['libelle' => 'Médicament C', 'quantite' => 1, 'prise' => 'matin']],
+            'commentaire' => '',
+        ])
+            ->assertOk()
+            ->assertJsonPath('consultation.ordonnance_texte', 'Médicament C (qté 1) - Le matin')
+            ->assertJsonPath('consultation.ordonnance.commentaire', null)
+            ->assertJsonCount(1, 'consultation.ordonnance.lignes');
+
+        $this->assertDatabaseCount('consultation_ordonnance_lignes', 1);
+    }
+
+    public function test_empty_prescription_clears_the_rendered_text(): void
+    {
+        [$user, $profil] = $this->makeMedecin();
+        $consultation = $this->makeConsultation($profil, $this->makeRendezVous($profil));
+        Sanctum::actingAs($user);
+
+        $this->putJson("/api/medecin/consultations/{$consultation->id}/ordonnance", ['lignes' => []])
+            ->assertOk()
+            ->assertJsonPath('consultation.ordonnance_texte', null)
+            ->assertJsonCount(0, 'consultation.ordonnance.lignes');
+    }
+
+    public function test_prescription_line_requires_known_prise_and_positive_quantity(): void
+    {
+        [$user, $profil] = $this->makeMedecin();
+        $consultation = $this->makeConsultation($profil, $this->makeRendezVous($profil));
+        Sanctum::actingAs($user);
+
+        $this->putJson("/api/medecin/consultations/{$consultation->id}/ordonnance", [
+            'lignes' => [['libelle' => 'Médicament A', 'quantite' => 0, 'prise' => 'inconnue']],
+        ])->assertUnprocessable()->assertJsonValidationErrors(['lignes.0.quantite', 'lignes.0.prise']);
     }
 
     public function test_consultation_of_another_medecin_is_not_found(): void

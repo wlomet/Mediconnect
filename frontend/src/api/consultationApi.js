@@ -1,5 +1,6 @@
 import api from "./axios";
 import { telechargerCsv } from "../utils/csvExport";
+import { telechargerTableau } from "../utils/exportTableau";
 
 const base = "/medecin/consultations";
 
@@ -7,10 +8,25 @@ export const consultationApi = {
   list: (statut) =>
     api.get(base, { params: statut ? { statut } : {} }).then((res) => res.data.consultations),
 
-  exporterCsv: (statut) =>
-    api
-      .get(`${base}/export`, { params: statut ? { statut } : {}, responseType: "blob" })
-      .then(telechargerCsv),
+  exporter: (format, statut) => {
+    const params = statut ? { statut } : {};
+
+    if (format === "csv") {
+      return api.get(`${base}/export`, { params, responseType: "blob" }).then(telechargerCsv);
+    }
+
+    return api
+      .get(`${base}/export`, { params: { ...params, format: "json" } })
+      .then((res) =>
+        telechargerTableau({
+          format,
+          nomBase: res.data.nom_base,
+          titre: "Consultations",
+          entetes: res.data.entetes,
+          lignes: res.data.lignes,
+        })
+      );
+  },
 
   enCours: () => api.get(`${base}/en-cours`).then((res) => res.data.consultation),
 
@@ -26,8 +42,8 @@ export const consultationApi = {
       .put(`${base}/${id}/heure-debut`, { heure_debut_reelle: heureDebutReelle })
       .then((res) => res.data.consultation),
 
-  saveOrdonnance: (id, texte) =>
-    api.put(`${base}/${id}/ordonnance`, { texte }).then((res) => res.data.consultation),
+  saveOrdonnance: (id, { lignes, commentaire }) =>
+    api.put(`${base}/${id}/ordonnance`, { lignes, commentaire }).then((res) => res.data.consultation),
 
   saveFacture: (id, lignes) =>
     api.put(`${base}/${id}/facture`, { lignes }).then((res) => res.data.consultation),

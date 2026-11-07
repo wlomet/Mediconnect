@@ -24,6 +24,7 @@ class Consultation extends Model
         'abandon_motif',
         'paused_at',
         'ordonnance_texte',
+        'ordonnance_commentaire',
     ];
 
     protected $casts = [
@@ -52,6 +53,11 @@ class Consultation extends Model
     public function facture()
     {
         return $this->hasOne(ConsultationFacture::class);
+    }
+
+    public function ordonnanceLignes()
+    {
+        return $this->hasMany(ConsultationOrdonnanceLigne::class)->orderBy('position');
     }
 
     public function documents()

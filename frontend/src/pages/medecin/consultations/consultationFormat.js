@@ -5,6 +5,20 @@ export const STATUT_LABELS = {
   terminee: "Terminée",
 };
 
+// Valeurs identiques à ConsultationOrdonnanceLigne::PRISES côté backend.
+export const PRISE_OPTIONS = [
+  { valeur: "1_fois_par_jour", libelle: "1 fois par jour" },
+  { valeur: "2_fois_par_jour", libelle: "2 fois par jour" },
+  { valeur: "3_fois_par_jour", libelle: "3 fois par jour" },
+  { valeur: "4_fois_par_jour", libelle: "4 fois par jour" },
+  { valeur: "matin", libelle: "Le matin" },
+  { valeur: "midi", libelle: "Le midi" },
+  { valeur: "soir", libelle: "Le soir" },
+  { valeur: "matin_et_soir", libelle: "Matin et soir" },
+  { valeur: "au_coucher", libelle: "Au coucher" },
+  { valeur: "si_besoin", libelle: "Si besoin" },
+];
+
 export const JOURNAL_LABELS = {
   demarree: "Consultation démarrée",
   heure_debut_modifiee: "Heure de début modifiée",

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Medecin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Consultation;
+use App\Models\ConsultationOrdonnanceLigne;
 use App\Models\MedecinProfile;
 use App\Models\RendezVous;
 use App\Rules\PhoneNumber;
@@ -37,7 +38,7 @@ class ConsultationController extends Controller
     private function consultationsDuProfil(MedecinProfile $profil)
     {
         return Consultation::where('medecin_profile_id', $profil->id)
-            ->with(['rendezVous', 'facture.lignes', 'documents']);
+            ->with(['rendezVous', 'facture.lignes', 'documents', 'ordonnanceLignes']);
     }
 
     private function consultationsFiltrees(Request $request)
@@ -63,7 +64,7 @@ class ConsultationController extends Controller
     public function export(Request $request, CsvExportService $csv)
     {
         $consultations = $this->consultationsFiltrees($request)->get();
-        $statut = $request->query('statut') ?: 'toutes';
+        $nomBase = 'consultations_'.($request->query('statut') ?: 'toutes').'_'.now()->format('Y-m-d');
 
         $lignes = $consultations->map(function (Consultation $c) {
             $rdv = $c->rendezVous;
@@ -83,11 +84,13 @@ class ConsultationController extends Controller
             ];
         });
 
-        return $csv->telecharger(
-            "consultations_{$statut}_".now()->format('Y-m-d').'.csv',
-            ['Nom', 'Email', 'Date du rendez-vous', 'Motif', 'Statut du rendez-vous', 'Début de consultation', 'Fin de consultation', 'Statut de consultation', 'Ordonnance', 'Montant facture (EUR)', "Motif d'abandon"],
-            $lignes
-        );
+        $entetes = ['Nom', 'Email', 'Date du rendez-vous', 'Motif', 'Statut du rendez-vous', 'Début de consultation', 'Fin de consultation', 'Statut de consultation', 'Ordonnance', 'Montant facture (EUR)', "Motif d'abandon"];
+
+        if ($request->query('format') === 'json') {
+            return response()->json(['nom_base' => $nomBase, 'entetes' => $entetes, 'lignes' => $lignes]);
+        }
+
+        return $csv->telecharger("{$nomBase}.csv", $entetes, $lignes);
     }
 
     public function enCours(Request $request)
@@ -192,14 +195,19 @@ class ConsultationController extends Controller
     public function saveOrdonnance(Request $request, int $id)
     {
         $data = $request->validate([
-            'texte' => ['nullable', 'string', 'max:10000'],
+            'lignes' => ['present', 'array', 'max:50'],
+            'lignes.*.libelle' => ['required', 'string', 'max:255'],
+            'lignes.*.quantite' => ['required', 'integer', 'min:1', 'max:999'],
+            'lignes.*.prise' => ['required', Rule::in(array_keys(ConsultationOrdonnanceLigne::PRISES))],
+            'commentaire' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $consultation = $this->consultations->enregistrerOrdonnance(
             $this->profil($request),
             $request->user(),
             $id,
-            $data['texte'] ?? null
+            $data['lignes'],
+            $data['commentaire'] ?? null
         );
 
         return response()->json([

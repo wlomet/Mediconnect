@@ -6,6 +6,7 @@ use App\Exceptions\BusinessException;
 use App\Models\Consultation;
 use App\Models\ConsultationFacture;
 use App\Models\ConsultationFactureLigne;
+use App\Models\ConsultationOrdonnanceLigne;
 use App\Models\MedecinProfile;
 use App\Models\RendezVous;
 use App\Models\User;
@@ -63,12 +64,31 @@ class ConsultationService
         });
     }
 
-    public function enregistrerOrdonnance(MedecinProfile $profil, User $user, int $id, ?string $texte): Consultation
+    /** @param list<array{libelle: string, quantite: int|string, prise: string}> $lignes */
+    public function enregistrerOrdonnance(MedecinProfile $profil, User $user, int $id, array $lignes, ?string $commentaire): Consultation
     {
-        return $this->verrouiller($profil, function () use ($profil, $user, $id, $texte) {
+        return $this->verrouiller($profil, function () use ($profil, $user, $id, $lignes, $commentaire) {
             $consultation = $this->enCours($profil, $id);
-            $consultation->update(['ordonnance_texte' => $texte]);
-            $this->journaliser($consultation, 'ordonnance_enregistree', $user, ['longueur' => mb_strlen((string) $texte)]);
+            $commentaire = trim((string) $commentaire);
+            $commentaire = $commentaire === '' ? null : $commentaire;
+
+            ConsultationOrdonnanceLigne::where('consultation_id', $consultation->id)->delete();
+
+            $lignesOrdonnance = [];
+            foreach (array_values($lignes) as $position => $ligne) {
+                $lignesOrdonnance[] = $consultation->ordonnanceLignes()->create([
+                    'libelle' => $ligne['libelle'],
+                    'quantite' => $ligne['quantite'],
+                    'prise' => $ligne['prise'],
+                    'position' => $position,
+                ]);
+            }
+
+            $consultation->update([
+                'ordonnance_commentaire' => $commentaire,
+                'ordonnance_texte' => $this->texteOrdonnance($lignesOrdonnance, $commentaire),
+            ]);
+            $this->journaliser($consultation, 'ordonnance_enregistree', $user, ['lignes' => count($lignes)]);
 
             return $this->charger($consultation);
         });
@@ -213,6 +233,14 @@ class ConsultationService
             'abandon_motif' => $c->abandon_motif,
             'paused_at' => $c->paused_at,
             'ordonnance_texte' => $c->ordonnance_texte,
+            'ordonnance' => [
+                'commentaire' => $c->ordonnance_commentaire,
+                'lignes' => $c->ordonnanceLignes->map(fn (ConsultationOrdonnanceLigne $l) => [
+                    'libelle' => $l->libelle,
+                    'quantite' => $l->quantite,
+                    'prise' => $l->prise,
+                ])->values(),
+            ],
             'rendez_vous' => [
                 'id' => $rdv->id,
                 'date_debut' => $rdv->date_debut,
@@ -264,7 +292,7 @@ class ConsultationService
                     }
                 });
             })
-            ->with(['rendezVous', 'facture.lignes', 'documents'])
+            ->with(['rendezVous', 'facture.lignes', 'documents', 'ordonnanceLignes'])
             ->orderByDesc('started_at')
             ->get()
             ->map(fn (Consultation $c) => $this->formater($c))
@@ -292,6 +320,19 @@ class ConsultationService
                 ])
                 ->values(),
         ];
+    }
+
+    /** @param list<ConsultationOrdonnanceLigne> $lignes */
+    private function texteOrdonnance(array $lignes, ?string $commentaire): ?string
+    {
+        $blocs = [
+            implode("\n", array_map(fn (ConsultationOrdonnanceLigne $ligne) => $ligne->texte(), $lignes)),
+            $commentaire ?? '',
+        ];
+
+        $texte = implode("\n\n", array_filter($blocs, fn (string $bloc) => $bloc !== ''));
+
+        return $texte !== '' ? $texte : null;
     }
 
     private function verrouiller(MedecinProfile $profil, callable $action): mixed
@@ -374,13 +415,13 @@ class ConsultationService
     private function consultationDuProfil(MedecinProfile $profil, int $id): Consultation
     {
         return Consultation::where('medecin_profile_id', $profil->id)
-            ->with(['rendezVous', 'facture.lignes', 'documents'])
+            ->with(['rendezVous', 'facture.lignes', 'documents', 'ordonnanceLignes'])
             ->findOrFail($id);
     }
 
     private function charger(Consultation $consultation): Consultation
     {
-        return $consultation->fresh(['rendezVous', 'facture.lignes', 'documents']);
+        return $consultation->fresh(['rendezVous', 'facture.lignes', 'documents', 'ordonnanceLignes']);
     }
 
     private function journaliser(Consultation $consultation, string $type, User $user, array $payload = []): void
