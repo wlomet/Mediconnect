@@ -116,6 +116,41 @@ class CsvExportTest extends TestCase
         $this->get('/api/medecin/planning/export?from=2030-03-04&to=2030-03-04')->assertForbidden();
     }
 
+    public function test_planning_export_json_returns_the_same_rows_for_excel_and_pdf(): void
+    {
+        [$user, $profil] = $this->makeMedecin();
+        $this->makeRendezVous($profil, ['name' => 'Premier', 'email' => 'premier@example.test', 'date_debut' => '2030-03-04 00:00:00', 'date_fin' => '2030-03-04 00:30:00']);
+        $this->makeRendezVous($profil, ['email' => 'hors@example.test', 'date_debut' => '2030-03-05 08:00:00', 'date_fin' => '2030-03-05 08:30:00']);
+        Sanctum::actingAs($user);
+
+        $donnees = $this->getJson('/api/medecin/planning/export?from=2030-03-04&to=2030-03-04&format=json')->assertOk()->json();
+
+        $this->assertSame('rendez-vous_2030-03-04_2030-03-04', $donnees['nom_base']);
+        $this->assertSame(['Date', 'Heure début', 'Heure fin', 'Nom', 'Email', 'Statut'], $donnees['entetes']);
+        $this->assertSame([['04/03/2030', '00:00', '00:30', 'Premier', 'premier@example.test', 'confirmé']], $donnees['lignes']);
+    }
+
+    public function test_consultations_export_json_returns_the_same_rows_as_csv(): void
+    {
+        [$user, $profil] = $this->makeMedecin();
+        $rdv = $this->makeRendezVous($profil, [
+            'name' => 'Marie Martin',
+            'email' => 'marie@example.test',
+            'date_debut' => '2030-03-04 09:00:00',
+            'date_fin' => '2030-03-04 09:30:00',
+        ]);
+        $this->makeConsultation($profil, $rdv, Consultation::TERMINEE);
+        Sanctum::actingAs($user);
+
+        $donnees = $this->getJson('/api/medecin/consultations/export?format=json')->assertOk()->json();
+
+        $this->assertStringStartsWith('consultations_toutes_', $donnees['nom_base']);
+        $this->assertCount(11, $donnees['entetes']);
+        $this->assertCount(1, $donnees['lignes']);
+        $this->assertSame(['Marie Martin', 'marie@example.test', '04/03/2030 09:00', 'Contrôle', 'confirmé'], array_slice($donnees['lignes'][0], 0, 5));
+        $this->assertSame('Terminée', $donnees['lignes'][0][7]);
+    }
+
     /** @return array<int, array<int, string>> */
     private function lignesCsv(TestResponse $response): array
     {

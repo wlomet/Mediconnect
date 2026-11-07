@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import NavbarMedecin from "../components/NavbarMedecin";
 import ModalDemarrerConsultation from "./ModalDemarrerConsultation";
 import { consultationApi, extraireErreur } from "../../../api/consultationApi";
+import { FORMATS_EXPORT } from "../../../utils/exportTableau";
 import { STATUT_LABELS, formatDateHeure, formatMontant } from "./consultationFormat";
 import styles from "./Consultations.module.css";
 
@@ -30,6 +31,7 @@ const ConsultationsListe = () => {
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState("");
   const [nouvelleOuverte, setNouvelleOuverte] = useState(false);
+  const [formatExport, setFormatExport] = useState("csv");
 
   useEffect(() => {
     let actif = true;
@@ -65,9 +67,9 @@ const ConsultationsListe = () => {
 
   const aOrdonnance = (c) => Boolean(c.ordonnance_texte);
 
-  const exporterCsv = async () => {
+  const exporter = async () => {
     try {
-      await consultationApi.exporterCsv(filtre);
+      await consultationApi.exporter(formatExport, filtre);
     } catch {
       toast.error("Export impossible");
     }
@@ -84,13 +86,25 @@ const ConsultationsListe = () => {
             <p className={styles.subtitle}>Consultations terminées, abandonnées, en attente et en cours</p>
           </div>
           <div className={styles.headerActions}>
+            <select
+              value={formatExport}
+              onChange={(e) => setFormatExport(e.target.value)}
+              className={`${styles.select} ${styles.selectFormat}`}
+              aria-label="Format d'export"
+            >
+              {FORMATS_EXPORT.map((format) => (
+                <option key={format.valeur} value={format.valeur}>
+                  {format.libelle}
+                </option>
+              ))}
+            </select>
             <button
               type="button"
               className={`${styles.button} ${styles.secondary}`}
-              onClick={exporterCsv}
+              onClick={exporter}
               disabled={chargement || consultations.length === 0}
             >
-              Exporter CSV
+              Exporter
             </button>
             <button type="button" className={`${styles.button} ${styles.primary}`} onClick={() => setNouvelleOuverte(true)}>
               Nouvelle consultation

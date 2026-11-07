@@ -43,11 +43,14 @@ class MedecinPlanningController extends Controller
             $rdv->statut,
         ]);
 
-        return $csv->telecharger(
-            "rendez-vous_{$filtres['from']}_{$filtres['to']}.csv",
-            ['Date', 'Heure début', 'Heure fin', 'Nom', 'Email', 'Statut'],
-            $lignes
-        );
+        $nomBase = "rendez-vous_{$filtres['from']}_{$filtres['to']}";
+        $entetes = ['Date', 'Heure début', 'Heure fin', 'Nom', 'Email', 'Statut'];
+
+        if ($request->query('format') === 'json') {
+            return response()->json(['nom_base' => $nomBase, 'entetes' => $entetes, 'lignes' => $lignes]);
+        }
+
+        return $csv->telecharger("{$nomBase}.csv", $entetes, $lignes);
     }
 
     /**

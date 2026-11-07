@@ -173,6 +173,10 @@
   color: #6b7280;
 }
 
+.selectFormat {
+  width: auto;
+}
+
 .actions {
   display: flex;
   gap: 8px;
@@ -475,9 +479,11 @@
 
 .popupActions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .popupActions button {
-  flex: 1;
+  flex: 1 1 auto;
+  padding: 8px 10px;
 }
