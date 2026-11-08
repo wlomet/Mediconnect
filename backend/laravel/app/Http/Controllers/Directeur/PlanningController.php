@@ -38,6 +38,31 @@ class PlanningController extends Controller
     }
 
     /**
+     * Rendez-vous de tous les médecins de l'hôpital (vue « Tous les médecins » du planning)
+     */
+    public function rendezVousHopital(Request $request)
+    {
+        $rendezVous = RendezVous::whereIn('medecin_id', $this->medecinProfileIdsAccessibles($request->user()))
+            ->with(['client', 'medecin.user'])
+            ->orderBy('date_debut', 'asc')
+            ->get()
+            ->map(fn (RendezVous $rdv) => [
+                'id' => $rdv->id,
+                'date_debut' => $rdv->date_debut,
+                'date_fin' => $rdv->date_fin,
+                'motif' => $rdv->motif,
+                'statut' => $rdv->statut,
+                'name' => $rdv->name ?? $rdv->client?->name,
+                'medecin' => [
+                    'id' => $rdv->medecin->user_id,
+                    'name' => $rdv->medecin->user->name,
+                ],
+            ]);
+
+        return response()->json(['rendez_vous' => $rendezVous]);
+    }
+
+    /**
      * Planning d'un médecin de l'hôpital (horaires, indisponibilités, rendez-vous)
      */
     public function getMedecinPlanning(Request $request, $medecinId)

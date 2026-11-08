@@ -164,6 +164,30 @@ class RolesPlanningStatistiquesTest extends TestCase
         $this->getJson('/api/directeur/medecins-hopital')->assertOk()->assertJsonCount(2, 'medecins');
     }
 
+    public function test_directeur_liste_les_rendez_vous_de_tous_les_medecins_de_son_hopital(): void
+    {
+        $hopital = $this->makeHopital();
+        [$medecinA, $profilA] = $this->makeMedecinIn($hopital);
+        [$medecinB, $profilB] = $this->makeMedecinIn($hopital);
+        [, $profilC] = $this->makeMedecinIn($this->makeHopital());
+        $directeur = $this->makeDirecteurIn($hopital);
+
+        $this->rendezVousLe($profilA, '2026-01-15 10:00');
+        $this->rendezVousLe($profilB, '2026-01-15 10:00');
+        $this->rendezVousLe($profilC, '2026-01-17 10:00');
+
+        SessionAuth::actingAs($directeur);
+
+        $reponse = $this->getJson('/api/directeur/rendez-vous-hopital')->assertOk()->json();
+
+        $this->assertCount(2, $reponse['rendez_vous']);
+        $this->assertEqualsCanonicalizing(
+            [$medecinA->id, $medecinB->id],
+            array_column(array_column($reponse['rendez_vous'], 'medecin'), 'id'),
+        );
+        $this->assertSame('Patient Test', $reponse['rendez_vous'][0]['name']);
+    }
+
     public function test_export_json_du_directeur_renvoie_les_rendez_vous_du_medecin(): void
     {
         $hopital = $this->makeHopital();

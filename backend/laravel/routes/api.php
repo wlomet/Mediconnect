@@ -44,6 +44,7 @@ use App\Http\Controllers\Gestionnaire\StatistiqueController as GestionnaireStati
 use App\Http\Controllers\Directeur\PlanningController as DirecteurPlanningController;
 use App\Http\Controllers\Directeur\RendezVousController as DirecteurRendezVousController;
 use App\Http\Controllers\Directeur\StatistiqueController as DirecteurStatistiqueController;
+use App\Http\Controllers\Directeur\ConsultationController as DirecteurConsultationController;
 use App\Http\Controllers\SuperAdmin\UserController as SuperAdminUserController;
 use App\Http\Controllers\SuperAdmin\RoleController as SuperAdminRoleController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
@@ -387,6 +388,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
         // Planning, rendez-vous et statistiques des médecins de l'hôpital
         Route::get('/medecins-hopital', [DirecteurPlanningController::class, 'medecinsHopital']);
+        Route::get('/rendez-vous-hopital', [DirecteurPlanningController::class, 'rendezVousHopital']);
         Route::get('/medecins/{medecinId}/planning', [DirecteurPlanningController::class, 'getMedecinPlanning']);
         Route::get('/medecins/{medecinId}/planning/export', [DirecteurPlanningController::class, 'exporterRendezVous']);
         Route::post('/medecins/{medecinId}/horaires', [DirecteurPlanningController::class, 'addHoraire']);
@@ -405,6 +407,9 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
             Route::patch('/{id}/cancel', [DirecteurRendezVousController::class, 'cancel']);
             Route::post('/{id}/renvoyer-email', [DirecteurRendezVousController::class, 'renvoyerEmail']);
         });
+
+        // Consultations des médecins de l'hôpital (lecture seule)
+        Route::get('/consultations', [DirecteurConsultationController::class, 'index']);
 
         Route::prefix('statistiques')->group(function () {
             Route::get('/rendez-vous', [DirecteurStatistiqueController::class, 'rendezVous']);

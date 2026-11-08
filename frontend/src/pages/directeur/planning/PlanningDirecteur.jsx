@@ -42,7 +42,7 @@ const buildEvents = (horaires, indisponibilitesRaw, range, rendezvousRaw = []) =
       const { backgroundColor, borderColor } = couleurRendezVous(rdv.statut);
       return {
         id: `rdv-${rdv.id}`,
-        title: rdv.patient?.name || "RDV",
+        title: rdv.name || rdv.client?.name || "RDV",
         start: new Date(rdv.date_debut),
         end: new Date(rdv.date_fin),
         backgroundColor,
@@ -177,6 +177,8 @@ const buildEvents = (horaires, indisponibilitesRaw, range, rendezvousRaw = []) =
   return [...disponibilites, ...indisponibilites, ...creneauxDisponibles, ...rendezvousEvents];
 };
 
+const TOUS_MEDECINS = "tous";
+
 const VIEW_MODES = [
   { value: "calendar", label: "Calendrier" },
   { value: "table", label: "Tableau" },
@@ -294,7 +296,13 @@ export default function PlanningDirecteur() {
   const [selectedRendezVous, setSelectedRendezVous] = useState(null);
   const [showExport, setShowExport] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const tousLesMedecins = medecinId === TOUS_MEDECINS;
   const medecinSelectionne = medecins.find((m) => String(m.id) === String(medecinId)) || null;
+  const modesDisponibles = tousLesMedecins
+    ? VIEW_MODES.filter((mode) => mode.value !== "calendar")
+    : VIEW_MODES;
+  // Le calendrier n'est pas proposé pour la vue globale
+  const modeAffiche = tousLesMedecins && viewMode === "calendar" ? "table" : viewMode;
 
   const changerMedecin = (id) => {
     setMedecinId(id);
@@ -308,7 +316,9 @@ export default function PlanningDirecteur() {
         const liste = res.data.medecins || [];
         setMedecins(liste);
         setMedecinId((actuel) =>
-          liste.some((m) => String(m.id) === String(actuel)) ? actuel : String(liste[0]?.id ?? "")
+          actuel === TOUS_MEDECINS || liste.some((m) => String(m.id) === String(actuel))
+            ? actuel
+            : String(liste[0]?.id ?? "")
         );
       })
       .catch((err) => console.error("Erreur lors du chargement des médecins :", err));
@@ -341,6 +351,17 @@ export default function PlanningDirecteur() {
   const fetchEvents = useCallback(async () => {
     if (!medecinId) return;
     try {
+      if (medecinId === TOUS_MEDECINS) {
+        const res = await api.get("/directeur/rendez-vous-hopital");
+        const nextRendezvous = res.data.rendez_vous || [];
+        horairesRef.current = [];
+        indisposRef.current = [];
+        rendezvousRef.current = nextRendezvous;
+        setMedecinProfileId(null);
+        setPlanning({ horaires: [], indisponibilites: [], rendezVous: nextRendezvous });
+        return;
+      }
+
       const res = await api.get(`/directeur/medecins/${medecinId}/planning`);
       const nextHoraires = res.data.horaires || [];
       const nextIndispos = res.data.indisponibilites || [];
@@ -432,6 +453,7 @@ export default function PlanningDirecteur() {
         jour: item.start.toLocaleDateString("fr-FR", { weekday: "long" }),
         debut: item.type === "indisponibilite" ? "Journée" : formatTime(item.start),
         fin: item.type === "indisponibilite" ? "" : formatTime(item.end),
+        medecin: escapeHtml(item.rdv?.medecin?.name ? `Dr. ${item.rdv.medecin.name}` : ""),
         type: TYPE_LABELS[item.type],
         detail: escapeHtml(item.detail),
         item,
@@ -471,6 +493,7 @@ export default function PlanningDirecteur() {
         { data: "jour" },
         { data: "debut" },
         { data: "fin" },
+        { data: "medecin" },
         { data: "type" },
         { data: "detail" },
       ],
@@ -503,12 +526,17 @@ export default function PlanningDirecteur() {
 
   // Recalcule la taille des composants masqués lors du changement de vue
   useEffect(() => {
-    if (viewMode === "calendar") {
+    if (modeAffiche === "calendar") {
       calendarRef.current?.getApi().updateSize();
-    } else if (viewMode === "table") {
+    } else if (modeAffiche === "table") {
       dataTableRef.current?.columns.adjust().draw(false);
     }
-  }, [viewMode]);
+  }, [modeAffiche]);
+
+  // La colonne Médecin (index 4) ne sert que pour la vue « Tous les médecins »
+  useEffect(() => {
+    dataTableRef.current?.column(4).visible(tousLesMedecins);
+  }, [tousLesMedecins]);
 
   return (
     <div className={styles.container}>
@@ -524,6 +552,7 @@ export default function PlanningDirecteur() {
                 className="rounded border border-gray-300 bg-white px-3 py-2 text-sm"
                 aria-label="Médecin"
               >
+                <option value={TOUS_MEDECINS}>Tous les médecins</option>
                 {medecins.map((m) => (
                   <option key={m.id} value={m.id}>
                     Dr. {m.name}
@@ -535,18 +564,22 @@ export default function PlanningDirecteur() {
             )}
           </div>
           <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-            <button
-              onClick={() => setShowHoraireModal(true)}
-              className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 w-full md:w-auto"
-            >
-              Gestion des Horaires Hebdos
-            </button>
-            <button
-              onClick={() => setShowIndispoModal(true)}
-              className="bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600 w-full md:w-auto"
-            >
-              Ajouter indisponibilité
-            </button>
+            {!tousLesMedecins && (
+              <>
+                <button
+                  onClick={() => setShowHoraireModal(true)}
+                  className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 w-full md:w-auto"
+                >
+                  Gestion des Horaires Hebdos
+                </button>
+                <button
+                  onClick={() => setShowIndispoModal(true)}
+                  className="bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600 w-full md:w-auto"
+                >
+                  Ajouter indisponibilité
+                </button>
+              </>
+            )}
             <button
               onClick={handleRefresh}
               disabled={refreshing}
@@ -564,13 +597,13 @@ export default function PlanningDirecteur() {
           <div className="flex flex-col gap-3 mb-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
-                {VIEW_MODES.map((mode) => (
+                {modesDisponibles.map((mode) => (
                   <button
                     key={mode.value}
                     type="button"
                     onClick={() => setViewMode(mode.value)}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-                      viewMode === mode.value
+                      modeAffiche === mode.value
                         ? "bg-[#0596DE] text-white"
                         : "text-[#0A1E3D] hover:bg-gray-100"
                     }`}
@@ -579,24 +612,28 @@ export default function PlanningDirecteur() {
                   </button>
                 ))}
               </div>
-              <button
-                type="button"
-                onClick={() => setShowExport((v) => !v)}
-                className="ml-auto px-3 py-1.5 rounded-lg bg-[#0596DE] text-white text-sm font-medium hover:opacity-90"
-              >
-                Exporter
-              </button>
-            </div>
-            {showExport && <PanneauExport onExporter={exporterPlanning} />}
-            {viewMode !== "calendar" && (
-              <div className="flex flex-wrap gap-2">
+              {!tousLesMedecins && (
                 <button
                   type="button"
-                  onClick={() => setShowNewRdvModal(true)}
-                  className="px-3 py-1.5 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-600"
+                  onClick={() => setShowExport((v) => !v)}
+                  className="ml-auto px-3 py-1.5 rounded-lg bg-[#0596DE] text-white text-sm font-medium hover:opacity-90"
                 >
-                  Nouveau Rendez-vous
+                  Exporter
                 </button>
+              )}
+            </div>
+            {showExport && !tousLesMedecins && <PanneauExport onExporter={exporterPlanning} />}
+            {modeAffiche !== "calendar" && (
+              <div className="flex flex-wrap gap-2">
+                {!tousLesMedecins && (
+                  <button
+                    type="button"
+                    onClick={() => setShowNewRdvModal(true)}
+                    className="px-3 py-1.5 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-600"
+                  >
+                    Nouveau Rendez-vous
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setListStart((d) => addDays(d, -7))}
@@ -622,7 +659,7 @@ export default function PlanningDirecteur() {
             )}
           </div>
 
-          <div style={{ display: viewMode === "calendar" ? "block" : "none" }}>
+          <div style={{ display: modeAffiche === "calendar" ? "block" : "none" }}>
           <FullCalendar
             ref={calendarRef}
             plugins={[timeGridPlugin]}
@@ -672,7 +709,7 @@ export default function PlanningDirecteur() {
 
           <div
             className="bg-white rounded-xl shadow-sm p-4"
-            style={{ display: viewMode === "table" ? "block" : "none" }}
+            style={{ display: modeAffiche === "table" ? "block" : "none" }}
           >
             <table ref={tableRef} className="display stripe hover w-full">
               <thead>
@@ -681,6 +718,7 @@ export default function PlanningDirecteur() {
                   <th>Jour</th>
                   <th>Début</th>
                   <th>Fin</th>
+                  <th>Médecin</th>
                   <th>Type</th>
                   <th>Détail</th>
                 </tr>
@@ -689,7 +727,7 @@ export default function PlanningDirecteur() {
             </table>
           </div>
 
-          {viewMode === "list" && (
+          {modeAffiche === "list" && (
             <div className="space-y-4">
               <p className="text-sm text-gray-500">{periodLabel}</p>
               {listDays.map((day) => {
@@ -701,7 +739,9 @@ export default function PlanningDirecteur() {
                       {formatDayLabel(day)}
                     </h3>
                     {dayItems.length === 0 ? (
-                      <p className="px-4 py-3 text-sm text-gray-400">Aucun créneau</p>
+                      <p className="px-4 py-3 text-sm text-gray-400">
+                        {tousLesMedecins ? "Aucun rendez-vous" : "Aucun créneau"}
+                      </p>
                     ) : (
                       <ul className="divide-y divide-gray-100">
                         {dayItems.map((item) => (
@@ -720,6 +760,11 @@ export default function PlanningDirecteur() {
                               <span className={`text-xs px-2 py-0.5 rounded-full ${TYPE_STYLES[item.type]}`}>
                                 {TYPE_LABELS[item.type]}
                               </span>
+                              {tousLesMedecins && item.rdv?.medecin?.name && (
+                                <span className="text-sm font-medium text-[#0596DE]">
+                                  Dr. {item.rdv.medecin.name}
+                                </span>
+                              )}
                               <span className="text-sm text-gray-600">{item.detail}</span>
                             </button>
                           </li>
