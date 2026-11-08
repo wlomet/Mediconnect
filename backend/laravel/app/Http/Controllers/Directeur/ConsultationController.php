@@ -4,62 +4,43 @@ namespace App\Http\Controllers\Directeur;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Directeur\Concerns\MedecinsAccessibles;
-use App\Models\Consultation;
+use App\Services\ConsultationListeService;
+use App\Services\CsvExportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class ConsultationController extends Controller
 {
     use MedecinsAccessibles;
 
-    /**
-     * Consultations des médecins de l'hôpital (lecture seule), filtrables par statut et par médecin
-     */
-    public function index(Request $request): JsonResponse
+    // Tableau DataTables (AJAX) des consultations des médecins de l'hôpital
+    public function datatable(Request $request, ConsultationListeService $liste): JsonResponse
     {
-        $filtres = $request->validate([
-            'statut' => ['nullable', Rule::in([Consultation::EN_COURS, Consultation::EN_ATTENTE, Consultation::ABANDONNEE, Consultation::TERMINEE])],
-            'medecin_id' => ['nullable', 'integer'],
-        ]);
+        $donnees = $request->validate(ConsultationListeService::REGLES);
 
-        $profilIds = isset($filtres['medecin_id'])
-            ? [$this->profilMedecinAccessible($request->user(), (int) $filtres['medecin_id'])->id]
-            : $this->medecinProfileIdsAccessibles($request->user());
-
-        $consultations = Consultation::whereIn('medecin_profile_id', $profilIds)
-            ->with(['rendezVous', 'medecin.user', 'medecin.specialite', 'facture.lignes'])
-            ->when(isset($filtres['statut']), fn ($q) => $q->where('statut', $filtres['statut']))
-            ->orderByDesc('started_at')
-            ->get();
-
-        return response()->json([
-            'consultations' => $consultations->map(fn (Consultation $c) => $this->formater($c))->values(),
-        ]);
+        return response()->json($liste->tableau($this->profilIds($request, $donnees), $donnees));
     }
 
-    // Sans contenu médical (ordonnance, motif, coordonnées du patient) : indicateurs seulement
-    private function formater(Consultation $c): array
+    // Export CSV, ou JSON (format=json) pour l'Excel et le PDF générés côté front
+    public function export(Request $request, ConsultationListeService $liste, CsvExportService $csv)
     {
-        return [
-            'id' => $c->id,
-            'statut' => $c->statut,
-            'medecin' => [
-                'id' => $c->medecin->user->id,
-                'name' => $c->medecin->user->name,
-                'specialite' => $c->medecin->specialite?->nom ?? 'Non spécifié',
-            ],
-            'patient' => ['nom' => $c->rendezVous->name],
-            'rendez_vous' => [
-                'date_debut' => $c->rendezVous->date_debut,
-                'date_fin' => $c->rendezVous->date_fin,
-            ],
-            'started_at' => $c->started_at,
-            'heure_debut_reelle' => $c->heure_debut_reelle,
-            'ended_at' => $c->ended_at,
-            'ordonnance_decision' => $c->decisionOrdonnance(),
-            'facture_decision' => $c->decisionFacture(),
-            'facture_total' => $c->facture ? (float) $c->facture->total : null,
-        ];
+        $donnees = $request->validate(ConsultationListeService::REGLES);
+        $export = $liste->export($this->profilIds($request, $donnees), $donnees);
+
+        if ($request->query('format') === 'json') {
+            return response()->json($export);
+        }
+
+        return $csv->telecharger("{$export['nom_base']}.csv", $export['entetes'], $export['lignes']);
+    }
+
+    // Le médecin choisi (s'il est accessible), sinon tous les médecins de l'hôpital
+    private function profilIds(Request $request, array $donnees): array
+    {
+        if (isset($donnees['medecin_id'])) {
+            return [$this->profilMedecinAccessible($request->user(), (int) $donnees['medecin_id'])->id];
+        }
+
+        return $this->medecinProfileIdsAccessibles($request->user());
     }
 }

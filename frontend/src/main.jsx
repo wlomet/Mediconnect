@@ -60,8 +60,10 @@ import ConsultationPage from "./pages/medecin/consultations/ConsultationPage";
 import StatistiquesMedecin from "./pages/medecin/statistiques/StatistiquesMedecin";
 import PlanningSecretaire from "./pages/secretaire/planning/PlanningSecretaire";
 import StatistiquesSecretaire from "./pages/secretaire/statistiques/StatistiquesSecretaire";
+import ConsultationsSecretaire from "./pages/secretaire/consultations/ConsultationsSecretaire";
 import PlanningGestionnaire from "./pages/gestionnaire/planning/PlanningGestionnaire";
 import StatistiquesGestionnaire from "./pages/gestionnaire/statistiques/StatistiquesGestionnaire";
+import ConsultationsGestionnaire from "./pages/gestionnaire/consultations/ConsultationsGestionnaire";
 import PlanningDirecteur from "./pages/directeur/planning/PlanningDirecteur";
 import StatistiquesDirecteur from "./pages/directeur/statistiques/StatistiquesDirecteur";
 import ConsultationsDirecteur from "./pages/directeur/consultations/ConsultationsDirecteur";
@@ -113,6 +115,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/gestionnaire/dashboard" element={<DashboardGestionnaire />} />
         <Route path="/gestionnaire/planning" element={<PlanningGestionnaire />} />
         <Route path="/gestionnaire/statistiques" element={<StatistiquesGestionnaire />} />
+        <Route path="/gestionnaire/consultations" element={<ConsultationsGestionnaire />} />
         <Route path="/directeur/dashboard" element={<DashboardDirecteur />} />
         <Route path="/directeur/planning" element={<PlanningDirecteur />} />
         <Route path="/directeur/consultations" element={<ConsultationsDirecteur />} />
@@ -125,6 +128,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/secretaire/dashboard" element={<DashboardSecretaire />} />
         <Route path="/secretaire/planning" element={<PlanningSecretaire />} />
         <Route path="/secretaire/statistiques" element={<StatistiquesSecretaire />} />
+        <Route path="/secretaire/consultations" element={<ConsultationsSecretaire />} />
         <Route element={<SuperAdminLayout />}>
           <Route path="/super-admin/dashboard" element={<DashboardSuperAdmin />} />
           <Route path="/super-admin/utilisateurs" element={<UtilisateursSuperAdmin />} />

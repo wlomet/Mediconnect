@@ -39,8 +39,10 @@ use App\Http\Controllers\Gestionnaire\LiaisonController as GestionnaireLiaisonCo
 use App\Http\Controllers\Gestionnaire\DashboardController as GestionnaireDashboardController;
 use App\Http\Controllers\Secretaire\PlanningController as SecretairePlanningController;
 use App\Http\Controllers\Secretaire\StatistiqueController as SecretaireStatistiqueController;
+use App\Http\Controllers\Secretaire\ConsultationController as SecretaireConsultationController;
 use App\Http\Controllers\Gestionnaire\PlanningController as GestionnairePlanningController;
 use App\Http\Controllers\Gestionnaire\StatistiqueController as GestionnaireStatistiqueController;
+use App\Http\Controllers\Gestionnaire\ConsultationController as GestionnaireConsultationController;
 use App\Http\Controllers\Directeur\PlanningController as DirecteurPlanningController;
 use App\Http\Controllers\Directeur\RendezVousController as DirecteurRendezVousController;
 use App\Http\Controllers\Directeur\StatistiqueController as DirecteurStatistiqueController;
@@ -304,6 +306,9 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
             Route::delete('/{medecinId}/indisponibilites/{id}', [SecretairePlanningController::class, 'deleteIndisponibilite']);
         });
 
+        // Consultations des médecins accessibles (tableau)
+        Route::get('/consultations/datatable', [SecretaireConsultationController::class, 'datatable']);
+
         // Statistiques des médecins accessibles (filtre optionnel medecin_id)
         Route::prefix('statistiques')->group(function () {
             Route::get('/rendez-vous', [SecretaireStatistiqueController::class, 'rendezVous']);
@@ -355,6 +360,10 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
             Route::post('/{medecinId}/indisponibilites', [GestionnaireDashboardController::class, 'addIndisponibilite']);
             Route::delete('/{medecinId}/indisponibilites/{id}', [GestionnairePlanningController::class, 'deleteIndisponibilite']);
         });
+
+        // Consultations des médecins accessibles : tableau et export
+        Route::get('/consultations/datatable', [GestionnaireConsultationController::class, 'datatable']);
+        Route::get('/consultations/export', [GestionnaireConsultationController::class, 'export']);
 
         // Statistiques des médecins accessibles (filtre optionnel medecin_id)
         Route::prefix('statistiques')->group(function () {
@@ -408,8 +417,9 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
             Route::post('/{id}/renvoyer-email', [DirecteurRendezVousController::class, 'renvoyerEmail']);
         });
 
-        // Consultations des médecins de l'hôpital (lecture seule)
-        Route::get('/consultations', [DirecteurConsultationController::class, 'index']);
+        // Consultations des médecins de l'hôpital (lecture seule) : tableau et export
+        Route::get('/consultations/datatable', [DirecteurConsultationController::class, 'datatable']);
+        Route::get('/consultations/export', [DirecteurConsultationController::class, 'export']);
 
         Route::prefix('statistiques')->group(function () {
             Route::get('/rendez-vous', [DirecteurStatistiqueController::class, 'rendezVous']);

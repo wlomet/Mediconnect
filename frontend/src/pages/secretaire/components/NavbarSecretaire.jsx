@@ -10,6 +10,7 @@ const NavbarSecretaire = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const planningActive = location.pathname.startsWith("/secretaire/planning");
   const statistiquesActive = location.pathname.startsWith("/secretaire/statistiques");
+  const consultationsActive = location.pathname.startsWith("/secretaire/consultations");
 
   const handleLogout = async () => {
     try {
@@ -77,6 +78,13 @@ const NavbarSecretaire = () => {
               onClick={() => setMenuOpen(false)}
             >
               Statistiques
+            </a>
+            <a
+              href="/secretaire/consultations"
+              className={`${styles.navLink} ${consultationsActive ? styles.navLinkActive : ""}`}
+              onClick={() => setMenuOpen(false)}
+            >
+              Consultations
             </a>
           </div>
 

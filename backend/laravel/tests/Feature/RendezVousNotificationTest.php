@@ -351,7 +351,7 @@ class RendezVousNotificationTest extends TestCase
     private function espionnerJournal(): ArrayObject
     {
         $entrees = new ArrayObject();
-        $canal = new class($entrees) {
+        $canal = new class ($entrees) {
             public function __construct(private ArrayObject $entrees)
             {
             }
