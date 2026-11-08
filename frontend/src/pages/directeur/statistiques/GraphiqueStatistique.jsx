@@ -1,19 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { formatDateKey, libellePeriode } from "../../../utils/dateHelpers";
+import { libellePeriode } from "../../../utils/dateHelpers";
 import { exporterSvgEnPng } from "../../../utils/exportImage";
 import GraphiqueBarres from "./GraphiqueBarres";
 import GraphiqueCourbes from "./GraphiqueCourbes";
 import styles from "./StatistiquesDirecteur.module.css";
-
-// Par défaut : les 12 derniers mois, mois en cours inclus
-const periodeParDefaut = () => {
-  const aujourdhui = new Date();
-  return {
-    from: formatDateKey(new Date(aujourdhui.getFullYear(), aujourdhui.getMonth() - 11, 1)),
-    to: formatDateKey(aujourdhui),
-  };
-};
 
 const formatNombre = (valeur) => Number(valeur).toLocaleString("fr-FR");
 
@@ -22,19 +13,19 @@ export default function GraphiqueStatistique({
   nomFichier,
   charger,
   medecinId,
+  from,
+  to,
   type,
   unite,
   series,
   formaterValeur = formatNombre,
   resume,
 }) {
-  const [periode, setPeriode] = useState(periodeParDefaut);
   const [donnees, setDonnees] = useState(null);
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState("");
   const svgRef = useRef(null);
 
-  const { from, to } = periode;
   const invalide = !from || !to || from > to;
 
   useEffect(() => {
@@ -62,11 +53,6 @@ export default function GraphiqueStatistique({
       actif = false;
     };
   }, [charger, from, to, medecinId, invalide]);
-
-  const modifierDate = (cle) => (e) => {
-    const valeur = e.target.value;
-    setPeriode((courante) => ({ ...courante, [cle]: valeur }));
-  };
 
   const exporter = async () => {
     try {
@@ -99,23 +85,6 @@ export default function GraphiqueStatistique({
           Exporter en PNG
         </button>
       </header>
-
-      <div className={styles.periode}>
-        <label className={styles.champ}>
-          Du
-          <input type="date" value={from} onChange={modifierDate("from")} className={styles.input} />
-        </label>
-        <label className={styles.champ}>
-          Au
-          <input type="date" value={to} onChange={modifierDate("to")} className={styles.input} />
-        </label>
-      </div>
-
-      {!from || !to ? (
-        <p className={styles.erreur}>Renseignez les deux dates.</p>
-      ) : from > to ? (
-        <p className={styles.erreur}>La date de début doit précéder la date de fin.</p>
-      ) : null}
 
       {erreur && <p className={styles.erreur}>{erreur}</p>}
 

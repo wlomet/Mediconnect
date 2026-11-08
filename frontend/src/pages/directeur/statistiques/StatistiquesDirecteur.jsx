@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
 import NavbarDirecteur from "../utils/navbar";
 import api from "../../../api/axios";
-import { paramsPeriode } from "../../../utils/dateHelpers";
+import { formatDateKey, paramsPeriode } from "../../../utils/dateHelpers";
 import GraphiqueStatistique from "./GraphiqueStatistique";
 import styles from "./StatistiquesDirecteur.module.css";
 
 const BASE = "/directeur/statistiques";
+
+// Par défaut : les 12 derniers mois, mois en cours inclus
+const debutParDefaut = () => {
+  const aujourdhui = new Date();
+  return formatDateKey(new Date(aujourdhui.getFullYear(), aujourdhui.getMonth() - 11, 1));
+};
 
 // Chaque graphique interroge son endpoint avec sa période et le médecin choisi (vide = tous)
 const chargerStatistique = (chemin) => ({ from, to, medecinId }) =>
@@ -74,6 +80,9 @@ const GRAPHIQUES = [
 export default function StatistiquesDirecteur() {
   const [medecins, setMedecins] = useState([]);
   const [medecinId, setMedecinId] = useState("");
+  const [from, setFrom] = useState(debutParDefaut);
+  const [to, setTo] = useState(() => formatDateKey(new Date()));
+  const periodeInvalide = !from || !to || from > to;
 
   useEffect(() => {
     api
@@ -90,24 +99,39 @@ export default function StatistiquesDirecteur() {
         <header className={styles.header}>
           <h1 className={styles.title}>Statistiques</h1>
           <p className={styles.subtitle}>
-            Chaque graphique a sa propre période. Le bouton « Exporter en PNG » enregistre le graphique en image.
+            La période et le médecin valent pour tous les graphiques. Le bouton « Exporter en PNG » enregistre le graphique en image.
           </p>
-          <label className={styles.champ}>
-            Médecin
-            <select value={medecinId} onChange={(e) => setMedecinId(e.target.value)} className={styles.input}>
-              <option value="">Tous les médecins</option>
-              {medecins.map((m) => (
-                <option key={m.id} value={m.id}>
-                  Dr. {m.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className={styles.filtres}>
+            <label className={styles.champ}>
+              Médecin
+              <select value={medecinId} onChange={(e) => setMedecinId(e.target.value)} className={styles.input}>
+                <option value="">Tous les médecins</option>
+                {medecins.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    Dr. {m.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={styles.champ}>
+              Date de début
+              <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={styles.input} />
+            </label>
+            <label className={styles.champ}>
+              Date de fin
+              <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={styles.input} />
+            </label>
+          </div>
+          {periodeInvalide && (
+            <p className={styles.erreurPeriode}>
+              {!from || !to ? "Renseignez les deux dates." : "La date de début doit précéder la date de fin."}
+            </p>
+          )}
         </header>
 
         <div className={styles.grille}>
           {GRAPHIQUES.map(({ id, ...graphique }) => (
-            <GraphiqueStatistique key={id} medecinId={medecinId} {...graphique} />
+            <GraphiqueStatistique key={id} from={from} to={to} medecinId={medecinId} {...graphique} />
           ))}
         </div>
       </main>

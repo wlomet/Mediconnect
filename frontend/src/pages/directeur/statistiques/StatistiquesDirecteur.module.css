@@ -26,6 +26,20 @@
   font-size: 0.9rem;
 }
 
+.filtres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin-top: 12px;
+}
+
+.erreurPeriode {
+  color: #b91c1c;
+  font-size: 0.85rem;
+  margin: 8px 0 0;
+}
+
 .grille {
   display: grid;
   grid-template-columns: 1fr;
@@ -69,13 +83,6 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: #374151;
-}
-
-.periode {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: flex-end;
 }
 
 .champ {
