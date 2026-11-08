@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { formatDateKey, libellePeriode } from "../../../utils/dateHelpers";
 import { exporterSvgEnPng } from "../../../utils/exportImage";
+import SelecteurPeriode from "../../../components/SelecteurPeriode";
 import GraphiqueBarres from "./GraphiqueBarres";
 import GraphiqueCourbes from "./GraphiqueCourbes";
 import styles from "./StatistiquesMedecin.module.css";
@@ -62,11 +63,6 @@ export default function GraphiqueStatistique({
     };
   }, [charger, from, to, invalide]);
 
-  const modifierDate = (cle) => (e) => {
-    const valeur = e.target.value;
-    setPeriode((courante) => ({ ...courante, [cle]: valeur }));
-  };
-
   const exporter = async () => {
     try {
       await exporterSvgEnPng({
@@ -100,14 +96,7 @@ export default function GraphiqueStatistique({
       </header>
 
       <div className={styles.periode}>
-        <label className={styles.champ}>
-          Du
-          <input type="date" value={from} onChange={modifierDate("from")} className={styles.input} />
-        </label>
-        <label className={styles.champ}>
-          Au
-          <input type="date" value={to} onChange={modifierDate("to")} className={styles.input} />
-        </label>
+        <SelecteurPeriode label="Période" from={from} to={to} onChange={setPeriode} />
       </div>
 
       {!from || !to ? (

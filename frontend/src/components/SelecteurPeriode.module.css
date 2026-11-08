@@ -1,0 +1,322 @@
+.racine {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  --couleur-selection: #111827;
+  --couleur-bande: #f3f4f6;
+}
+
+.legende {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.declencheur {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 240px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: #fff;
+  color: #111827;
+  font-family: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.declencheur[aria-expanded="true"] {
+  border-color: var(--couleur-selection);
+  box-shadow: 0 0 0 1px var(--couleur-selection);
+}
+
+.valeur {
+  white-space: nowrap;
+}
+
+.vide {
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.panneau {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 1000;
+  max-width: calc(100vw - 32px);
+  padding: 20px 24px 16px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+}
+
+.onglets {
+  display: flex;
+  width: max-content;
+  margin: 0 auto 16px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #ebebeb;
+}
+
+.onglet,
+.ongletActif {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 16px;
+  background: transparent;
+  color: #374151;
+  font-family: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.ongletActif {
+  background: #fff;
+  color: #111827;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.calendrier {
+  position: relative;
+}
+
+.mois {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.unMois {
+  position: relative;
+}
+
+.entete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #111827;
+  text-transform: capitalize;
+}
+
+.flechePrecedente,
+.flecheSuivante {
+  position: absolute;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+}
+
+.flechePrecedente {
+  left: 0;
+}
+
+.flecheSuivante {
+  right: 0;
+}
+
+.chevron {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.jourSemaine {
+  width: 40px;
+  padding: 0 0 8px;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.grille {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.cellule {
+  padding: 0;
+  text-align: center;
+}
+
+.jour {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #111827;
+  font-family: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.jour:hover {
+  background: #e5e7eb;
+}
+
+.aujourdhui .jour {
+  font-weight: 700;
+}
+
+.debutPlage {
+  background: linear-gradient(to right, transparent 50%, var(--couleur-bande) 50%);
+}
+
+.finPlage {
+  background: linear-gradient(to left, transparent 50%, var(--couleur-bande) 50%);
+}
+
+.debutPlage.finPlage {
+  background: none;
+}
+
+.selectionne .jour {
+  background: var(--couleur-selection);
+  color: #fff;
+}
+
+/* Doit suivre .selectionne pour que les jours intermédiaires restent sans pastille */
+.intermediaire {
+  background: var(--couleur-bande);
+}
+
+.intermediaire .jour {
+  border-radius: 0;
+  background: transparent;
+  color: #111827;
+}
+
+.flexibles {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.titreSection {
+  margin: 0;
+  color: #111827;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.durees {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.duree,
+.dureeActive {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: #fff;
+  color: #111827;
+  font-family: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.dureeActive {
+  padding: 7px 15px;
+  border: 2px solid var(--couleur-selection);
+  font-weight: 600;
+}
+
+.cartes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px;
+  overflow-x: auto;
+}
+
+.carte,
+.carteActive {
+  flex: 0 0 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 8px;
+  border: 1px solid #dddddd;
+  border-radius: 12px;
+  background: #fff;
+  color: #111827;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.carteActive {
+  padding: 15px 7px;
+  border: 2px solid var(--couleur-selection);
+}
+
+.nomMois {
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.annee {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.navCartes {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+}
+
+.pied {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.effacer {
+  padding: 6px 4px;
+  border: none;
+  background: none;
+  color: #111827;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}

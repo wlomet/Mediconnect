@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { bornesPresetPeriode, formatDateKey } from "../utils/dateHelpers";
 import { FORMATS_EXPORT } from "../utils/exportTableau";
+import SelecteurPeriode from "./SelecteurPeriode";
 
 const PRESETS_PERIODE = [
   { valeur: "jour", libelle: "Aujourd'hui" },
@@ -12,25 +13,26 @@ const PRESETS_PERIODE = [
 // onExporter reçoit { format, from, to } (dates incluses, AAAA-MM-JJ) et rejette en cas d'échec
 export default function PanneauExport({ onExporter, couleur = "#0596DE" }) {
   const [format, setFormat] = useState("csv");
-  const [from, setFrom] = useState(() => formatDateKey(new Date()));
-  const [to, setTo] = useState(() => formatDateKey(new Date()));
+  const [periode, setPeriode] = useState(() => {
+    const aujourdhui = formatDateKey(new Date());
+    return { from: aujourdhui, to: aujourdhui };
+  });
   const [preset, setPreset] = useState(null);
+  const { from, to } = periode;
 
   const choisirPreset = (valeur) => {
     const { debut, fin } = bornesPresetPeriode(valeur);
     setPreset(valeur);
-    setFrom(formatDateKey(debut));
-    setTo(formatDateKey(fin));
+    setPeriode({ from: formatDateKey(debut), to: formatDateKey(fin) });
   };
 
-  // Modifier une date à la main désélectionne le raccourci
-  const modifierDate = (setter) => (e) => {
+  // Changer la période à la main désélectionne le raccourci
+  const modifierPeriode = (nouvelle) => {
     setPreset(null);
-    setter(e.target.value);
+    setPeriode(nouvelle);
   };
 
-  const inverse = Boolean(from && to && from > to);
-  const invalide = !from || !to || inverse;
+  const invalide = !from || !to;
 
   const telecharger = async () => {
     try {
@@ -43,24 +45,7 @@ export default function PanneauExport({ onExporter, couleur = "#0596DE" }) {
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
       <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-xs text-[#0A1E3D]">
-          Du
-          <input
-            type="date"
-            value={from}
-            onChange={modifierDate(setFrom)}
-            className="rounded border border-gray-300 px-2 py-1.5 text-sm"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-[#0A1E3D]">
-          Au
-          <input
-            type="date"
-            value={to}
-            onChange={modifierDate(setTo)}
-            className="rounded border border-gray-300 px-2 py-1.5 text-sm"
-          />
-        </label>
+        <SelecteurPeriode label="Période" from={from} to={to} onChange={modifierPeriode} couleur={couleur} />
         {PRESETS_PERIODE.map((p) => (
           <button
             key={p.valeur}
@@ -100,7 +85,6 @@ export default function PanneauExport({ onExporter, couleur = "#0596DE" }) {
         >
           Télécharger
         </button>
-        {inverse && <p className="text-xs text-red-600">La date de début doit précéder la date de fin.</p>}
       </div>
     </div>
   );

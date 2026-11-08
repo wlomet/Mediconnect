@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { superAdminApi } from "../../../api/superAdminApi";
 import { telechargerCsv } from "../../../utils/csvExport";
+import SelecteurPeriode from "../../../components/SelecteurPeriode";
 import styles from "../SuperAdminPages.module.css";
 
 const PAR_PAGE = 25;
@@ -71,6 +72,11 @@ const RendezVousSuperAdmin = () => {
 
   const modifierFiltre = (cle, valeur) => {
     setFiltres((f) => ({ ...f, [cle]: valeur }));
+    setPage(1);
+  };
+
+  const modifierPeriode = ({ from, to }) => {
+    setFiltres((f) => ({ ...f, from, to }));
     setPage(1);
   };
 
@@ -161,25 +167,7 @@ const RendezVousSuperAdmin = () => {
               </select>
             </label>
 
-            <label className={styles.field}>
-              Du
-              <input
-                type="date"
-                className={styles.input}
-                value={filtres.from}
-                onChange={(e) => modifierFiltre("from", e.target.value)}
-              />
-            </label>
-
-            <label className={styles.field}>
-              Au
-              <input
-                type="date"
-                className={styles.input}
-                value={filtres.to}
-                onChange={(e) => modifierFiltre("to", e.target.value)}
-              />
-            </label>
+            <SelecteurPeriode label="Période" from={filtres.from} to={filtres.to} onChange={modifierPeriode} />
 
             <button type="button" className={styles.secondaryButton} onClick={reinitialiser}>
               Réinitialiser

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import NavbarDirecteur from "../utils/navbar";
 import api from "../../../api/axios";
 import { formatDateKey, paramsPeriode } from "../../../utils/dateHelpers";
+import SelecteurPeriode from "../../../components/SelecteurPeriode";
 import GraphiqueStatistique from "./GraphiqueStatistique";
 import styles from "./StatistiquesDirecteur.module.css";
 
@@ -80,8 +81,8 @@ const GRAPHIQUES = [
 export default function StatistiquesDirecteur() {
   const [medecins, setMedecins] = useState([]);
   const [medecinId, setMedecinId] = useState("");
-  const [from, setFrom] = useState(debutParDefaut);
-  const [to, setTo] = useState(() => formatDateKey(new Date()));
+  const [periode, setPeriode] = useState(() => ({ from: debutParDefaut(), to: formatDateKey(new Date()) }));
+  const { from, to } = periode;
   const periodeInvalide = !from || !to || from > to;
 
   useEffect(() => {
@@ -113,14 +114,7 @@ export default function StatistiquesDirecteur() {
                 ))}
               </select>
             </label>
-            <label className={styles.champ}>
-              Date de début
-              <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={styles.input} />
-            </label>
-            <label className={styles.champ}>
-              Date de fin
-              <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={styles.input} />
-            </label>
+            <SelecteurPeriode label="Période" from={from} to={to} onChange={setPeriode} />
           </div>
           {periodeInvalide && (
             <p className={styles.erreurPeriode}>
