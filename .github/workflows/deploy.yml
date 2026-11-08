@@ -36,6 +36,7 @@ jobs:
             --exclude 'vendor/' \
             --exclude 'storage/' \
             --exclude '.env' \
+            --exclude '.env.local' \
             backend/laravel/ \
             ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }}:/var/www/Mediconnect/backend/laravel/
 
