@@ -69,6 +69,12 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
         ],
 
+        'notifications_rendez_vous' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/notifications_rendez_vous.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+        ],
+
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),

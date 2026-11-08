@@ -13,6 +13,7 @@ class RendezVousNotificationService
 {
     private const SUJET_CONFIRMATION = 'MediConnect : votre rendez-vous est confirmé';
     private const SUJET_ANNULATION = 'MediConnect : votre rendez-vous est annulé';
+    private const CANAL_LOG = 'notifications_rendez_vous';
 
     public function __construct(private MailService $mail)
     {
@@ -60,7 +61,7 @@ class RendezVousNotificationService
         try {
             $this->expedier($rendezVous, 'emails.rendez-vous-confirme', self::SUJET_CONFIRMATION, $this->donneesConfirmation($rendezVous));
         } catch (Throwable $e) {
-            Log::error('Échec du renvoi de l\'email de rendez-vous : ' . $e->getMessage(), [
+            Log::channel(self::CANAL_LOG)->error('Échec du renvoi de l\'email de rendez-vous : ' . $e->getMessage(), [
                 'rendez_vous_id' => $rendezVous->id,
             ]);
 
@@ -113,7 +114,7 @@ class RendezVousNotificationService
         try {
             $this->expedier($rendezVous, $vue, $sujet, $donnees);
         } catch (Throwable $e) {
-            Log::error('Échec de l\'envoi de l\'email de rendez-vous : ' . $e->getMessage(), [
+            Log::channel(self::CANAL_LOG)->error('Échec de l\'envoi de l\'email de rendez-vous : ' . $e->getMessage(), [
                 'rendez_vous_id' => $rendezVous->id,
                 'vue' => $vue,
             ]);
@@ -122,7 +123,7 @@ class RendezVousNotificationService
 
     private function expedier(RendezVous $rendezVous, string $vue, string $sujet, array $donnees): void
     {
-        $this->mail->send(
+        $reponse = $this->mail->send(
             to: $rendezVous->email,
             subject: $sujet,
             options: [
@@ -130,6 +131,12 @@ class RendezVousNotificationService
                 'html' => view($vue, $donnees)->render(),
             ],
         );
+
+        Log::channel(self::CANAL_LOG)->info('Email de rendez-vous envoyé.', [
+            'rendez_vous_id' => $rendezVous->id,
+            'vue' => $vue,
+            'message_id' => $reponse['messageId'] ?? null,
+        ]);
     }
 
     private function donneesRendezVous(RendezVous $rendezVous): array
@@ -155,6 +162,11 @@ class RendezVousNotificationService
     private function notifierSiCompteVerifie(RendezVous $rendezVous, string $vue, string $sujet, array $donnees): void
     {
         if (! $this->emailVerifie($rendezVous->email)) {
+            Log::channel(self::CANAL_LOG)->info('Email de rendez-vous non envoyé : aucun compte à email vérifié pour cette adresse.', [
+                'rendez_vous_id' => $rendezVous->id,
+                'vue' => $vue,
+            ]);
+
             return;
         }
 

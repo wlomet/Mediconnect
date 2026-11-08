@@ -13,6 +13,7 @@ use App\Services\MailService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Tests\Feature\Concerns\RendezVousFixtures;
@@ -281,6 +282,42 @@ class RendezVousNotificationTest extends TestCase
         $this->assertStringContainsString('3 avenue du Centre Hospitalier', $envois[0]['html']);
     }
 
+    public function test_sent_confirmation_is_logged(): void
+    {
+        User::factory()->create(['email' => 'patient@example.test', 'email_verified_at' => now()]);
+        [$user, $profil] = $this->makeMedecin();
+        $rdv = $this->makeRendezVous($profil, ['statut' => 'en_attente']);
+        $envois = $this->espionnerEnvois();
+        $journal = $this->espionnerJournal();
+        Sanctum::actingAs($user);
+
+        $this->putJson("/api/medecin/rendez-vous/{$rdv->id}", ['statut' => 'confirmé'])->assertOk();
+
+        $this->assertCount(1, $envois);
+        $this->assertCount(1, $journal);
+        $this->assertSame('info', $journal[0]['niveau']);
+        $this->assertSame('Email de rendez-vous envoyé.', $journal[0]['message']);
+        $this->assertSame('emails.rendez-vous-confirme', $journal[0]['contexte']['vue']);
+    }
+
+    public function test_skipped_confirmation_is_logged_when_patient_email_is_not_verified(): void
+    {
+        User::factory()->create(['email' => 'patient@example.test', 'email_verified_at' => null]);
+        [$user, $profil] = $this->makeMedecin();
+        $rdv = $this->makeRendezVous($profil, ['statut' => 'en_attente']);
+        $envois = $this->espionnerEnvois();
+        $journal = $this->espionnerJournal();
+        Sanctum::actingAs($user);
+
+        $this->putJson("/api/medecin/rendez-vous/{$rdv->id}", ['statut' => 'confirmé'])->assertOk();
+
+        $this->assertCount(0, $envois);
+        $this->assertCount(1, $journal);
+        $this->assertSame('info', $journal[0]['niveau']);
+        $this->assertStringContainsString('non envoyé', $journal[0]['message']);
+        $this->assertEquals($rdv->id, $journal[0]['contexte']['rendez_vous_id']);
+    }
+
     private function makeSecretaire(User $medecin): User
     {
         $secretaire = $this->makeUserWithRole('secretaire');
@@ -308,6 +345,27 @@ class RendezVousNotificationTest extends TestCase
             'date_debut' => $debut->toDateTimeString(),
             'date_fin' => $debut->copy()->addMinutes(30)->toDateTimeString(),
         ], $extra);
+    }
+
+    // Journal dédié aux notifications de rendez-vous : chaque ligne écrite est enregistrée, sans fichier.
+    private function espionnerJournal(): ArrayObject
+    {
+        $entrees = new ArrayObject();
+        $canal = new class($entrees) {
+            public function __construct(private ArrayObject $entrees)
+            {
+            }
+
+            public function __call(string $niveau, array $arguments): void
+            {
+                $this->entrees[] = ['niveau' => $niveau, 'message' => $arguments[0], 'contexte' => $arguments[1] ?? []];
+            }
+        };
+
+        Log::spy();
+        Log::shouldReceive('channel')->with('notifications_rendez_vous')->andReturn($canal);
+
+        return $entrees;
     }
 
     // Capture chaque envoi sans appeler Brevo.
