@@ -42,12 +42,18 @@ const libelleFacture = (c) => {
 };
 
 // Dans l'ordre des colonnes, qui correspond aux indices de tri attendus par le serveur
-const COLONNES = [
+const creerColonnes = (avecEtablissement) => [
   { title: "Date de création", rendu: (c) => formatDateHeure(c.created_at) },
   {
     title: "Médecin",
-    rendu: (c) =>
-      `<strong>Dr. ${echapper(c.medecin.name)}</strong><div class="${styles.small}">${echapper(c.medecin.specialite)}</div>`,
+    rendu: (c) => {
+      const precisions = [c.medecin.specialite, avecEtablissement ? c.medecin.etablissement : null];
+      const texte = precisions
+        .filter(Boolean)
+        .map((valeur) => echapper(valeur))
+        .join(" · ");
+      return `<strong>Dr. ${echapper(c.medecin.name)}</strong><div class="${styles.small}">${texte}</div>`;
+    },
   },
   { title: "Patient", rendu: (c) => echapper(c.patient.nom) },
   { title: "Rendez-vous", rendu: (c) => formatDateHeure(c.rendez_vous.date_debut) },
@@ -61,17 +67,17 @@ const COLONNES = [
   },
 ];
 
-// Tableau DataTables côté serveur (pagination, tri, recherche) ; statut et médecin viennent de la page
-export default function ConsultationsDataTable({ racine, statut, medecinId }) {
+// Tableau DataTables côté serveur (pagination, tri, recherche) ; statut, médecin et établissement viennent de la page
+export default function ConsultationsDataTable({ racine, statut, medecinId, hopitalId, avecEtablissement = false }) {
   const tableRef = useRef(null);
   const dataTableRef = useRef(null);
-  const filtresRef = useRef({ statut, medecinId });
+  const filtresRef = useRef({ statut, medecinId, hopitalId });
 
   // Recharge les données quand un filtre change, sans recréer le tableau
   useEffect(() => {
-    filtresRef.current = { statut, medecinId };
+    filtresRef.current = { statut, medecinId, hopitalId };
     dataTableRef.current?.ajax.reload();
-  }, [statut, medecinId]);
+  }, [statut, medecinId, hopitalId]);
 
   useEffect(() => {
     if (!tableRef.current || !window.$) return undefined;
@@ -83,14 +89,14 @@ export default function ConsultationsDataTable({ racine, statut, medecinId }) {
       order: [[0, "desc"]],
       pageLength: 10,
       lengthMenu: [10, 25, 50, 100],
-      columns: COLONNES.map(({ title, triable = true, rendu }) => ({
+      columns: creerColonnes(avecEtablissement).map(({ title, triable = true, rendu }) => ({
         title,
         data: null,
         orderable: triable,
         render: (_valeur, _type, ligne) => rendu(ligne),
       })),
       ajax: (data, callback) => {
-        const { statut: statutFiltre, medecinId: medecinFiltre } = filtresRef.current;
+        const { statut: statutFiltre, medecinId: medecinFiltre, hopitalId: hopitalFiltre } = filtresRef.current;
 
         api
           .get(`${racine}/consultations/datatable`, {
@@ -103,6 +109,7 @@ export default function ConsultationsDataTable({ racine, statut, medecinId }) {
               "order[0][dir]": data.order[0].dir,
               ...(statutFiltre ? { statut: statutFiltre } : {}),
               ...(medecinFiltre ? { medecin_id: medecinFiltre } : {}),
+              ...(hopitalFiltre ? { hopital_id: hopitalFiltre } : {}),
             },
           })
           .then((res) => callback(res.data))
@@ -122,7 +129,7 @@ export default function ConsultationsDataTable({ racine, statut, medecinId }) {
       dataTableRef.current?.destroy();
       dataTableRef.current = null;
     };
-  }, [racine]);
+  }, [racine, avecEtablissement]);
 
   return <table ref={tableRef} className={styles.table} />;
 }

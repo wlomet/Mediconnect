@@ -39,6 +39,7 @@ import EtablissementsSuperAdmin from "./pages/superadmin/etablissements/Etabliss
 import AntecedentsSuperAdmin from "./pages/superadmin/antecedents/AntecedentsSuperAdmin";
 import SpecialitesSuperAdmin from "./pages/superadmin/specialites/SpecialitesSuperAdmin";
 import RendezVousSuperAdmin from "./pages/superadmin/rendez-vous/RendezVousSuperAdmin";
+import ConsultationsSuperAdmin from "./pages/superadmin/consultations/ConsultationsSuperAdmin";
 import SuperAdminPdfTemplatesList from "./pages/superadmin/pdf-templates/SuperAdminPdfTemplatesList";
 import SuperAdminPdfLogosPage from "./pages/superadmin/pdf-templates/SuperAdminPdfLogosPage";
 import SuperAdminLayout from "./pages/superadmin/components/SuperAdminLayout";
@@ -138,6 +139,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/super-admin/antecedents" element={<AntecedentsSuperAdmin />} />
           <Route path="/super-admin/specialites" element={<SpecialitesSuperAdmin />} />
           <Route path="/super-admin/rendez-vous" element={<RendezVousSuperAdmin />} />
+          <Route path="/super-admin/consultations" element={<ConsultationsSuperAdmin />} />
           <Route path="/super-admin/pdf-templates" element={<SuperAdminPdfTemplatesList />} />
           <Route path="/super-admin/pdf-templates/logos" element={<SuperAdminPdfLogosPage />} />
         </Route>

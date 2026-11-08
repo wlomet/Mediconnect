@@ -13,6 +13,7 @@ class ConsultationListeService
     public const REGLES = [
         'statut' => ['nullable', 'in:en_cours,en_attente,abandonnee,terminee'],
         'medecin_id' => ['nullable', 'integer'],
+        'hopital_id' => ['nullable', 'integer'],
         'from' => ['nullable', 'date_format:Y-m-d', 'required_with:to'],
         'to' => ['nullable', 'date_format:Y-m-d', 'required_with:from', 'after_or_equal:from'],
         'timezone' => ['nullable', 'timezone:all'],
@@ -44,9 +45,9 @@ class ConsultationListeService
         Consultation::TERMINEE => 'Terminée',
     ];
 
-    private const RELATIONS = ['rendezVous', 'medecin.user', 'medecin.specialite', 'facture.lignes'];
+    private const RELATIONS = ['rendezVous', 'medecin.user', 'medecin.specialite', 'medecin.hopital', 'facture.lignes'];
 
-    public function tableau(array $profilIds, array $donnees): array
+    public function tableau(?array $profilIds, array $donnees): array
     {
         $base = $this->requete($profilIds, $donnees);
         $recordsTotal = (clone $base)->count();
@@ -70,7 +71,7 @@ class ConsultationListeService
     }
 
     // Entêtes et lignes de l'export, triées comme le tableau
-    public function export(array $profilIds, array $donnees): array
+    public function export(?array $profilIds, array $donnees): array
     {
         $fuseau = $donnees['timezone'] ?? config('app.timezone');
         $heure = fn (?Carbon $date) => $date?->copy()->setTimezone($fuseau)->format('d/m/Y H:i');
@@ -102,17 +103,25 @@ class ConsultationListeService
     }
 
     // Filtres statut et période (bornes incluses, dans le fuseau de l'utilisateur) ; pas de contenu médical
-    private function requete(array $profilIds, array $donnees): Builder
+    // $profilIds null : tous les médecins de l'application (super-admin)
+    private function requete(?array $profilIds, array $donnees): Builder
     {
         $requete = Consultation::query()
             ->select('consultations.*')
             ->join('medecin_profiles', 'medecin_profiles.id', '=', 'consultations.medecin_profile_id')
             ->join('users', 'users.id', '=', 'medecin_profiles.user_id')
-            ->join('rendez_vous', 'rendez_vous.id', '=', 'consultations.rendez_vous_id')
-            ->whereIn('consultations.medecin_profile_id', $profilIds);
+            ->join('rendez_vous', 'rendez_vous.id', '=', 'consultations.rendez_vous_id');
+
+        if ($profilIds !== null) {
+            $requete->whereIn('consultations.medecin_profile_id', $profilIds);
+        }
 
         if (!empty($donnees['statut'])) {
             $requete->where('consultations.statut', $donnees['statut']);
+        }
+
+        if (!empty($donnees['hopital_id'])) {
+            $requete->where('medecin_profiles.hopital_id', $donnees['hopital_id']);
         }
 
         if (!empty($donnees['from'])) {
@@ -162,6 +171,7 @@ class ConsultationListeService
                 'id' => $c->medecin->user->id,
                 'name' => $c->medecin->user->name,
                 'specialite' => $c->medecin->specialite?->nom ?? 'Non spécifié',
+                'etablissement' => $c->medecin->hopital?->name ?? 'Sans établissement',
             ],
             'patient' => ['nom' => $c->rendezVous->name],
             'rendez_vous' => [

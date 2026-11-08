@@ -55,6 +55,8 @@ use App\Http\Controllers\SuperAdmin\UserCreationController as SuperAdminUserCrea
 use App\Http\Controllers\SuperAdmin\AntecedentOptionController as SuperAdminAntecedentOptionController;
 use App\Http\Controllers\SuperAdmin\SpecialiteController as SuperAdminSpecialiteController;
 use App\Http\Controllers\SuperAdmin\RendezVousController as SuperAdminRendezVousController;
+use App\Http\Controllers\SuperAdmin\ImpersonationController as SuperAdminImpersonationController;
+use App\Http\Controllers\SuperAdmin\ConsultationController as SuperAdminConsultationController;
 use App\Http\Controllers\SuperAdmin\ActeurController as SuperAdminActeurController;
 use App\Http\Controllers\SuperAdmin\PdfTemplateController as SuperAdminPdfTemplateController;
 use App\Http\Controllers\SuperAdmin\PdfImageController as SuperAdminPdfImageController;
@@ -480,6 +482,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
             Route::put('/{id}', [SuperAdminUserController::class, 'update']);
             Route::put('/{id}/status', [SuperAdminUserController::class, 'toggleActive']);
             Route::put('/{id}/hide', [SuperAdminUserController::class, 'toggleHide']);
+            Route::post('/{id}/impersonate', [SuperAdminUserController::class, 'impersonate']);
             Route::put('/{id}/change-password', [SuperAdminController::class, 'changeUserPassword']);
             Route::post('/assign-role', [SuperAdminUserController::class, 'assignRole']);
             Route::post('/remove-role', [SuperAdminUserController::class, 'removeRole']);
@@ -511,6 +514,12 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         // Rendez-vous de l'application
         Route::get('/rendez-vous', [SuperAdminRendezVousController::class, 'index']);
         Route::get('/rendez-vous/export', [SuperAdminRendezVousController::class, 'export']);
+
+        // Historique des connexions en tant qu'un autre utilisateur
+        Route::get('/impersonations', [SuperAdminImpersonationController::class, 'index']);
+
+        // Consultations de l'application (lecture seule)
+        Route::get('/consultations/datatable', [SuperAdminConsultationController::class, 'datatable']);
 
         // Établissements et médecins (filtres et attributions)
         Route::get('/acteurs', [SuperAdminActeurController::class, 'index']);
