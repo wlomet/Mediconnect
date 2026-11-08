@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { Eye, Pencil, Key } from "react-bootstrap-icons";
 import Swal from "sweetalert2";
 import axiosInstance from "../../../../api/axios";
+import { superAdminApi } from "../../../../api/superAdminApi";
 import { toast } from "react-toastify";
 import { AuthContext } from "../../../../context/AuthContext";
 import ShowUserModal from "../modals/ShowUserModal";
@@ -9,10 +11,13 @@ import EditUserModal from "../modals/EditUserModal";
 import ChangePasswordModal from "../modals/ChangePasswordModal";
 import { validatePhone } from "../../../../utils/phoneValidation";
 
+const ROLES_NON_IMPERSONABLES = ["super-admin", "admin"];
+
 const UserDataTable = ({ users }) => {
   const tableRef = useRef(null);
   const dataTableRef = useRef(null);
-  const { user: currentUser } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const { user: currentUser, checkAuth } = useContext(AuthContext);
   const [localUsers, setLocalUsers] = useState(users);
   const [selectedRole, setSelectedRole] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -127,6 +132,31 @@ const UserDataTable = ({ users }) => {
     }
   };
 
+  // Ouvre une session sur le compte choisi : la déconnexion ramène au compte superadmin
+  const handleImpersonate = async (userId) => {
+    const result = await Swal.fire({
+      title: "Se connecter à ce compte ?",
+      text: "Vous serez connecté comme cet utilisateur. La déconnexion vous ramènera à votre compte superadmin.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#0f766e",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Se connecter",
+      cancelButtonText: "Annuler",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await superAdminApi.impersonateUser(userId);
+      await checkAuth();
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Erreur lors de la connexion au compte:", error);
+      toast.error(error.response?.data?.message || "Connexion au compte impossible");
+    }
+  };
+
   // Gérer les clics sur le tableau (délégation d'événements)
   useEffect(() => {
     if (!tableRef.current) return;
@@ -135,6 +165,7 @@ const UserDataTable = ({ users }) => {
       const btnView = e.target.closest('.btn-view');
       const btnEdit = e.target.closest('.btn-edit');
       const btnPassword = e.target.closest('.btn-password');
+      const btnImpersonate = e.target.closest('.btn-impersonate');
 
       if (btnView) {
         handleShowUser(btnView.dataset.userId);
@@ -142,6 +173,8 @@ const UserDataTable = ({ users }) => {
         handleEditUser(btnEdit.dataset.userId);
       } else if (btnPassword) {
         handleChangePasswordUser(btnPassword.dataset.userId);
+      } else if (btnImpersonate) {
+        handleImpersonate(btnImpersonate.dataset.userId);
       }
     };
 
@@ -240,6 +273,21 @@ const UserDataTable = ({ users }) => {
                   <i class="bi bi-key"></i>
                 </button>
               </div>
+            `;
+          }
+        },
+        {
+          data: null,
+          title: 'Se connecter',
+          orderable: false,
+          render: (data) => {
+            if (data.roles.some((role) => ROLES_NON_IMPERSONABLES.includes(role.name))) {
+              return '';
+            }
+            return `
+              <button class="btn-action btn-impersonate" data-user-id="${data.id}" title="Se connecter à ce compte">
+                <i class="bi bi-box-arrow-in-right"></i>
+              </button>
             `;
           }
         }
@@ -394,6 +442,7 @@ const UserDataTable = ({ users }) => {
               <th>Statut</th>
               <th>Visible</th>
               <th>Actions</th>
+              <th>Se connecter</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -431,6 +480,12 @@ const UserDataTable = ({ users }) => {
         }
         .btn-password:hover {
           background-color: #e68a00;
+        }
+        .btn-impersonate {
+          background-color: #0f766e;
+        }
+        .btn-impersonate:hover {
+          background-color: #0d625c;
         }
         .switch {
           position: relative;

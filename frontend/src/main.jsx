@@ -43,6 +43,8 @@ import ConsultationsSuperAdmin from "./pages/superadmin/consultations/Consultati
 import SuperAdminPdfTemplatesList from "./pages/superadmin/pdf-templates/SuperAdminPdfTemplatesList";
 import SuperAdminPdfLogosPage from "./pages/superadmin/pdf-templates/SuperAdminPdfLogosPage";
 import SuperAdminLayout from "./pages/superadmin/components/SuperAdminLayout";
+import ImpersonationsSuperAdmin from "./pages/superadmin/impersonations/ImpersonationsSuperAdmin";
+import ImpersonationBanner from "./components/ImpersonationBanner";
 import DashboardAdmin from "./pages/admin/dashboard/DashboardAdmin";
 import DirectorRequests from "./pages/admin/directeur-requests/DirectorRequests";
 import UserVerification from "./pages/admin/user-verification/UserVerification";
@@ -84,6 +86,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     />
     <BrowserRouter>
       <ConsultationPopup />
+      <ImpersonationBanner />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<SearchMedecin />} />
@@ -139,6 +142,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/super-admin/antecedents" element={<AntecedentsSuperAdmin />} />
           <Route path="/super-admin/specialites" element={<SpecialitesSuperAdmin />} />
           <Route path="/super-admin/rendez-vous" element={<RendezVousSuperAdmin />} />
+          <Route path="/super-admin/impersonations" element={<ImpersonationsSuperAdmin />} />
           <Route path="/super-admin/consultations" element={<ConsultationsSuperAdmin />} />
           <Route path="/super-admin/pdf-templates" element={<SuperAdminPdfTemplatesList />} />
           <Route path="/super-admin/pdf-templates/logos" element={<SuperAdminPdfLogosPage />} />

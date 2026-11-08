@@ -6,6 +6,7 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [roles, setRoles] = useState([]);
+  const [impersonatedBy, setImpersonatedBy] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,9 +18,11 @@ export const AuthProvider = ({ children }) => {
       const response = await api.get("/user");
       setUser(response.data.user);
       setRoles(response.data.roles);
+      setImpersonatedBy(response.data.impersonated_by ?? null);
     } catch (error) {
       console.log("Erreur checkAuth:", error);
       setUser(null);
+      setImpersonatedBy(null);
     } finally {
       setLoading(false);
     }
@@ -46,17 +49,26 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    let retourSuperAdmin = false;
     try {
-      await api.post("/logout");
+      const response = await api.post("/logout");
+      retourSuperAdmin = Boolean(response.data.retour_superadmin);
     } finally {
-      // L'état local est réinitialisé même si la requête échoue
-      setUser(null);
-      setRoles([]);
+      // L'état local est réinitialisé même si la requête échoue (sauf retour au superadmin)
+      if (!retourSuperAdmin) {
+        setUser(null);
+        setRoles([]);
+        setImpersonatedBy(null);
+      }
+    }
+
+    if (retourSuperAdmin) {
+      await checkAuth();
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, roles, login, register, logout, checkAuth }}>
+    <AuthContext.Provider value={{ user, loading, roles, impersonatedBy, login, register, logout, checkAuth }}>
       {children}
     </AuthContext.Provider>
   );

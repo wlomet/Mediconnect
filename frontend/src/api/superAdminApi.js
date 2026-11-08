@@ -23,6 +23,9 @@ export const superAdminApi = {
 
   listActeurs: () => api.get(`${root}/acteurs`).then((res) => res.data),
 
+  impersonateUser: (userId) => api.post(`${root}/users/${userId}/impersonate`).then((res) => res.data),
+  listImpersonations: (params) => api.get(`${root}/impersonations`, { params }).then((res) => res.data),
+
   listPdfTemplates: (params) => api.get(`${root}/pdf-templates`, { params }).then((res) => res.data.templates),
   createPdfTemplateFromDefault: (payload) =>
     api.post(`${root}/pdf-templates/from-default`, payload).then((res) => res.data.template),

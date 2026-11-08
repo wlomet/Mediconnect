@@ -12,6 +12,7 @@ use App\Models\MedecinProfile;
 use App\Models\Secretaire;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use App\Services\ImpersonationService;
 use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
@@ -154,6 +155,24 @@ class UserController extends Controller
                 'id' => $user->id,
                 'hide' => $user->hide,
             ]
+        ]);
+    }
+
+    /**
+     * SuperAdmin ouvre une session sur le compte d'un utilisateur, rendue par la déconnexion
+     */
+    public function impersonate(Request $request, $id, ImpersonationService $impersonation)
+    {
+        $cible = User::findOrFail($id);
+
+        if ($motif = $impersonation->motifRefus($cible)) {
+            return response()->json(['message' => $motif], 422);
+        }
+
+        $impersonation->demarrer($request->user(), $cible, $request);
+
+        return response()->json([
+            'message' => 'Connexion au compte effectuée',
         ]);
     }
 

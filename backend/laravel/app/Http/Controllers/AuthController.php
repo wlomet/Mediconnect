@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Rules\PhoneNumber;
 use App\Models\User;
+use App\Services\ConnexionService;
 use App\Services\EmailVerificationService;
+use App\Services\ImpersonationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -84,7 +86,7 @@ class AuthController extends Controller
         ]);
     }
 
-    public function login(Request $request)
+    public function login(Request $request, ConnexionService $connexion)
     {
         // Validation des champs requis
         $request->validate([
@@ -111,35 +113,8 @@ class AuthController extends Controller
 
         // Vérifier le mot de passe puis les conditions de connexion si l'utilisateur existe
         if ($user && Hash::check($request->input('password'), $user->password)) {
-            if (!$user->hasVerifiedEmail() && !$user->isEmailExempt()) {
-                return response()->json([
-                    'message' => 'Votre adresse email n\'est pas encore vérifiée. Activez votre compte depuis le lien reçu par email.',
-                    'isEmailUnverified' => true,
-                    'email' => $user->email,
-                ], 403);
-            }
-
-            if ((int) $user->isVerified === -1) {
-                return response()->json([
-                    'message' => 'Votre demande d\'inscription a été refusée. Veuillez contacter le support pour plus d\'informations.',
-                    'isRejected' => true
-                ], 403);
-            }
-
-            // Avant is_active : un médecin en attente a is_active = 0
-            if ((int) $user->isVerified !== 1) {
-                return response()->json([
-                    'message' => 'Votre compte est en attente de vérification par un administrateur',
-                    'isPending' => true
-                ], 403);
-            }
-
-            // Compte désactivé par un administrateur : message explicite, distinct du cas "en attente"
-            if (!$user->is_active) {
-                return response()->json([
-                    'message' => 'Votre compte a été désactivé par un administrateur. Veuillez contacter le support pour plus d\'informations.',
-                    'isDisabled' => true
-                ], 403);
+            if ($refus = $connexion->motifRefus($user)) {
+                return response()->json(['message' => $refus['message']] + $refus['extra'], 403);
             }
 
             Auth::login($user);
@@ -167,9 +142,17 @@ class AuthController extends Controller
         ], 401);
     }
 
-    public function logout(Request $request)
+    public function logout(Request $request, ImpersonationService $impersonation)
     {
         try {
+            // Pendant une impersonation, la déconnexion rend la session au superadmin
+            if ($impersonation->quitter($request) !== null) {
+                return response()->json([
+                    'message' => 'Retour au compte superadmin',
+                    'retour_superadmin' => true,
+                ]);
+            }
+
             Auth::logout();
 
             $request->session()->invalidate();
@@ -181,7 +164,7 @@ class AuthController extends Controller
         }
     }
 
-    public function user(Request $request)
+    public function user(Request $request, ImpersonationService $impersonation)
     {
         try {
             if (Auth::check()) {
@@ -199,7 +182,8 @@ class AuthController extends Controller
                         'isVerified' => $user->isVerified,
                         'profileComplete' => $user->hasRequiredProfileRow(),
                     ],
-                    'roles' => $user->getRoleNames()->toArray()
+                    'roles' => $user->getRoleNames()->toArray(),
+                    'impersonated_by' => $impersonation->impersonateur($request),
                 ]);
             } else {
                 return response()->json([
