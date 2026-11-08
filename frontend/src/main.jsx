@@ -64,6 +64,7 @@ import PlanningGestionnaire from "./pages/gestionnaire/planning/PlanningGestionn
 import StatistiquesGestionnaire from "./pages/gestionnaire/statistiques/StatistiquesGestionnaire";
 import PlanningDirecteur from "./pages/directeur/planning/PlanningDirecteur";
 import StatistiquesDirecteur from "./pages/directeur/statistiques/StatistiquesDirecteur";
+import ConsultationsDirecteur from "./pages/directeur/consultations/ConsultationsDirecteur";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <AuthProvider>
@@ -114,6 +115,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/gestionnaire/statistiques" element={<StatistiquesGestionnaire />} />
         <Route path="/directeur/dashboard" element={<DashboardDirecteur />} />
         <Route path="/directeur/planning" element={<PlanningDirecteur />} />
+        <Route path="/directeur/consultations" element={<ConsultationsDirecteur />} />
         <Route path="/directeur/statistiques" element={<StatistiquesDirecteur />} />
         <Route path="/directeur/create-users" element={<CreateUsers />} />
         <Route path="/directeur/hopital" element={<HopitalInfo />} />
